@@ -1,6 +1,5 @@
 import Link from 'next/link'
 import { memo } from 'react'
-import SupabaseTest from '@/components/SupabaseTest'
 
 const HeroSection = memo(function HeroSection() {
   return (
@@ -33,13 +32,6 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       <HeroSection />
-
-      {/* Supabase Integration Test */}
-      <section className="py-12 bg-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <SupabaseTest />
-        </div>
-      </section>
 
       {/* Features Section */}
       <section className="py-20 bg-white">

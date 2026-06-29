@@ -2,9 +2,18 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null)
+  const [newMessage, setNewMessage] = useState('')
+  const [messages, setMessages] = useState([
+    { id: '1', sender: 'other', text: 'Hola, me interesa tu vivienda para el mes de julio. ¿Está disponible?', time: '10:30 AM' },
+    { id: '2', sender: 'me', text: '¡Hola! Sí, está disponible desde el 15 de julio hasta el 31 de julio.', time: '10:35 AM' },
+    { id: '3', sender: 'other', text: 'Perfecto. ¿Cuántos WellPoints serían para 7 noches?', time: '10:40 AM' },
+    { id: '4', sender: 'me', text: 'Serían 350 WellPoints. ¿Te gustaría proceder con la solicitud?', time: '10:45 AM' },
+    { id: '5', sender: 'other', text: 'Sí, me gustaría. ¿Cómo puedo hacer la solicitud?', time: '10:50 AM' },
+  ])
 
   const conversations = [
     {
@@ -57,13 +66,38 @@ export default function MessagesPage() {
     }
   ]
 
-  const messages = [
-    { id: '1', sender: 'other', text: 'Hola, me interesa tu vivienda para el mes de julio. ¿Está disponible?', time: '10:30 AM' },
-    { id: '2', sender: 'me', text: '¡Hola! Sí, está disponible desde el 15 de julio hasta el 31 de julio.', time: '10:35 AM' },
-    { id: '3', sender: 'other', text: 'Perfecto. ¿Cuántos WellPoints serían para 7 noches?', time: '10:40 AM' },
-    { id: '4', sender: 'me', text: 'Serían 350 WellPoints. ¿Te gustaría proceder con la solicitud?', time: '10:45 AM' },
-    { id: '5', sender: 'other', text: 'Sí, me gustaría. ¿Cómo puedo hacer la solicitud?', time: '10:50 AM' },
-  ]
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!newMessage.trim() || !selectedConversation) return
+
+    const messageText = newMessage
+    setNewMessage('') // Limpiar el input inmediatamente
+
+    try {
+      // Add message to local state
+      const messageObj = {
+        id: String(messages.length + 1),
+        sender: 'me' as const,
+        text: messageText,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+      setMessages([...messages, messageObj])
+
+      // Save to Supabase (if you have the messages table set up)
+      // Uncomment when you have the proper database structure
+      /*
+      const { error } = await supabase.from('messages').insert({
+        conversation_id: selectedConversation,
+        sender_id: 'current-user-id',
+        text: messageText,
+      })
+      if (error) throw error
+      */
+    } catch (error) {
+      console.error('Error sending message:', error)
+      setNewMessage(messageText) // Restaurar el texto si hay error
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -170,16 +204,22 @@ export default function MessagesPage() {
 
                 {/* Message Input */}
                 <div className="p-4 border-t">
-                  <div className="flex gap-3">
+                  <form onSubmit={handleSendMessage} className="flex gap-3">
                     <input
                       type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
                       placeholder="Escribe un mensaje..."
                       className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <button className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                    <button 
+                      type="submit"
+                      disabled={!newMessage.trim()}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
                       Enviar
                     </button>
-                  </div>
+                  </form>
                 </div>
               </div>
             ) : (

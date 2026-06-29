@@ -1,6 +1,53 @@
+'use client'
+
+import { useState } from 'react'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function RegisterPage() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+  })
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Hash password (simple implementation - in production use bcrypt on backend)
+      const passwordHash = btoa(formData.password)
+
+      const { data, error } = await supabase
+        .from('users')
+        .insert({
+          email: formData.email,
+          password_hash: passwordHash,
+          name: formData.name,
+          role: 'user',
+          plan: 'free',
+          status: 'active',
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Redirect to login or dashboard
+      router.push('/login')
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Error al crear cuenta')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
       <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
@@ -11,13 +58,22 @@ export default function RegisterPage() {
           Únete a Wellhouse y comienza a intercambiar viviendas
         </p>
 
-        <form className="space-y-4">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-800 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nombre completo
             </label>
             <input
               type="text"
+              required
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Tu nombre"
             />
@@ -29,6 +85,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="tu@email.com"
             />
@@ -40,6 +99,9 @@ export default function RegisterPage() {
             </label>
             <input
               type="password"
+              required
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="••••••••"
             />
@@ -47,9 +109,10 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            disabled={loading}
+            className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            Crear Cuenta
+            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
         </form>
 
