@@ -7,14 +7,22 @@ export class UsersService {
 
   async findByEmail(email: string) {
     const client = this.supabaseService.getClient();
-    const { data, error } = await client.from('users').select('*').eq('email', email).single();
+    const { data, error } = await client
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .single();
     if (error) return null;
     return data;
   }
 
   async create(userData: any) {
     const client = this.supabaseService.getClient();
-    const { data, error } = await client.from('users').insert(userData).select().single();
+    const { data, error } = await client
+      .from('users')
+      .insert(userData)
+      .select()
+      .single();
     if (error) throw error;
     return data;
   }
@@ -28,7 +36,11 @@ export class UsersService {
 
   async findOne(id: string) {
     const client = this.supabaseService.getClient();
-    const { data, error } = await client.from('users').select('*').eq('id', id).single();
+    const { data, error } = await client
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .single();
     if (error) throw error;
     return data;
   }
