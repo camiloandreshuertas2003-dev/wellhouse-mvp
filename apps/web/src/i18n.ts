@@ -11,7 +11,8 @@ function resolveLocale(locale: string | undefined): Locale {
     : defaultLocale;
 }
 
-export default getRequestConfig(async ({ locale }) => {
+export default getRequestConfig(async ({ requestLocale }) => {
+  const locale = await requestLocale;
   const resolvedLocale = resolveLocale(locale);
 
   return {
