@@ -8,9 +8,15 @@ export class SupabaseService {
   private supabaseAdmin: SupabaseClient;
 
   constructor(private configService: ConfigService) {
-    const supabaseUrl = this.configService.get<string>('NEXT_PUBLIC_SUPABASE_URL');
-    const supabaseAnonKey = this.configService.get<string>('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-    const supabaseServiceRoleKey = this.configService.get<string>('SUPABASE_SERVICE_ROLE_KEY');
+    const supabaseUrl = this.configService.get<string>(
+      'NEXT_PUBLIC_SUPABASE_URL',
+    );
+    const supabaseAnonKey = this.configService.get<string>(
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
+    );
+    const supabaseServiceRoleKey = this.configService.get<string>(
+      'SUPABASE_SERVICE_ROLE_KEY',
+    );
 
     if (!supabaseUrl || !supabaseAnonKey) {
       throw new Error('Missing Supabase configuration');
@@ -46,13 +52,20 @@ export class SupabaseService {
   }
 
   async insert(table: string, data: any) {
-    const { data: result, error } = await this.supabase.from(table).insert(data).select();
+    const { data: result, error } = await this.supabase
+      .from(table)
+      .insert(data)
+      .select();
     if (error) throw error;
     return result;
   }
 
   async update(table: string, data: any, filter: any) {
-    const { data: result, error } = await this.supabase.from(table).update(data).match(filter).select();
+    const { data: result, error } = await this.supabase
+      .from(table)
+      .update(data)
+      .match(filter)
+      .select();
     if (error) throw error;
     return result;
   }

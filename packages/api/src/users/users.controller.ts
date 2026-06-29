@@ -21,7 +21,11 @@ export class UsersController {
   async getUserById(@Param('id') id: string) {
     try {
       const client = this.supabaseService.getClient();
-      const { data: user, error } = await client.from('users').select('*').eq('id', id).single();
+      const { data: user, error } = await client
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
       if (error) throw error;
       return { success: true, data: user };
     } catch (error) {
@@ -33,7 +37,11 @@ export class UsersController {
   async createUser(@Body() userData: any) {
     try {
       const client = this.supabaseService.getClient();
-      const { data: user, error } = await client.from('users').insert(userData).select().single();
+      const { data: user, error } = await client
+        .from('users')
+        .insert(userData)
+        .select()
+        .single();
       if (error) throw error;
       return { success: true, data: user };
     } catch (error) {
