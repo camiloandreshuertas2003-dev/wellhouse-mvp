@@ -1,0 +1,356 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  passwordHash  String
+  phone         String?
+  name          String
+  bio           String?
+  avatarUrl     String?
+  role          String    @default("USER_FREE") // USER_FREE, USER_PREMIUM, SUPERHOST, MODERATOR, SUPPORT, ADMIN, SUPER_ADMIN
+  plan          String    @default("free")       // free, premium
+  status        String    @default("active")     // active, suspended, inactive
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  sessions      Session[]
+  verifications UserVerification[]
+  properties    Property[]
+  exchangesAsRequester Exchange[] @relation("RequesterExchanges")
+  exchangesAsHost     Exchange[] @relation("HostExchanges")
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  conversations   Conversation[] @relation("UserConversations")
+  reviewsAsReviewer Review[] @relation("ReviewerReviews")
+  reviewsAsReviewed Review[] @relation("ReviewedReviews")
+  favorites       Favorite[]
+  favoriteLists   FavoriteList[]
+  notifications   Notification[]
+  reports         Report[] @relation("ReporterReports")
+  reportedInReports Report[] @relation("ReportedUserReports")
+  supportTickets  SupportTicket[]
+  subscriptions   Subscription[]
+  auditLogs       AuditLog[]
+  wellpointsLedger WellPointsLedger[]
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  token        String   @unique
+  refreshToken String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model UserVerification {
+  id           String    @id @default(uuid())
+  userId       String
+  type         String    // email, phone, id, address
+  status       String    @default("pending") // pending, verified, rejected
+  verifiedAt   DateTime?
+  documentUrl  String?
+  createdAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Property {
+  id            String    @id @default(uuid())
+  userId        String
+  title         String
+  description   String?
+  type          String    // Casa, Apartamento, Villa, Ático, etc.
+  country       String
+  city          String
+  lat           Float?
+  lng           Float?
+  capacity      Int       @default(1)
+  bedrooms      Int       @default(1)
+  bathrooms     Int       @default(1)
+  areaM2        Int?
+  status        String    @default("draft") // draft, published, archived
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amenities     PropertyAmenity[]
+  photos        PropertyPhoto[]
+  availability  AvailabilityBlock[]
+  exchangesAsRequester Exchange[] @relation("RequesterPropertyExchanges")
+  exchangesAsHost     Exchange[] @relation("HostPropertyExchanges")
+  reviews       Review[]
+  reports       Report[]
+  favorites     Favorite[]
+
+  @@index([userId])
+}
+
+model PropertyAmenity {
+  id          String    @id @default(uuid())
+  propertyId  String
+  amenityType String    // wifi, pool, parking, pets, etc.
+  createdAt   DateTime  @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model PropertyPhoto {
+  id               String    @id @default(uuid())
+  propertyId       String
+  url              String
+  order            Int       @default(0)
+  isCover          Boolean   @default(false)
+  moderationStatus String    @default("pending") // pending, approved, rejected
+  createdAt        DateTime  @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model AvailabilityBlock {
+  id          String    @id @default(uuid())
+  propertyId  String
+  startDate   DateTime
+  endDate     DateTime
+  type        String    // available, blocked, exchange
+  createdAt   DateTime  @default(now())
+
+  property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@index([propertyId])
+}
+
+model Exchange {
+  id                  String    @id @default(uuid())
+  requesterId         String
+  hostId              String
+  requesterPropertyId String?
+  hostPropertyId      String?
+  startDate           DateTime
+  endDate             DateTime
+  type                String    // simultaneous, points, direct
+  status              String    @default("pending") // pending, accepted, rejected, cancelled, completed
+  wellpointsUsed      Int       @default(0)
+  createdAt           DateTime  @default(now())
+
+  requester           User              @relation("RequesterExchanges", fields: [requesterId], references: [id])
+  host                User              @relation("HostExchanges", fields: [hostId], references: [id])
+  requesterProperty    Property?         @relation("RequesterPropertyExchanges", fields: [requesterPropertyId], references: [id])
+  hostProperty        Property?         @relation("HostPropertyExchanges", fields: [hostPropertyId], references: [id])
+  requests            ExchangeRequest[]
+  messages            Message[]
+  reviews             Review[]
+
+  @@index([requesterId])
+  @@index([hostId])
+}
+
+model ExchangeRequest {
+  id          String    @id @default(uuid())
+  exchangeId  String
+  message     String?
+  status      String    @default("pending") // pending, accepted, rejected, cancelled
+  respondedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  exchange Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+
+  @@index([exchangeId])
+}
+
+model Conversation {
+  id             String   @id @default(uuid())
+  participantIds String[]
+  lastMessageId  String?
+  createdAt      DateTime @default(now())
+
+  messages Message[]
+  users    User[] @relation("UserConversations")
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  exchangeId     String?
+  conversationId String
+  senderId       String
+  receiverId     String
+  content        String
+  type           String    @default("text") // text, image
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  exchange     Exchange?     @relation(fields: [exchangeId], references: [id], onDelete: SetNull)
+  conversation Conversation  @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver     User         @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model WellPointsLedger {
+  id            String    @id @default(uuid())
+  userId        String
+  amount        Int
+  type          String    // earned, spent, expired, bonus
+  referenceId   String?
+  referenceType String?
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Review {
+  id              String    @id @default(uuid())
+  exchangeId      String
+  reviewerId      String
+  reviewedId      String
+  propertyId      String?
+  ratingOverall   Int
+  ratingCleanliness Int?
+  ratingCommunication Int?
+  ratingAccuracy  Int?
+  text            String?
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+
+  exchange Exchange @relation(fields: [exchangeId], references: [id], onDelete: Cascade)
+  reviewer User    @relation("ReviewerReviews", fields: [reviewerId], references: [id])
+  reviewed User    @relation("ReviewedReviews", fields: [reviewedId], references: [id])
+  property Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  @@index([exchangeId])
+  @@index([reviewerId])
+  @@index([reviewedId])
+}
+
+model FavoriteList {
+  id          String    @id @default(uuid())
+  userId      String
+  name        String
+  isShared    Boolean   @default(false)
+  shareToken  String?
+  createdAt   DateTime  @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites Favorite[]
+
+  @@index([userId])
+}
+
+model Favorite {
+  id        String    @id @default(uuid())
+  userId    String
+  propertyId String
+  listId    String?
+  createdAt DateTime  @default(now())
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  list     FavoriteList? @relation(fields: [listId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, propertyId])
+  @@index([userId])
+  @@index([propertyId])
+}
+
+model Notification {
+  id        String    @id @default(uuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  dataJson  Json?
+  readAt    DateTime?
+  sentAt    DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Report {
+  id               String    @id @default(uuid())
+  reporterId       String
+  reportedUserId   String?
+  reportedPropertyId String?
+  type             String
+  description      String?
+  status           String    @default("pending")
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+
+  reporter  User      @relation("ReporterReports", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User?     @relation("ReportedUserReports", fields: [reportedUserId], references: [id], onDelete: SetNull)
+  property  Property? @relation(fields: [reportedPropertyId], references: [id], onDelete: SetNull)
+
+  @@index([reporterId])
+}
+
+model SupportTicket {
+  id          String    @id @default(uuid())
+  userId      String
+  category    String
+  subject     String
+  description String?
+  status      String    @default("open")
+  priority    String    @default("medium")
+  assignedTo  String?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Subscription {
+  id                    String    @id @default(uuid())
+  userId                String
+  plan                  String
+  status                String    @default("active")
+  stripeSubscriptionId  String?
+  currentPeriodStart    DateTime?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model AuditLog {
+  id           String    @id @default(uuid())
+  userId       String?
+  action       String
+  resourceType String
+  resourceId   String?
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([resourceType])
+}

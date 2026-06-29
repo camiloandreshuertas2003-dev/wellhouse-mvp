@@ -1,0 +1,58 @@
+{
+  "home": {
+    "hero": {
+      "title": "Viaja gratis alojándote en hogares reales",
+      "subtitle": "Intercambia tu vivienda con personas verificadas de todo el mundo. La comunidad más confiable de intercambio de viviendas del mundo hispanohablante.",
+      "cta_primary": "Comenzar Gratis",
+      "cta_secondary": "Cómo Funciona"
+    },
+    "features": {
+      "title": "¿Por qué Wellhouse?",
+      "subtitle": "Descubre las ventajas que nos hacen diferentes",
+      "freemium": {
+        "title": "Freemium + WellPoints",
+        "description": "Sistema flexible de puntos que te permite intercambiar sin restricciones monetarias"
+      },
+      "verification": {
+        "title": "Verificación Robusta",
+        "description": "3 niveles de verificación para garantizar la confianza y seguridad de la comunidad"
+      },
+      "spanish": {
+        "title": "100% en Español",
+        "description": "Plataforma diseñada específicamente para la comunidad hispanohablante global"
+      }
+    },
+    "how_it_works": {
+      "title": "¿Cómo funciona?",
+      "subtitle": "Intercambia tu vivienda en 4 simples pasos",
+      "step1": {
+        "title": "Regístrate",
+        "description": "Crea tu perfil y verifica tu identidad"
+      },
+      "step2": {
+        "title": "Publica",
+        "description": "Sube fotos de tu vivienda y calendario"
+      },
+      "step3": {
+        "title": "Busca",
+        "description": "Encuentra el hogar perfecto para tu viaje"
+      },
+      "step4": {
+        "title": "Intercambia",
+        "description": "Confirma y disfruta tu intercambio"
+      }
+    },
+    "cta": {
+      "title": "¿Listo para viajar gratis?",
+      "subtitle": "Únete a miles de viajeros que ya están intercambiando sus hogares",
+      "button": "Crear Cuenta Gratis"
+    }
+  },
+  "footer": {
+    "description": "La plataforma de intercambio de viviendas más confiable del mundo hispanohablante.",
+    "explore": "Explorar",
+    "company": "Compañía",
+    "support": "Soporte",
+    "copyright": "© 2026 Wellhouse. Todos los derechos reservados."
+  }
+}

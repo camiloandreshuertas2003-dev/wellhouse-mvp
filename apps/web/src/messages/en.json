@@ -1,0 +1,58 @@
+{
+  "home": {
+    "hero": {
+      "title": "Travel for Free by Staying in Real Homes",
+      "subtitle": "Exchange your home with verified people from around the world. The most trusted home exchange community in the Spanish-speaking world.",
+      "cta_primary": "Start for Free",
+      "cta_secondary": "How It Works"
+    },
+    "features": {
+      "title": "Why Wellhouse?",
+      "subtitle": "Discover the advantages that make us different",
+      "freemium": {
+        "title": "Freemium + WellPoints",
+        "description": "Flexible points system that allows you to exchange without monetary restrictions"
+      },
+      "verification": {
+        "title": "Robust Verification",
+        "description": "3 verification levels to guarantee trust and community security"
+      },
+      "spanish": {
+        "title": "100% in Spanish",
+        "description": "Platform designed specifically for the global Spanish-speaking community"
+      }
+    },
+    "how_it_works": {
+      "title": "How It Works?",
+      "subtitle": "Exchange your home in 4 simple steps",
+      "step1": {
+        "title": "Sign Up",
+        "description": "Create your profile and verify your identity"
+      },
+      "step2": {
+        "title": "Publish",
+        "description": "Upload photos of your home and calendar"
+      },
+      "step3": {
+        "title": "Search",
+        "description": "Find the perfect home for your trip"
+      },
+      "step4": {
+        "title": "Exchange",
+        "description": "Confirm and enjoy your exchange"
+      }
+    },
+    "cta": {
+      "title": "Ready to Travel for Free?",
+      "subtitle": "Join thousands of travelers already exchanging their homes",
+      "button": "Create Free Account"
+    }
+  },
+  "footer": {
+    "description": "The most trusted home exchange platform in the Spanish-speaking world.",
+    "explore": "Explore",
+    "company": "Company",
+    "support": "Support",
+    "copyright": "© 2026 Wellhouse. All rights reserved."
+  }
+}
