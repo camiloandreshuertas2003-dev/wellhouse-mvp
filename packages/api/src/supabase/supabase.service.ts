@@ -35,6 +35,9 @@ export class SupabaseService {
   }
 
   getAdminClient(): SupabaseClient {
+    if (!this.supabaseAdmin) {
+      throw new Error('Supabase admin client not initialized. Missing SUPABASE_SERVICE_ROLE_KEY environment variable.');
+    }
     return this.supabaseAdmin;
   }
 
