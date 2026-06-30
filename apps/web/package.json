@@ -6,11 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "npm install @parcel/watcher-linux-x64-glibc --no-save"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@parcel/watcher": "^2.4.1",
     "@supabase/supabase-js": "^2.108.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
