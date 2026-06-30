@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "npm install @parcel/watcher-linux-x64-glibc --no-save"
   },
   "dependencies": {
     "@parcel/watcher": "^2.4.1",
