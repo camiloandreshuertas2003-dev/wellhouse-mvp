@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@parcel/watcher": "^2.4.1",
     "@supabase/supabase-js": "^2.108.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -30,5 +29,8 @@
     "postcss": "^8.4.39",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.5.3"
+  },
+  "optionalDependencies": {
+    "@parcel/watcher": "^2.5.0"
   }
 }
