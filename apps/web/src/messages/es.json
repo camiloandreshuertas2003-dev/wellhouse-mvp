@@ -49,10 +49,69 @@
     }
   },
   "footer": {
+    "wellhouse": "Wellhouse",
     "description": "La plataforma de intercambio de viviendas más confiable del mundo hispanohablante.",
-    "explore": "Explorar",
-    "company": "Compañía",
-    "support": "Soporte",
+    "explore": {
+      "title": "Explorar",
+      "search": "Buscar viviendas",
+      "how_it_works": "Cómo funciona",
+      "security": "Seguridad",
+      "wellpoints": "WellPoints"
+    },
+    "company": {
+      "title": "Compañía",
+      "about_us": "Sobre nosotros",
+      "blog": "Blog",
+      "careers": "Carreras",
+      "press": "Prensa"
+    },
+    "support": {
+      "title": "Soporte",
+      "help_center": "Centro de ayuda",
+      "contact": "Contacto",
+      "terms": "Términos",
+      "privacy": "Privacidad"
+    },
     "copyright": "© 2026 Wellhouse. Todos los derechos reservados."
+  },
+  "onboarding": {
+    "title": "Completa tu perfil",
+    "subtitle": "Cuéntanos un poco sobre ti para que otros usuarios puedan confiar en ti",
+    "full_name": "Nombre completo",
+    "full_name_placeholder": "Tu nombre",
+    "bio": "Bio",
+    "bio_placeholder": "Cuéntanos sobre ti, tus intereses y por qué te gusta intercambiar viviendas...",
+    "phone": "Teléfono (para verificación)",
+    "phone_placeholder": "+1 234 567 8900",
+    "verification_levels": {
+      "title": "Niveles de verificación",
+      "level1": "Nivel 1: Email + Teléfono (básico)",
+      "level2": "Nivel 2: Documento de identidad (opcional)",
+      "level3": "Nivel 3: Verificación de dirección (opcional)"
+    },
+    "save_button": "Guardar y continuar",
+    "skip_button": "Omitir por ahora →"
+  },
+  "how_it_works_page": {
+    "back_link": "← Volver al inicio",
+    "title": "¿Cómo funciona Wellhouse?",
+    "step1": {
+      "title": "Regístrate",
+      "description": "Crea tu perfil gratuito y verifica tu identidad. Solo tomamos unos minutos y garantizamos la seguridad de toda la comunidad."
+    },
+    "step2": {
+      "title": "Publica tu vivienda",
+      "description": "Sube fotos de tu hogar, describe las características y establece tu calendario de disponibilidad. Cuantos más detalles, más oportunidades de intercambio."
+    },
+    "step3": {
+      "title": "Busca y conecta",
+      "description": "Explora viviendas en destinos que te interesen. Contacta con otros usuarios y acuerda los detalles de tu intercambio."
+    },
+    "step4": {
+      "title": "Intercambia y viaja",
+      "description": "Confirma el intercambio, recibe las instrucciones de acceso y disfruta de tu estancia. Al regresar, deja una reseña para ayudar a la comunidad."
+    },
+    "cta_title": "¿Listo para comenzar tu primera experiencia?",
+    "cta_button": "Crear Cuenta Gratis"
   }
 }
