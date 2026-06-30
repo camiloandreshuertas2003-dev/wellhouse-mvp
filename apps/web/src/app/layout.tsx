@@ -2,7 +2,7 @@ import { NextIntlClientProvider, useMessages } from 'next-intl'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import '../globals.css'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
