@@ -1,6 +1,8 @@
 # Dependencies
 node_modules
 .pnpm-store
+package-lock.json
+**/package-lock.json
 
 # Build outputs
 .next
@@ -35,3 +37,6 @@ coverage
 Thumbs.db
 .vercel
 .env*
+
+# Carpeta de cuarentena para archivos obsoletos
+_quarantine/
