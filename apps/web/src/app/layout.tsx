@@ -24,7 +24,6 @@ export default function LocaleLayout({
   children: React.ReactNode
   params: { locale: string }
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const messages = useMessages()
 
   return (
