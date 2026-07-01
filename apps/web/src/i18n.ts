@@ -1,13 +1,17 @@
-import {getRequestConfig} from 'next-intl/server';
- 
-// Can be imported from a shared config
-const locales = ['es'];
- 
-export default getRequestConfig(async ({locale}) => {
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as any)) notFound();
- 
+import { getRequestConfig } from 'next-intl/server';
+import { routing } from './i18n/routing';
+
+export default getRequestConfig(async ({ requestLocale }) => {
+  // Await the locale (next-intl v4 API)
+  let locale = await requestLocale;
+
+  // Fallback to default locale if undefined or unsupported
+  if (!locale || !routing.locales.includes(locale as 'es' | 'en')) {
+    locale = routing.defaultLocale;
+  }
+
   return {
+    locale,
     messages: (await import(`./messages/${locale}.json`)).default
   };
 });
