@@ -1,15 +1,18 @@
 import Link from 'next/link'
+import {useTranslations} from 'next-intl';
 
 export default function HowItWorksPage() {
+  const t = useTranslations('how_it_works_page');
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-16">
         <Link href="/" className="text-blue-600 hover:underline mb-8 inline-block">
-          ← Volver al inicio
+          {t('back_link')}
         </Link>
 
         <h1 className="text-4xl font-bold text-gray-900 mb-8">
-          ¿Cómo funciona Wellhouse?
+          {t('title')}
         </h1>
 
         <div className="space-y-12">
@@ -19,10 +22,9 @@ export default function HowItWorksPage() {
                 1
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-2">Regístrate</h2>
+                <h2 className="text-2xl font-semibold mb-2">{t('step1.title')}</h2>
                 <p className="text-gray-600">
-                  Crea tu perfil gratuito y verifica tu identidad. Solo tomamos unos minutos
-                  y garantizamos la seguridad de toda la comunidad.
+                  {t('step1.description')}
                 </p>
               </div>
             </div>
@@ -34,10 +36,9 @@ export default function HowItWorksPage() {
                 2
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-2">Publica tu vivienda</h2>
+                <h2 className="text-2xl font-semibold mb-2">{t('step2.title')}</h2>
                 <p className="text-gray-600">
-                  Sube fotos de tu hogar, describe las características y establece tu calendario
-                  de disponibilidad. Cuantos más detalles, más oportunidades de intercambio.
+                  {t('step2.description')}
                 </p>
               </div>
             </div>
@@ -49,10 +50,9 @@ export default function HowItWorksPage() {
                 3
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-2">Busca y conecta</h2>
+                <h2 className="text-2xl font-semibold mb-2">{t('step3.title')}</h2>
                 <p className="text-gray-600">
-                  Explora viviendas en destinos que te interesen. Contacta con otros usuarios
-                  y acuerda los detalles de tu intercambio.
+                  {t('step3.description')}
                 </p>
               </div>
             </div>
@@ -64,10 +64,9 @@ export default function HowItWorksPage() {
                 4
               </div>
               <div>
-                <h2 className="text-2xl font-semibold mb-2">Intercambia y viaja</h2>
+                <h2 className="text-2xl font-semibold mb-2">{t('step4.title')}</h2>
                 <p className="text-gray-600">
-                  Confirma el intercambio, recibe las instrucciones de acceso y disfruta de tu
-                  estancia. Al regresar, deja una reseña para ayudar a la comunidad.
+                  {t('step4.description')}
                 </p>
               </div>
             </div>
@@ -76,13 +75,13 @@ export default function HowItWorksPage() {
 
         <div className="mt-12 text-center bg-blue-600 text-white rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">
-            ¿Listo para comenzar tu primera experiencia?
+            {t('cta_title')}
           </h2>
           <Link
             href="/register"
             className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors inline-block"
           >
-            Crear Cuenta Gratis
+            {t('cta_button')}
           </Link>
         </div>
       </div>

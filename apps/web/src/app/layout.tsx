@@ -2,7 +2,7 @@ import { NextIntlClientProvider, useMessages } from 'next-intl'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import '../globals.css'
+import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -24,7 +24,6 @@ export default function LocaleLayout({
   children: React.ReactNode
   params: { locale: string }
 }) {
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
   const messages = useMessages()
 
   return (
