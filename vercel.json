@@ -1,5 +1,8 @@
 {
-  "buildCommand": "pnpm run build",
-  "outputDirectory": ".next",
-  "framework": "nextjs"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm exec turbo run build --filter=@wellhouse/web",
+  "installCommand": "corepack enable && pnpm install",
+  "outputDirectory": "apps/web/.next",
+  "framework": "nextjs",
+  "nodeVersion": "20.x"
 }

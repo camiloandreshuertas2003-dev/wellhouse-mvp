@@ -2,67 +2,86 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import {
+  Wifi, ChefHat, Car, Snowflake, Thermometer, WashingMachine, Tv,
+  Waves, Dumbbell, Trees, Mountain, ArrowUp, PawPrint, Laptop, Flame,
+  Umbrella, Coffee, BedDouble, Star, Home, MapPin, Bed, Camera, Edit3, Send,
+  Building, Tent, Palmtree, Map, Sparkles
+} from 'lucide-react'
 
-// ─── WellScore preview (client-side estimation) ───────────────────────────────
-function calcWellScorePreview(data: FormData, photos: string[], amenities: string[]): number {
-  let score = 1.0
-  if (data.title.length >= 10) score += 0.3
-  if (data.description.length >= 80) score += 0.4
-  if (data.city && data.country) score += 0.2
-  if (Number(data.bedrooms) >= 1) score += 0.1
-  if (Number(data.bathrooms) >= 1) score += 0.1
-  if (Number(data.capacity) >= 2) score += 0.1
-  score += Math.min(photos.length * 0.15, 0.9)
-  score += Math.min(amenities.length * 0.08, 0.8)
-  if (data.availableFrom && data.availableTo) score += 0.3
-  if (data.rules.length >= 20) score += 0.1
-  return Math.min(Math.round(score * 10) / 10, 5.0)
-}
-
+// No more fake wellscore calculations
 interface FormData {
-  title: string; type: string; description: string; rules: string
-  address: string; city: string; country: string; postalCode: string
-  bedrooms: string; bathrooms: string; capacity: string; beds: string; areaSqm: string
-  availableFrom: string; availableTo: string; minStay: string; maxStay: string
+  title: string
+  type: string
+  category: string
+  description_space: string
+  description_area: string
+  description_directions: string
+  rules: string
+  address: string
+  city: string
+  country: string
+  postalCode: string
+  bedrooms: string
+  bathrooms: string
+  capacity: string
+  beds: string
+  areaSqm: string
+  availableFrom: string
+  availableTo: string
+  minStay: string
+  maxStay: string
 }
 
 const STEPS = [
-  { n: 1, label: 'Tipo', icon: '🏠' },
-  { n: 2, label: 'Ubicación', icon: '📍' },
-  { n: 3, label: 'Detalles', icon: '🛏️' },
-  { n: 4, label: 'Fotos', icon: '📷' },
-  { n: 5, label: 'Descripción', icon: '✍️' },
-  { n: 6, label: 'Publicar', icon: '🚀' },
+  { n: 1, label: 'Tipo', Icon: Home },
+  { n: 2, label: 'Ubicación', Icon: MapPin },
+  { n: 3, label: 'Detalles', Icon: Bed },
+  { n: 4, label: 'Fotos', Icon: Camera },
+  { n: 5, label: 'Descripción', Icon: Edit3 },
+  { n: 6, label: 'Publicar', Icon: Send },
 ]
 
 const AMENITIES = [
-  { id: 'wifi', name: 'WiFi', icon: '📶', score: 0.1 },
-  { id: 'kitchen', name: 'Cocina', icon: '🍳', score: 0.15 },
-  { id: 'parking', name: 'Parking', icon: '🚗', score: 0.1 },
-  { id: 'ac', name: 'A/A', icon: '❄️', score: 0.08 },
-  { id: 'heating', name: 'Calefacción', icon: '🔥', score: 0.08 },
-  { id: 'washer', name: 'Lavadora', icon: '🧺', score: 0.08 },
-  { id: 'tv', name: 'Smart TV', icon: '📺', score: 0.05 },
-  { id: 'pool', name: 'Piscina', icon: '🏊', score: 0.2 },
-  { id: 'gym', name: 'Gimnasio', icon: '💪', score: 0.1 },
-  { id: 'garden', name: 'Jardín', icon: '🌳', score: 0.12 },
-  { id: 'balcony', name: 'Balcón', icon: '🌅', score: 0.1 },
-  { id: 'elevator', name: 'Ascensor', icon: '🛗', score: 0.05 },
-  { id: 'pets', name: 'Mascotas OK', icon: '🐾', score: 0.08 },
-  { id: 'workspace', name: 'Escritorio', icon: '💻', score: 0.08 },
-  { id: 'bbq', name: 'BBQ', icon: '🔥', score: 0.1 },
+  { id: 'wifi', name: 'WiFi', Icon: Wifi },
+  { id: 'kitchen', name: 'Cocina', Icon: ChefHat },
+  { id: 'parking', name: 'Parqueadero', Icon: Car },
+  { id: 'ac', name: 'A/A', Icon: Snowflake },
+  { id: 'heating', name: 'Calefacción', Icon: Thermometer },
+  { id: 'washer', name: 'Lavadora', Icon: WashingMachine },
+  { id: 'tv', name: 'Smart TV', Icon: Tv },
+  { id: 'pool', name: 'Piscina', Icon: Waves },
+  { id: 'gym', name: 'Gimnasio', Icon: Dumbbell },
+  { id: 'garden', name: 'Jardín', Icon: Trees },
+  { id: 'balcony', name: 'Balcón', Icon: Mountain },
+  { id: 'elevator', name: 'Ascensor', Icon: ArrowUp },
+  { id: 'pets', name: 'Mascotas OK', Icon: PawPrint },
+  { id: 'workspace', name: 'Escritorio', Icon: Laptop },
+  { id: 'bbq', name: 'BBQ / Chimenea', Icon: Flame },
+  { id: 'beach-access', name: 'Acceso playa', Icon: Umbrella },
+  { id: 'tour-cafetero', name: 'Tour cafetero', Icon: Coffee },
+  { id: 'beds', name: 'Camas extra', Icon: BedDouble },
+  { id: 'mountain-view', name: 'Vista montaña', Icon: Mountain },
+  { id: 'premium', name: 'Premium', Icon: Star },
 ]
 
 const PROPERTY_TYPES = [
-  { id: 'Apartamento', label: 'Apartamento', icon: '🏢', desc: 'Piso en edificio' },
-  { id: 'Casa', label: 'Casa', icon: '🏡', desc: 'Vivienda independiente' },
-  { id: 'Estudio', label: 'Estudio', icon: '🛏️', desc: 'Espacio compacto' },
-  { id: 'Loft', label: 'Loft', icon: '🏗️', desc: 'Espacio abierto' },
-  { id: 'Villa', label: 'Villa', icon: '🏖️', desc: 'Lujo y privacidad' },
-  { id: 'Cabaña', label: 'Cabaña', icon: '🌲', desc: 'Naturaleza y paz' },
+  { id: 'Apartamento', label: 'Apartamento', Icon: Building, desc: 'Piso en edificio' },
+  { id: 'Casa', label: 'Casa', Icon: Home, desc: 'Vivienda independiente' },
+  { id: 'Estudio', label: 'Estudio', Icon: Bed, desc: 'Espacio compacto' },
+  { id: 'Loft', label: 'Loft', Icon: Home, desc: 'Espacio abierto' },
+  { id: 'Villa', label: 'Villa', Icon: Palmtree, desc: 'Lujo y privacidad' },
+  { id: 'Cabaña', label: 'Cabaña', Icon: Tent, desc: 'Naturaleza y paz' },
+]
+
+const PROPERTY_CATEGORIES = [
+  { id: 'urbano', label: 'Urbano', desc: 'Ciudad, barrio cultural', Icon: Building },
+  { id: 'playa', label: 'Playa y costa', desc: 'A orillas del mar', Icon: Palmtree },
+  { id: 'montana', label: 'Montaña', desc: 'Andes, paisaje de altura', Icon: Mountain },
+  { id: 'finca', label: 'Fincas y campo', desc: 'Finca cafetera, rural', Icon: Map },
+  { id: 'exclusivo', label: 'Exclusivo', desc: 'Villa, lujo premium', Icon: Sparkles },
 ]
 
 export default function CreatePropertyPage() {
@@ -75,16 +94,14 @@ export default function CreatePropertyPage() {
   const [photos, setPhotos] = useState<string[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [amenities, setAmenities] = useState<string[]>([])
-  const [wellScore, setWellScore] = useState(1.0)
 
   const [form, setForm] = useState<FormData>({
-    title: '', type: '', description: '', rules: '',
-    address: '', city: '', country: '', postalCode: '',
-    bedrooms: '', bathrooms: '', capacity: '', beds: '', areaSqm: '',
-    availableFrom: '', availableTo: '', minStay: '1', maxStay: '30',
+    title: '', type: '', category: '', description_space: '', description_area: '',
+    description_directions: '', rules: '', address: '', city: '', country: '',
+    postalCode: '', bedrooms: '', bathrooms: '', capacity: '', beds: '',
+    areaSqm: '', availableFrom: '', availableTo: '', minStay: '1', maxStay: '30',
   })
 
-  // Guard against hydration mismatch — only render on client
   useEffect(() => { setMounted(true) }, [])
 
   useEffect(() => {
@@ -93,11 +110,6 @@ export default function CreatePropertyPage() {
       setUserId(user.id)
     })
   }, [router])
-
-  // Recalculate WellScore on every change
-  useEffect(() => {
-    setWellScore(calcWellScorePreview(form, photos, amenities))
-  }, [form, photos, amenities])
 
   const set = (field: keyof FormData, value: string) =>
     setForm(prev => ({ ...prev, [field]: value }))
@@ -142,11 +154,9 @@ export default function CreatePropertyPage() {
     })
   }, [])
 
-  // Only render the full wizard on the client (prevents SSR hydration mismatch)
   if (!mounted) return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ width: 40, height: 40, borderRadius: '50%', border: '3px solid rgba(129,140,248,0.3)', borderTopColor: '#818cf8', animation: 'spin 0.8s linear infinite' }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    <div className="min-h-screen bg-base-paper flex items-center justify-center">
+      <div className="w-10 h-10 border-4 border-ink-teal-500 border-t-transparent rounded-full animate-spin" />
     </div>
   )
 
@@ -162,15 +172,21 @@ export default function CreatePropertyPage() {
     }
     setSaving(true)
     setError(null)
-    try {
-      // Refresh session to ensure a fresh JWT token
-      await supabase.auth.refreshSession()
 
-      // Call SECURITY DEFINER RPC — bypasses RLS and unique constraint issues
+    const combinedDescription = [
+      form.description_space && `El espacio: ${form.description_space}`,
+      form.description_area && `La zona: ${form.description_area}`,
+      form.description_directions && `Cómo llegar: ${form.description_directions}`,
+    ].filter(Boolean).join('\n\n') || form.title
+
+    try {
+      try { await supabase.auth.refreshSession() } catch {}
+
       const { error: saveErr } = await supabase.rpc('upsert_property', {
+        p_property_id:    null,
         p_user_id:        userId,
         p_title:          form.title,
-        p_description:    form.description || null,
+        p_description:    combinedDescription,
         p_type:           form.type || null,
         p_country:        form.country,
         p_city:           form.city,
@@ -182,14 +198,24 @@ export default function CreatePropertyPage() {
         p_images:         photos,
         p_available_from: form.availableFrom || null,
         p_available_to:   form.availableTo || null,
-        p_min_stay:       parseInt(form.minStay),
-        p_max_stay:       parseInt(form.maxStay),
+        p_min_stay:       parseInt(form.minStay) || 2,
+        p_max_stay:       parseInt(form.maxStay) || 30,
         p_rules:          form.rules || null,
-        p_status:         'draft',
-        p_wellscore:      wellScore,
+        p_status:         'published',
+        p_wellscore:      0, // The property starts with 0 WellScore
       })
 
-      if (saveErr) throw saveErr
+      if (saveErr) {
+        throw new Error(saveErr.message || 'Error al guardar la vivienda')
+      }
+
+      // Automatically award 100 WellPoints for completing registration
+      await fetch('/api/wellpoints/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId })
+      })
+
       router.push('/dashboard?published=true')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al publicar')
@@ -197,103 +223,84 @@ export default function CreatePropertyPage() {
     }
   }
 
-  const scoreColor = wellScore >= 4 ? '#10b981' : wellScore >= 2.5 ? '#f59e0b' : '#6366f1'
-  const scoreLabel = wellScore >= 4 ? 'Excelente' : wellScore >= 2.5 ? 'Bueno' : 'En progreso'
   const progressPct = Math.min(((step - 1) / (STEPS.length - 1)) * 100, 100)
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%)', fontFamily: "'Inter', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        .wizard-input { width:100%; padding:12px 16px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:12px; color:#f1f5f9; font-size:15px; outline:none; transition:all .2s; }
-        .wizard-input:focus { border-color:#818cf8; background:rgba(129,140,248,0.1); box-shadow:0 0 0 3px rgba(129,140,248,0.15); }
-        .wizard-input::placeholder { color:rgba(148,163,184,0.6); }
-        .wizard-label { display:block; font-size:13px; font-weight:600; color:#94a3b8; margin-bottom:8px; letter-spacing:.5px; text-transform:uppercase; }
-        .card { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:32px; backdrop-filter:blur(20px); }
-        .btn-primary { background:linear-gradient(135deg,#818cf8,#6366f1); color:white; border:none; padding:14px 32px; border-radius:12px; font-weight:700; font-size:15px; cursor:pointer; transition:all .2s; }
-        .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 25px rgba(99,102,241,.4); }
-        .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
-        .btn-ghost { background:rgba(255,255,255,0.06); color:#94a3b8; border:1px solid rgba(255,255,255,0.1); padding:14px 24px; border-radius:12px; font-weight:600; cursor:pointer; transition:all .2s; }
-        .btn-ghost:hover { background:rgba(255,255,255,0.1); color:#f1f5f9; }
-        .btn-ghost:disabled { opacity:.3; cursor:not-allowed; }
-        .amenity-chip { padding:12px 16px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.04); cursor:pointer; transition:all .2s; text-align:center; }
-        .amenity-chip.selected { border-color:#818cf8; background:rgba(129,140,248,0.15); }
-        .amenity-chip:hover { border-color:rgba(129,140,248,0.5); }
-        .type-card { padding:20px; border-radius:16px; border:2px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.04); cursor:pointer; transition:all .2s; text-align:center; }
-        .type-card.selected { border-color:#818cf8; background:rgba(129,140,248,0.15); transform:scale(1.03); }
-        .type-card:hover:not(.selected) { border-color:rgba(255,255,255,0.2); background:rgba(255,255,255,0.07); }
-        .photo-slot { aspect-ratio:4/3; border-radius:12px; overflow:hidden; border:2px dashed rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.03); cursor:pointer; transition:all .2s; }
-        .photo-slot:hover { border-color:#818cf8; background:rgba(129,140,248,0.08); }
-        textarea.wizard-input { resize:vertical; min-height:120px; }
-      `}</style>
-
+    <div className="min-h-screen bg-[#f8f7f4] font-inter text-ink-teal-900 pb-20">
       {/* Top bar */}
-      <div style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <Link href="/dashboard" style={{ color: '#94a3b8', textDecoration: 'none', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-          ← Cancelar
-        </Link>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 20, fontWeight: 800, background: 'linear-gradient(135deg,#818cf8,#a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>wellhouse</span>
-        </div>
-        {/* WellScore badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 50, padding: '6px 16px' }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: scoreColor, boxShadow: `0 0 8px ${scoreColor}` }} />
-          <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 15 }}>{wellScore.toFixed(1)} WP/noche</span>
-          <span style={{ color: scoreColor, fontSize: 12, fontWeight: 600 }}>{scoreLabel}</span>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div style={{ height: 3, background: 'rgba(255,255,255,0.06)' }}>
-        <div style={{ height: '100%', width: `${progressPct}%`, background: 'linear-gradient(90deg,#818cf8,#a5b4fc)', transition: 'width .5s ease' }} />
-      </div>
-
-      {/* Step indicators */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, padding: '20px 24px 0' }}>
-        {STEPS.map(s => (
-          <div key={s.n} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, opacity: step === s.n ? 1 : 0.4 }}>
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
-              background: step > s.n ? 'rgba(16,185,129,0.2)' : step === s.n ? 'rgba(129,140,248,0.2)' : 'rgba(255,255,255,0.04)',
-              border: `2px solid ${step > s.n ? '#10b981' : step === s.n ? '#818cf8' : 'rgba(255,255,255,0.1)'}`,
-              transition: 'all .3s',
-            }}>
-              {step > s.n ? '✓' : s.icon}
-            </div>
-            <span style={{ fontSize: 11, color: step === s.n ? '#a5b4fc' : '#64748b', fontWeight: 600 }}>{s.label}</span>
+      <div className="bg-white border-b border-[#e8e4dc] sticky top-0 z-40">
+        <div className="max-w-[1440px] mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href="/dashboard" className="text-sm font-medium text-[#6b7280] hover:text-[#1a3c34] transition-colors">
+            ← Cancelar
+          </Link>
+          <div className="font-fraunces font-bold text-xl text-[#1a3c34]">
+            Registro de Vivienda
           </div>
-        ))}
+          <div className="text-sm font-medium text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded-full border border-[#10b981]/20">
+            Paso {step} de 6
+          </div>
+        </div>
+        {/* Progress bar */}
+        <div className="h-1 bg-[#e8e4dc] w-full">
+          <div className="h-full bg-[#10b981] transition-all duration-500 ease-in-out" style={{ width: `${progressPct}%` }} />
+        </div>
       </div>
 
-      {/* Main content */}
-      <div style={{ maxWidth: 720, margin: '32px auto', padding: '0 24px' }}>
+      <div className="max-w-3xl mx-auto px-4 mt-8">
+        {/* Step indicators */}
+        <div className="flex justify-between md:justify-center md:gap-10 mb-12 overflow-x-auto pb-4 hide-scrollbar">
+          {STEPS.map(s => {
+            const isCompleted = step > s.n;
+            const isCurrent = step === s.n;
+            return (
+              <div key={s.n} className={`flex flex-col items-center gap-2 min-w-[60px] ${!isCurrent && !isCompleted ? 'opacity-40' : ''}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isCompleted ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : isCurrent ? 'bg-[#1a3c34] border-[#1a3c34] text-white' : 'bg-white border-[#cbd5cc] text-[#6b7280]'}`}>
+                  <s.Icon className="w-4 h-4" />
+                </div>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${isCurrent ? 'text-[#1a3c34]' : 'text-[#6b7280]'}`}>{s.label}</span>
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Main content */}
         {error && (
-          <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: '12px 16px', marginBottom: 24, color: '#fca5a5', fontSize: 14 }}>
-            ⚠️ {error}
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-sm flex items-center gap-2">
+            <Sparkles className="w-4 h-4" /> {error}
           </div>
         )}
 
-        <div className="card">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#e8e4dc] p-6 md:p-10 mb-8">
           {step === 1 && <Step1Type form={form} set={set} />}
           {step === 2 && <Step2Location form={form} set={set} />}
           {step === 3 && <Step3Details form={form} set={set} amenities={amenities} toggleAmenity={toggleAmenity} />}
           {step === 4 && <Step4Photos photos={photos} onUpload={uploadPhotos} uploading={uploadingPhoto} onRemove={(url) => setPhotos(p => p.filter(x => x !== url))} onMove={movePhoto} />}
           {step === 5 && <Step5Description form={form} set={set} />}
-          {step === 6 && <Step6Review form={form} photos={photos} amenities={amenities} wellScore={wellScore} scoreColor={scoreColor} set={set} />}
+          {step === 6 && <Step6Review form={form} photos={photos} set={set} />}
         </div>
 
-        {/* Navigation */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 24, paddingBottom: 48 }}>
-          <button className="btn-ghost" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
+        <div className="flex justify-between items-center mt-8">
+          <button 
+            className="px-6 py-3 rounded-xl font-medium text-[#4a6b5e] hover:bg-[#e8e4dc] transition-colors disabled:opacity-30 border border-[#cbd5cc] bg-white" 
+            onClick={() => setStep(s => Math.max(1, s - 1))} 
+            disabled={step === 1}
+          >
             ← Anterior
           </button>
           {step < 6 ? (
-            <button className="btn-primary" onClick={() => setStep(s => Math.min(6, s + 1))}>
+            <button 
+              className="px-8 py-3 rounded-xl font-bold text-white bg-[#1a3c34] hover:bg-[#122a24] transition-all shadow-md shadow-[#1a3c34]/20" 
+              onClick={() => setStep(s => Math.min(6, s + 1))}
+            >
               Siguiente →
             </button>
           ) : (
-            <button className="btn-primary" onClick={handlePublish} disabled={saving} style={{ background: saving ? undefined : 'linear-gradient(135deg,#10b981,#059669)' }}>
-              {saving ? '⏳ Publicando...' : '🚀 Publicar vivienda'}
+            <button 
+              className="px-8 py-3 rounded-xl font-bold text-white bg-[#10b981] hover:bg-[#059669] transition-all shadow-md shadow-[#10b981]/20 disabled:opacity-50" 
+              onClick={handlePublish} 
+              disabled={saving}
+            >
+              {saving ? '⏳ Publicando...' : '🚀 Completar Registro'}
             </button>
           )}
         </div>
@@ -302,261 +309,277 @@ export default function CreatePropertyPage() {
   )
 }
 
-// ─── STEP 1: Tipo de vivienda ─────────────────────────────────────────────────
 function Step1Type({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>¿Qué tipo de vivienda es?</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 28 }}>Elige la categoría que mejor la describa</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">¿Qué tipo de vivienda es?</h2>
+      <p className="text-[#6b7280] mb-8">El tipo y categoría determinan dónde aparece tu vivienda en el explorador.</p>
+
+      <div className="mb-3 text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Tipo de vivienda *</div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
         {PROPERTY_TYPES.map(t => (
-          <div key={t.id} className={`type-card${form.type === t.id ? ' selected' : ''}`} onClick={() => set('type', t.id)}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>{t.icon}</div>
-            <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 14 }}>{t.label}</div>
-            <div style={{ color: '#64748b', fontSize: 12, marginTop: 4 }}>{t.desc}</div>
+          <div 
+            key={t.id} 
+            className={`p-5 rounded-2xl border-2 cursor-pointer transition-all text-center ${form.type === t.id ? 'border-[#10b981] bg-[#10b981]/5 shadow-sm' : 'border-[#e8e4dc] bg-white hover:border-[#cbd5cc]'}`} 
+            onClick={() => set('type', t.id)}
+          >
+            <div className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-3 ${form.type === t.id ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-[#f8f7f4] text-[#1a3c34]'}`}>
+              <t.Icon className="w-6 h-6" />
+            </div>
+            <div className="font-bold text-[#1a3c34] text-sm">{t.label}</div>
+            <div className="text-[#6b7280] text-xs mt-1">{t.desc}</div>
           </div>
         ))}
       </div>
-      {form.type && (
-        <div style={{ marginTop: 20, padding: '12px 16px', background: 'rgba(129,140,248,0.1)', borderRadius: 10, border: '1px solid rgba(129,140,248,0.2)', color: '#a5b4fc', fontSize: 14 }}>
-          ✓ Seleccionaste: <strong>{form.type}</strong>
-        </div>
-      )}
+
+      <div className="mb-3 text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Categoría principal *</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {PROPERTY_CATEGORIES.map(cat => (
+          <div
+            key={cat.id}
+            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${form.category === cat.id ? 'border-[#10b981] bg-[#10b981]/5' : 'border-[#e8e4dc] bg-white hover:border-[#cbd5cc]'}`}
+            onClick={() => set('category', cat.id)}
+          >
+            <div className={`p-2 rounded-lg ${form.category === cat.id ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-[#f8f7f4] text-[#4a6b5e]'}`}>
+              <cat.Icon className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="font-bold text-[#1a3c34] text-sm">{cat.label}</div>
+              <div className="text-[#6b7280] text-xs">{cat.desc}</div>
+            </div>
+            {form.category === cat.id && (
+              <div className="text-[#10b981]">
+                <Sparkles className="w-5 h-5" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
 
-// ─── STEP 2: Ubicación ────────────────────────────────────────────────────────
 function Step2Location({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
+  const inputClass = "w-full p-4 bg-white border border-[#cbd5cc] rounded-xl font-inter text-[#1a3c34] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
+  const labelClass = "block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-2"
+
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>¿Dónde está tu vivienda?</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 28 }}>La dirección exacta solo se muestra a huéspedes confirmados</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">¿Dónde está ubicada?</h2>
+      <p className="text-[#6b7280] mb-8">La dirección exacta se revelará a tus huéspedes solo cuando el intercambio esté confirmado.</p>
+      
+      <div className="space-y-6">
         <div>
-          <label className="wizard-label">País *</label>
-          <input className="wizard-input" value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
+          <label className={labelClass}>País *</label>
+          <input className={inputClass} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="wizard-label">Ciudad *</label>
-            <input className="wizard-input" value={form.city} onChange={e => set('city', e.target.value)} placeholder="Ej: Medellín" />
+            <label className={labelClass}>Ciudad *</label>
+            <input className={inputClass} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Ej: Medellín" />
           </div>
           <div>
-            <label className="wizard-label">Código Postal</label>
-            <input className="wizard-input" value={form.postalCode} onChange={e => set('postalCode', e.target.value)} placeholder="050001" />
+            <label className={labelClass}>Código Postal</label>
+            <input className={inputClass} value={form.postalCode} onChange={e => set('postalCode', e.target.value)} placeholder="050001" />
           </div>
         </div>
         <div>
-          <label className="wizard-label">Dirección (privada)</label>
-          <input className="wizard-input" value={form.address} onChange={e => set('address', e.target.value)} placeholder="Calle 10 #43-25" />
-        </div>
-        <div style={{ padding: '14px 16px', background: 'rgba(99,102,241,0.08)', borderRadius: 12, border: '1px solid rgba(99,102,241,0.2)', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-          <span style={{ fontSize: 18 }}>🔒</span>
-          <p style={{ color: '#a5b4fc', fontSize: 13, margin: 0 }}>La dirección exacta solo se revela a usuarios con intercambios <strong>confirmados</strong>. El mapa público muestra el barrio aproximado.</p>
+          <label className={labelClass}>Dirección (privada)</label>
+          <input className={inputClass} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Calle 10 #43-25" />
         </div>
       </div>
     </div>
   )
 }
 
-// ─── STEP 3: Detalles + Amenities ─────────────────────────────────────────────
 function Step3Details({ form, set, amenities, toggleAmenity }: {
   form: FormData; set: (f: keyof FormData, v: string) => void
   amenities: string[]; toggleAmenity: (id: string) => void
 }) {
   const Counter = ({ field, label }: { field: keyof FormData; label: string }) => (
-    <div style={{ textAlign: 'center' }}>
-      <label className="wizard-label" style={{ textAlign: 'center', display: 'block' }}>{label}</label>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, justifyContent: 'center' }}>
+    <div className="text-center p-4 border border-[#e8e4dc] rounded-2xl bg-[#f8f7f4]">
+      <label className="block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-3">{label}</label>
+      <div className="flex items-center justify-center gap-4">
         <button onClick={() => set(field, String(Math.max(0, (Number(form[field]) || 0) - 1)))}
-          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', fontSize: 18, cursor: 'pointer' }}>−</button>
-        <span style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 20, minWidth: 24, textAlign: 'center' }}>{form[field] || '0'}</span>
+          className="w-10 h-10 rounded-full border border-[#cbd5cc] bg-white text-[#1a3c34] font-bold text-lg hover:border-[#10b981] hover:text-[#10b981] transition-all flex items-center justify-center">−</button>
+        <span className="font-bold text-2xl text-[#1a3c34] min-w-[2rem] text-center">{form[field] || '0'}</span>
         <button onClick={() => set(field, String((Number(form[field]) || 0) + 1))}
-          style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: '#f1f5f9', fontSize: 18, cursor: 'pointer' }}>+</button>
+          className="w-10 h-10 rounded-full border border-[#cbd5cc] bg-white text-[#1a3c34] font-bold text-lg hover:border-[#10b981] hover:text-[#10b981] transition-all flex items-center justify-center">+</button>
       </div>
     </div>
   )
 
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>Capacidad y amenities</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 28 }}>Cada amenity sube tu WellScore™</p>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Capacidad y comodidades</h2>
+      <p className="text-[#6b7280] mb-8">Cuéntanos sobre los espacios de tu vivienda.</p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 32, padding: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: 16, border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
         <Counter field="capacity" label="Huéspedes" />
         <Counter field="bedrooms" label="Habitaciones" />
         <Counter field="bathrooms" label="Baños" />
         <Counter field="beds" label="Camas" />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <span style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, letterSpacing: '.5px', textTransform: 'uppercase' }}>
-          Amenities · {amenities.length} seleccionados
-        </span>
+      <div className="mb-4 flex items-center justify-between">
+        <span className="text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Amenidades incluidas</span>
+        <span className="text-xs font-medium text-[#6b7280]">{amenities.length} seleccionadas</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 10 }}>
-        {AMENITIES.map(a => (
-          <div key={a.id} className={`amenity-chip${amenities.includes(a.id) ? ' selected' : ''}`} onClick={() => toggleAmenity(a.id)}>
-            <div style={{ fontSize: 22 }}>{a.icon}</div>
-            <div style={{ color: '#e2e8f0', fontSize: 11, fontWeight: 600, marginTop: 4 }}>{a.name}</div>
-            {amenities.includes(a.id) && <div style={{ color: '#818cf8', fontSize: 10, marginTop: 2 }}>+{(a.score * 10).toFixed(0)}% WS</div>}
-          </div>
-        ))}
+      
+      <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+        {AMENITIES.map(a => {
+          const selected = amenities.includes(a.id)
+          return (
+            <div
+              key={a.id}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-2 text-center ${selected ? 'border-[#10b981] bg-[#10b981]/5 text-[#10b981]' : 'border-[#e8e4dc] bg-white text-[#6b7280] hover:border-[#cbd5cc]'}`}
+              onClick={() => toggleAmenity(a.id)}
+            >
+              <a.Icon className="w-6 h-6" strokeWidth={selected ? 2 : 1.5} />
+              <div className="text-[10px] font-bold uppercase tracking-wider">{a.name}</div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
 
-// ─── STEP 4: Fotos ────────────────────────────────────────────────────────────
 function Step4Photos({ photos, onUpload, uploading, onRemove, onMove }: {
   photos: string[]; onUpload: (f: FileList) => void; uploading: boolean; onRemove: (url: string) => void; onMove: (idx: number, dir: 'left' | 'right') => void
 }) {
-  const handleFiles = (files: FileList | null) => {
-    if (!files) return
-    onUpload(files)
-  }
+  const handleFiles = (files: FileList | null) => { if (!files) return; onUpload(files) }
 
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>Fotos de tu vivienda</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 12 }}>Más fotos = mayor WellScore™. Añade al menos 3 para mejores resultados.</p>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Fotos de tu vivienda</h2>
+      <p className="text-[#6b7280] mb-6">Añade al menos 3 fotos de buena calidad. La primera foto será la portada de tu anuncio.</p>
 
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
-        {['Sala', 'Dormitorio', 'Cocina', 'Baño', 'Exterior', 'Vista'].map(tip => (
-          <span key={tip} style={{ padding: '4px 10px', background: 'rgba(129,140,248,0.1)', border: '1px solid rgba(129,140,248,0.2)', borderRadius: 20, color: '#a5b4fc', fontSize: 12 }}>📸 {tip}</span>
-        ))}
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 16 }}>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {photos.map((url, i) => (
-          <div key={i} style={{ position: 'relative', aspectRatio: '4/3', borderRadius: 12, overflow: 'hidden' }}>
-            <img src={url} alt={`Foto ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <button onClick={() => onRemove(url)} style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', width: 28, height: 28, color: 'white', cursor: 'pointer', fontSize: 14, zIndex: 10 }}>×</button>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.65)', padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'white', fontSize: 11, fontWeight: 600 }}>{i === 0 ? '⭐ Portada' : `${i + 1}°`}</span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                <button type="button" disabled={i === 0} onClick={() => onMove(i, 'left')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 4, width: 22, height: 22, color: 'white', cursor: i === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, opacity: i === 0 ? 0.3 : 1 }}>◀</button>
-                <button type="button" disabled={i === photos.length - 1} onClick={() => onMove(i, 'right')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 4, width: 22, height: 22, color: 'white', cursor: i === photos.length - 1 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, opacity: i === photos.length - 1 ? 0.3 : 1 }}>▶</button>
+          <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-[#e8e4dc] group">
+            <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
+            <button onClick={() => onRemove(url)} className="absolute top-2 right-2 bg-white/90 rounded-full w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
+              &times;
+            </button>
+            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent p-3 pt-6 flex justify-between items-center">
+              <span className="text-white text-xs font-bold">{i === 0 ? 'Portada' : `${i + 1}°`}</span>
+              <div className="flex gap-1">
+                <button type="button" disabled={i === 0} onClick={() => onMove(i, 'left')} className="w-6 h-6 bg-white/20 rounded flex items-center justify-center text-white disabled:opacity-30">◀</button>
+                <button type="button" disabled={i === photos.length - 1} onClick={() => onMove(i, 'right')} className="w-6 h-6 bg-white/20 rounded flex items-center justify-center text-white disabled:opacity-30">▶</button>
               </div>
             </div>
           </div>
         ))}
         {photos.length < 8 && (
-          <label className="photo-slot" style={{ cursor: uploading ? 'wait' : 'pointer' }}>
+          <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-[#cbd5cc] bg-[#f8f7f4] flex flex-col items-center justify-center cursor-pointer hover:border-[#10b981] hover:bg-[#10b981]/5 transition-all text-[#6b7280] hover:text-[#10b981]">
             <input type="file" accept="image/*" multiple hidden onChange={e => handleFiles(e.target.files)} disabled={uploading} />
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{uploading ? '⏳' : '+'}</div>
-              <div style={{ color: '#64748b', fontSize: 13 }}>{uploading ? 'Subiendo...' : 'Agregar fotos'}</div>
-            </div>
+            {uploading ? (
+              <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin mb-2" />
+            ) : (
+              <Camera className="w-8 h-8 mb-2" />
+            )}
+            <div className="text-sm font-medium">{uploading ? 'Subiendo...' : 'Añadir fotos'}</div>
           </label>
         )}
       </div>
-
-      <div style={{ padding: '12px 16px', background: 'rgba(245,158,11,0.08)', borderRadius: 10, border: '1px solid rgba(245,158,11,0.2)', color: '#fbbf24', fontSize: 13 }}>
-        💡 <strong>Tip:</strong> La primera foto será la portada. Fotos bien iluminadas reciben 40% más solicitudes.
-      </div>
     </div>
   )
 }
 
-// ─── STEP 5: Título + Descripción ─────────────────────────────────────────────
 function Step5Description({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
+  const inputClass = "w-full p-4 bg-white border border-[#cbd5cc] rounded-xl font-inter text-[#1a3c34] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
+  const labelClass = "block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-2"
+  
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>Cuéntanos más</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 28 }}>Un buen título y descripción aumentan tu WellScore™</p>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Describe tu espacio</h2>
+      <p className="text-[#6b7280] mb-8">Escribe un título atractivo y destaca lo mejor de la vivienda.</p>
+
+      <div className="space-y-6">
         <div>
-          <label className="wizard-label">Título de tu vivienda *</label>
-          <input className="wizard-input" value={form.title} onChange={e => set('title', e.target.value)} placeholder="Ej: Penthouse con terraza y vista al mar en Cartagena" maxLength={80} />
-          <div style={{ textAlign: 'right', color: '#475569', fontSize: 12, marginTop: 4 }}>{form.title.length}/80</div>
+          <label className={labelClass}>Título de la vivienda *</label>
+          <input
+            className={inputClass}
+            value={form.title}
+            onChange={e => set('title', e.target.value)}
+            placeholder="Ej: Penthouse con terraza y vista al mar"
+            maxLength={80}
+          />
         </div>
+
         <div>
-          <label className="wizard-label">Descripción</label>
-          <textarea className="wizard-input" value={form.description} onChange={e => set('description', e.target.value)}
-            placeholder="Describe tu vivienda, el barrio, qué la hace especial, qué actividades hay cerca..."
-            style={{ minHeight: 140 }} />
-          <div style={{ textAlign: 'right', color: form.description.length >= 80 ? '#10b981' : '#475569', fontSize: 12, marginTop: 4 }}>
-            {form.description.length >= 80 ? '✓ Descripción completa (+WellScore)' : `${form.description.length}/80 mínimos`}
-          </div>
+          <label className={labelClass}>El Espacio</label>
+          <textarea
+            className={`${inputClass} min-h-[100px] resize-y`}
+            value={form.description_space}
+            onChange={e => set('description_space', e.target.value)}
+            placeholder="Describe el interior, distribución y ambiente..."
+          />
         </div>
+
         <div>
-          <label className="wizard-label">Reglas de la casa</label>
-          <textarea className="wizard-input" value={form.rules} onChange={e => set('rules', e.target.value)}
-            placeholder="Ej: No fumar, no mascotas, check-in después de las 15:00..."
-            style={{ minHeight: 80 }} />
+          <label className={labelClass}>La Zona (Barrio / Entorno)</label>
+          <textarea
+            className={`${inputClass} min-h-[100px] resize-y`}
+            value={form.description_area}
+            onChange={e => set('description_area', e.target.value)}
+            placeholder="¿Qué hay cerca? Parques, restaurantes, transporte..."
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Reglas de la casa</label>
+          <textarea
+            className={`${inputClass} min-h-[100px] resize-y`}
+            value={form.rules}
+            onChange={e => set('rules', e.target.value)}
+            placeholder="Ej: No fumar adentro, máximo 2 mascotas..."
+          />
         </div>
       </div>
     </div>
   )
 }
 
-// ─── STEP 6: Calendario + Revisión ───────────────────────────────────────────
-function Step6Review({ form, photos, amenities, wellScore, scoreColor, set }: {
-  form: FormData; photos: string[]; amenities: string[]; wellScore: number; scoreColor: string; set?: (f: keyof FormData, v: string) => void
+function Step6Review({ form, photos, set }: {
+  form: FormData; photos: string[]; set?: (f: keyof FormData, v: string) => void
 }) {
   const setFn = set || (() => {})
-  const completionItems = [
-    { label: 'Tipo de vivienda', done: !!form.type },
-    { label: 'Ciudad y país', done: !!(form.city && form.country) },
-    { label: 'Título', done: form.title.length >= 5 },
-    { label: 'Al menos 1 foto', done: photos.length >= 1 },
-    { label: 'Descripción', done: form.description.length >= 20 },
-    { label: 'Disponibilidad definida', done: !!(form.availableFrom && form.availableTo) },
-  ]
-  const completed = completionItems.filter(i => i.done).length
+  const inputClass = "w-full px-3 py-2 bg-white border border-[#cbd5cc] rounded-lg font-inter text-sm text-[#1a3c34] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981]"
 
   return (
     <div>
-      <h2 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', marginBottom: 6 }}>¡Casi listo para publicar! 🚀</h2>
-      <p style={{ color: '#64748b', fontSize: 15, marginBottom: 28 }}>Define tu disponibilidad y revisa que todo esté completo</p>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Paso final: Disponibilidad</h2>
+      <p className="text-[#6b7280] mb-8">Define cuándo estás dispuesto a intercambiar y revisa tu solicitud.</p>
 
-      {/* Availability */}
-      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 20, marginBottom: 24 }}>
-        <div style={{ color: '#94a3b8', fontWeight: 700, fontSize: 13, marginBottom: 16, textTransform: 'uppercase', letterSpacing: '.5px' }}>📅 Disponibilidad *</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+      <div className="bg-[#f8f7f4] border border-[#e8e4dc] rounded-2xl p-6 mb-8">
+        <h3 className="text-sm font-bold text-[#4a6b5e] uppercase tracking-wide mb-4">Fechas Disponibles</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="wizard-label">Desde</label>
-            <input type="date" className="wizard-input" value={form.availableFrom} onChange={e => setFn('availableFrom', e.target.value)} style={{ colorScheme: 'dark' }} />
+            <label className="block text-xs font-semibold text-[#6b7280] mb-1">Desde</label>
+            <input type="date" className={inputClass} value={form.availableFrom} onChange={e => setFn('availableFrom', e.target.value)} />
           </div>
           <div>
-            <label className="wizard-label">Hasta</label>
-            <input type="date" className="wizard-input" value={form.availableTo} onChange={e => setFn('availableTo', e.target.value)} style={{ colorScheme: 'dark' }} />
+            <label className="block text-xs font-semibold text-[#6b7280] mb-1">Hasta</label>
+            <input type="date" className={inputClass} value={form.availableTo} onChange={e => setFn('availableTo', e.target.value)} />
           </div>
           <div>
-            <label className="wizard-label">Estancia mínima (noches)</label>
-            <input type="number" min="1" className="wizard-input" value={form.minStay} onChange={e => setFn('minStay', e.target.value)} />
+            <label className="block text-xs font-semibold text-[#6b7280] mb-1">Estancia mínima (noches)</label>
+            <input type="number" min="1" className={inputClass} value={form.minStay} onChange={e => setFn('minStay', e.target.value)} />
           </div>
           <div>
-            <label className="wizard-label">Estancia máxima (noches)</label>
-            <input type="number" min="1" className="wizard-input" value={form.maxStay} onChange={e => setFn('maxStay', e.target.value)} />
+            <label className="block text-xs font-semibold text-[#6b7280] mb-1">Estancia máxima (noches)</label>
+            <input type="number" min="1" className={inputClass} value={form.maxStay} onChange={e => setFn('maxStay', e.target.value)} />
           </div>
         </div>
       </div>
 
-      {/* WellScore display */}
-      <div style={{ background: `linear-gradient(135deg, ${scoreColor}18, ${scoreColor}08)`, border: `1px solid ${scoreColor}40`, borderRadius: 16, padding: 20, marginBottom: 24, textAlign: 'center' }}>
-        <div style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, marginBottom: 8 }}>TU WELLSCORE™ ESTIMADO</div>
-        <div style={{ fontSize: 52, fontWeight: 900, color: scoreColor }}>{wellScore.toFixed(1)}</div>
-        <div style={{ color: '#64748b', fontSize: 14, marginTop: 4 }}>WP por noche que ganarás al hospedar</div>
-      </div>
-
-      {/* Checklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ color: '#94a3b8', fontSize: 13, fontWeight: 600, marginBottom: 4 }}>COMPLETITUD: {completed}/{completionItems.length}</div>
-        {completionItems.map(item => (
-          <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 20, height: 20, borderRadius: '50%', background: item.done ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)', border: `1px solid ${item.done ? '#10b981' : 'rgba(255,255,255,0.1)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: item.done ? '#10b981' : '#475569' }}>
-              {item.done ? '✓' : ''}
-            </div>
-            <span style={{ color: item.done ? '#e2e8f0' : '#64748b', fontSize: 14 }}>{item.label}</span>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ marginTop: 24, padding: '14px 18px', background: 'rgba(16,185,129,0.08)', borderRadius: 12, border: '1px solid rgba(16,185,129,0.2)', color: '#6ee7b7', fontSize: 13 }}>
-        🎉 Al publicar aparecerás en búsquedas y otros miembros podrán solicitarte intercambios. Puedes editar o despublicar en cualquier momento desde tu dashboard.
+      <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl flex gap-3 text-[#1a3c34]">
+        <Sparkles className="w-5 h-5 flex-shrink-0 text-[#10b981]" />
+        <div>
+          <p className="text-sm font-medium">Al completar el registro, recibirás <strong>100 WellPoints</strong> en tu balance para que puedas realizar tu primera solicitud de intercambio inmediatamente.</p>
+        </div>
       </div>
     </div>
   )

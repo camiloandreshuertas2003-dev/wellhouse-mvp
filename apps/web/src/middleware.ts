@@ -1,10 +1,10 @@
-import createMiddleware from 'next-intl/middleware'
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
-export default createMiddleware({
-  locales: ['es', 'en'],
-  defaultLocale: 'es',
-  localePrefix: 'as-needed',
-})
+export function middleware(request: NextRequest) {
+  // Pass-through all requests since we are using flat routing without [locale] prefixes
+  return NextResponse.next()
+}
 
 export const config = {
   matcher: ['/((?!api|_next|.*\\..*).*)'],
