@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showPass, setShowPass] = useState(false)
+  const [successAnim, setSuccessAnim] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -23,10 +24,14 @@ export default function LoginPage() {
         password: formData.password,
       })
       if (authError) throw authError
-      router.push('/dashboard')
+      
+      // Trigger cinematic loading animation
+      setSuccessAnim(true)
+      setTimeout(() => {
+        router.push('/search')
+      }, 2500)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión. Verifica tus credenciales.')
-    } finally {
       setLoading(false)
     }
   }
@@ -44,6 +49,30 @@ export default function LoginPage() {
       setError(err instanceof Error ? err.message : 'Error al conectar con Google')
       setGoogleLoading(false)
     }
+  }
+
+  if (successAnim) {
+    return (
+      <div className="fixed inset-0 z-50 bg-ink-teal-900 flex flex-col items-center justify-center animate-in fade-in duration-500">
+        <div className="flex gap-1 overflow-hidden">
+          {'Wellhouse'.split('').map((letter, i) => (
+            <span
+              key={i}
+              className="font-fraunces font-bold text-5xl md:text-7xl text-white inline-block animate-bounce"
+              style={{ 
+                animationDelay: `${i * 100}ms`,
+                color: i >= 4 ? '#EFA83C' : 'white' // 'house' in accent-mango
+              }}
+            >
+              {letter}
+            </span>
+          ))}
+        </div>
+        <p className="font-inter text-white/70 mt-6 tracking-widest uppercase text-sm animate-pulse">
+          Preparando tu estadía...
+        </p>
+      </div>
+    )
   }
 
   return (

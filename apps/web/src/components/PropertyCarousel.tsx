@@ -44,7 +44,7 @@ export default function PropertyCarousel({
 
   return (
     <section className="py-8 bg-base-paper" aria-labelledby={`carousel-${title.replace(/\s/g, '-')}`}>
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8">
         {/* Header Row */}
         <div className="flex items-end justify-between mb-4">
           <div className="flex items-start gap-2.5">
@@ -99,7 +99,7 @@ export default function PropertyCarousel({
         {/* Scrollable Container (Módulo A.1 & Módulo D: peeking on mobile and snap-align) */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-6 px-6 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {properties.map((p) => (
