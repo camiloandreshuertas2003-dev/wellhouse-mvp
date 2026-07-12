@@ -61,7 +61,7 @@ export default function LoginPage() {
               className="font-fraunces font-bold text-5xl md:text-7xl text-white inline-block animate-bounce"
               style={{ 
                 animationDelay: `${i * 100}ms`,
-                color: i >= 4 ? '#EFA83C' : 'white' // 'house' in accent-mango
+                color: i >= 4 ? '#00B4D8' : 'white' // 'house' in accent-mango (Azul Playa cyan)
               }}
             >
               {letter}

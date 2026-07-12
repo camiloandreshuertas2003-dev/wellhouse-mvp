@@ -43,18 +43,18 @@ export default function PropertyCarousel({
     : 'all'
 
   return (
-    <section className="py-8 bg-base-paper" aria-labelledby={`carousel-${title.replace(/\s/g, '-')}`}>
-      <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8">
+    <section className="py-4 md:py-8 bg-base-paper" aria-labelledby={`carousel-${title.replace(/\s/g, '-')}`}>
+      <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
         {/* Header Row */}
-        <div className="flex items-end justify-between mb-4">
+        <div className="flex items-end justify-between mb-3 md:mb-4">
           <div className="flex items-start gap-2.5">
             <div className="mt-1 text-ink-teal-500 flex-shrink-0">
-              <CategoryIcon category={categorySlug} className="w-6 h-6 stroke-[1.8]" />
+              <CategoryIcon category={categorySlug} className="w-5 h-5 md:w-6 md:h-6 stroke-[1.8]" />
             </div>
             <div>
               <h2
                 id={`carousel-${title.replace(/\s/g, '-')}`}
-                className="font-fraunces font-semibold text-2xl text-ink-teal-900 leading-tight"
+                className="font-fraunces font-semibold text-xl md:text-2xl text-ink-teal-900 leading-tight"
               >
                 {title}
               </h2>

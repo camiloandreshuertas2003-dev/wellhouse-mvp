@@ -114,17 +114,22 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
         </h3>
 
         {/* Line 2: Details */}
-        <p className="text-text-muted-custom font-inter text-[10px] sm:text-xs leading-normal line-clamp-1 flex items-center justify-between">
-          <span>
-            {property.location.split(',')[0]} · {property.wellRank} WP
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mt-0.5">
+          <span className="text-text-muted-custom font-inter text-[10px] sm:text-xs leading-normal line-clamp-1">
+            {property.location.split(',')[0]}
           </span>
-          <span className="flex items-center gap-0.5 font-semibold text-neutral-800 shrink-0 ml-1">
-            <svg width="8" height="8" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0 sm:w-[9px] sm:h-[9px]">
-              <path d="M7 1.5l1.545 3.13L12 5.13l-2.5 2.435.59 3.44L7 9.27l-3.09 1.735.59-3.44L2 5.13l3.455-.5L7 1.5z" fill="currentColor"/>
-            </svg>
-            {property.reviews > 0 ? property.rating.toFixed(1) : '5.0'}
-          </span>
-        </p>
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <span className="font-bold text-ink-teal-900 bg-surface-mist px-2 py-0.5 rounded-md text-[10px] sm:text-xs">
+              {property.wellRank} WP
+            </span>
+            <span className="flex items-center gap-0.5 font-semibold text-neutral-800 shrink-0">
+              <svg width="8" height="8" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0 sm:w-[9px] sm:h-[9px]">
+                <path d="M7 1.5l1.545 3.13L12 5.13l-2.5 2.435.59 3.44L7 9.27l-3.09 1.735.59-3.44L2 5.13l3.455-.5L7 1.5z" fill="currentColor"/>
+              </svg>
+              {property.reviews > 0 ? property.rating.toFixed(1) : '5.0'}
+            </span>
+          </div>
+        </div>
       </Link>
     </div>
   )
