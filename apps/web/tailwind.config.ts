@@ -50,6 +50,8 @@ const config: Config = {
           700: 'var(--ink-teal-700)',
           500: 'var(--ink-teal-500)',
         },
+        'primary-cobalt': 'var(--primary-cobalt)',
+        'secondary-ink': 'var(--secondary-ink)',
         'base-paper': 'var(--base-paper)',
         'surface-mist': {
           DEFAULT: 'var(--surface-mist)',

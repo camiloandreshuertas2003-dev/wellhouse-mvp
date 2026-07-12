@@ -11,7 +11,7 @@ import {
   Building, Tent, Palmtree, Map, Sparkles
 } from 'lucide-react'
 
-// No more fake wellscore calculations
+// No more fake wellrank calculations
 interface FormData {
   title: string
   type: string
@@ -248,7 +248,7 @@ export default function CreatePropertyPage() {
         p_max_stay:       parseInt(form.maxStay) || 30,
         p_rules:          form.rules || null,
         p_status:         'published',
-        p_wellscore:      0, // The property starts with 0 WellScore
+        p_wellrank:      0, // The property starts with 0 WellRank
       })
 
       if (saveErr) {

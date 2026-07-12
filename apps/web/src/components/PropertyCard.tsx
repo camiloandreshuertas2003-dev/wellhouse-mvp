@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import WellScoreRing from './WellScoreRing'
+import WellRankRing from './WellRankRing'
 import CategoryIcon from './CategoryIcon'
 
 export interface PropertyCardData {
@@ -19,7 +19,7 @@ export interface PropertyCardData {
   image: string
   verified: boolean
   isMock?: boolean
-  wellScore: number
+  wellRank: number
 }
 
 interface PropertyCardProps {
@@ -76,9 +76,9 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
             </div>
           )}
 
-          {/* WellScore Ring overlay (44px) at bottom-2 right-2 */}
+          {/* WellRank Ring overlay (44px) at bottom-2 right-2 */}
           <div className="absolute bottom-2.5 right-2.5">
-            <WellScoreRing value={property.wellScore} wp={property.wellScore} size={44} />
+            <WellRankRing value={property.wellRank} wp={property.wellRank} size={44} />
           </div>
         </div>
       </Link>
@@ -116,7 +116,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
         {/* Line 2: Details: Location/Nights/Wellpoints Rate + Rating */}
         <p className="text-text-muted-custom font-inter text-xs leading-normal line-clamp-1 flex items-center justify-between">
           <span>
-            {property.location.split(',')[0]} · {property.wellScore} WP por noche
+            {property.location.split(',')[0]} · {property.wellRank} WP por noche
           </span>
           <span className="flex items-center gap-0.5 font-semibold text-neutral-800 shrink-0 ml-1">
             <svg width="9" height="9" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0">

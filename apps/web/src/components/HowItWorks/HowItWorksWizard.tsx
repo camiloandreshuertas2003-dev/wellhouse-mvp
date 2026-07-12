@@ -24,7 +24,7 @@ const FAQS: FAQItem[] = [
   {
     id: 'q3',
     q: '¿Por qué esta casa cuesta más WP que otra?',
-    a: 'El valor en WellPoints está ligado al WellScore™ de la vivienda, el cual se calcula en base a la capacidad, habitaciones, amenidades y si tiene fotos o no.',
+    a: 'El valor en WellPoints está ligado al WellRank™ de la vivienda, el cual se calcula en base a la capacidad, habitaciones, amenidades y si tiene fotos o no.',
     stepToJump: 4,
   },
   {
@@ -75,7 +75,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
     if (step === 1) context = 'Duda sobre qué es Wellhouse y cómo se diferencia de otras plataformas.';
     if (step === 2) context = 'Duda sobre qué camino elegir (tengo vivienda vs quiero viajar sin publicar).';
     if (step === 3) context = 'Duda sobre cómo ganar o comprar WellPoints.';
-    if (step === 4) context = 'Duda sobre el WellScore y cómo se decide el costo de cada vivienda.';
+    if (step === 4) context = 'Duda sobre el WellRank y cómo se decide el costo de cada vivienda.';
     if (step === 5) context = 'Duda sobre verificación, seguridad y confianza en la plataforma.';
     if (step === 6) context = 'Duda sobre cuáles son los siguientes pasos para empezar.';
     
@@ -156,7 +156,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
             totalSteps={totalSteps}
             title="Así funcionan los WellPoints"
             body={selectedPath === 'host' 
-              ? "Cada vez que recibes a un huésped en tu vivienda, ganas WellPoints que se suman a tu balance. Cuanto mejor sea tu WellScore y más noches hospedes, más puntos ganarás para tus futuros viajes."
+              ? "Cada vez que recibes a un huésped en tu vivienda, ganas WellPoints que se suman a tu balance. Cuanto mejor sea tu WellRank y más noches hospedes, más puntos ganarás para tus futuros viajes."
               : "Puedes comprar paquetes de WellPoints directamente desde tu panel. Usa esos puntos para reservar estadías en cualquiera de las viviendas de nuestra red global. Simple y directo."
             }
             imageSrc="/images/como-funciona/step_3_wp_1783887994157.jpg"
@@ -172,8 +172,8 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
             totalSteps={totalSteps}
             title="Así se decide el costo"
             body={selectedPath === 'host'
-              ? "El WellScore™ evalúa automáticamente la calidad de TU vivienda (capacidad, habitaciones, amenidades y fotos). Este puntaje define cuántos WellPoints ganas por noche cuando alguien se queda en tu casa."
-              : "El WellScore™ de una vivienda determina cuántos WellPoints necesitas para quedarte en ella. Casas más grandes o con mejores amenidades tendrán un costo mayor en puntos."
+              ? "El WellRank™ evalúa automáticamente la calidad de TU vivienda (capacidad, habitaciones, amenidades y fotos). Este puntaje define cuántos WellPoints ganas por noche cuando alguien se queda en tu casa."
+              : "El WellRank™ de una vivienda determina cuántos WellPoints necesitas para quedarte en ella. Casas más grandes o con mejores amenidades tendrán un costo mayor en puntos."
             }
             imageSrc="/images/como-funciona/step_4_score_1783887969182.jpg"
             onNext={handleNext}

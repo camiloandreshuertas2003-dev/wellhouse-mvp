@@ -2,18 +2,18 @@
 
 import React, { useEffect, useRef } from 'react'
 
-interface WellScoreRingProps {
+interface WellRankRingProps {
   value: number   // 0-300 WP range
   wp: number      // WP per night price
   size?: number   // diameter in px
 }
 
 /**
- * WellScoreRing — SVG animated ring showing WellScore™ value.
+ * WellRankRing — SVG animated ring showing WellRank™ value.
  * Uses wellpoint-gold exclusively per design system rules.
  * Respects `prefers-reduced-motion` from user OS settings.
  */
-export default function WellScoreRing({ value, wp, size = 72 }: WellScoreRingProps) {
+export default function WellRankRing({ value, wp, size = 72 }: WellRankRingProps) {
   const circleRef = useRef<SVGCircleElement>(null)
   const strokeWidth = 5
   const radius = (size - strokeWidth * 2) / 2
@@ -42,7 +42,7 @@ export default function WellScoreRing({ value, wp, size = 72 }: WellScoreRingPro
     <div
       className="relative flex-shrink-0 flex items-center justify-center"
       style={{ width: size, height: size }}
-      aria-label={`WellScore ${value} WP, ${wp} WP por noche`}
+      aria-label={`WellRank ${value} WP, ${wp} WP por noche`}
     >
       <svg
         width={size}

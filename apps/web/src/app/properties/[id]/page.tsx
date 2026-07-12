@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import PropertyGallery from '@/components/PropertyGallery'
-import WellScoreBreakdown from '@/components/WellScoreBreakdown'
+import WellRankBreakdown from '@/components/WellRankBreakdown'
 import AmenityIcon from '@/components/AmenityIcon'
 import CategoryIcon from '@/components/CategoryIcon'
 import {
@@ -13,8 +13,8 @@ import {
   MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X
 } from 'lucide-react'
 
-// WellScore formula
-function calcWellScore(capacity: number, bedrooms: number, bathrooms: number) {
+// WellRank formula
+function calcWellRank(capacity: number, bedrooms: number, bathrooms: number) {
   return Math.max(30, Math.min((capacity * 15) + (bedrooms * 20) + (bathrooms * 10), 300))
 }
 
@@ -198,11 +198,11 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     ? Math.max(0, Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000))
     : 0
 
-  const wellScore = property
-    ? calcWellScore(property.capacity || 2, property.bedrooms || 1, property.bathrooms || 1)
+  const wellRank = property
+    ? calcWellRank(property.capacity || 2, property.bedrooms || 1, property.bathrooms || 1)
     : 0
 
-  const totalWP = wellScore * nights
+  const totalWP = wellRank * nights
 
   const images = property?.images?.length
     ? property.images
@@ -241,7 +241,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       checkin_date: checkin,
       checkout_date: checkout,
       nights,
-      wellscore_snapshot: wellScore,
+      wellrank_snapshot: wellRank,
       status: 'pending',
     })
 
@@ -274,7 +274,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       {/* Price */}
       <div>
         <p className="font-plex font-bold text-3xl text-ink-teal-900">
-          {wellScore} <span className="font-inter text-base font-normal text-text-muted-custom">WP/noche</span>
+          {wellRank} <span className="font-inter text-base font-normal text-text-muted-custom">WP/noche</span>
         </p>
         <p className="font-inter text-xs text-text-muted-custom mt-0.5">Intercambio con WellPoints</p>
       </div>
@@ -326,10 +326,10 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
           {nights > 0 && (
             <div className="bg-accent-mango/5 border border-accent-mango/20 rounded-radius-sm p-3">
               <div className="flex justify-between font-inter text-sm mb-1">
-                <span className="text-text-muted-custom">{wellScore} WP × {nights} noches</span>
+                <span className="text-text-muted-custom">{wellRank} WP × {nights} noches</span>
                 <span className="font-bold text-ink-teal-900">{totalWP} WP</span>
               </div>
-              <p className="font-inter text-xs text-text-muted-custom">WellScore™ bloqueado al confirmar</p>
+              <p className="font-inter text-xs text-text-muted-custom">WellRank™ bloqueado al confirmar</p>
             </div>
           )}
 
@@ -498,10 +498,10 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
               </div>
             )}
 
-            {/* WellScore Breakdown */}
+            {/* WellRank Breakdown */}
             <div className="border-t border-surface-mist pt-8">
-              <WellScoreBreakdown
-                total={wellScore}
+              <WellRankBreakdown
+                total={wellRank}
                 bedrooms={property.bedrooms}
                 bathrooms={property.bathrooms}
                 capacity={property.capacity}
@@ -545,7 +545,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       {/* ── Mobile: Fixed bottom booking bar ── */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
         <div>
-          <p className="font-plex font-bold text-lg text-ink-teal-900">{wellScore} WP<span className="font-inter text-sm font-normal text-text-muted-custom">/noche</span></p>
+          <p className="font-plex font-bold text-lg text-ink-teal-900">{wellRank} WP<span className="font-inter text-sm font-normal text-text-muted-custom">/noche</span></p>
           {submitted && <p className="font-inter text-xs text-signal-green font-semibold">✓ Solicitud enviada</p>}
         </div>
         <button

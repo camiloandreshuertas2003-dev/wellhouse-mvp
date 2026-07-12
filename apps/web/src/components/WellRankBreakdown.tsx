@@ -9,7 +9,7 @@ interface BreakdownFactor {
   earned: number
 }
 
-interface WellScoreBreakdownProps {
+interface WellRankBreakdownProps {
   total: number   // 0-300 WP
   bedrooms?: number
   bathrooms?: number
@@ -21,10 +21,10 @@ interface WellScoreBreakdownProps {
 }
 
 /**
- * WellScoreBreakdown — Shows the WellScore™ ring (large) + horizontal bar breakdown.
+ * WellRankBreakdown — Shows the WellRank™ ring (large) + horizontal bar breakdown.
  * Transparent and educational: lets guests and hosts understand the score.
  */
-export default function WellScoreBreakdown({
+export default function WellRankBreakdown({
   total,
   bedrooms = 1,
   bathrooms = 1,
@@ -33,7 +33,7 @@ export default function WellScoreBreakdown({
   isVerified = false,
   hasCalendar = false,
   reviewCount = 0,
-}: WellScoreBreakdownProps) {
+}: WellRankBreakdownProps) {
   const max = 300
 
   const factors: BreakdownFactor[] = [
@@ -85,7 +85,7 @@ export default function WellScoreBreakdown({
   return (
     <div className="bg-white rounded-[16px] border border-surface-mist p-6 md:p-8">
       <h2 className="font-fraunces font-semibold text-2xl text-ink-teal-900 mb-6">
-        WellScore™ de esta vivienda
+        WellRank™ de esta vivienda
       </h2>
 
       <div className="flex flex-col sm:flex-row gap-8 items-start">
@@ -155,14 +155,14 @@ export default function WellScoreBreakdown({
 
           {/* Total */}
           <div className="pt-3 border-t border-surface-mist flex items-center justify-between">
-            <span className="font-inter text-sm font-semibold text-ink-teal-900">WellScore™ total</span>
+            <span className="font-inter text-sm font-semibold text-ink-teal-900">WellRank™ total</span>
             <span className="font-plex font-bold text-ink-teal-900">{total} WP/noche</span>
           </div>
         </div>
       </div>
 
       <p className="mt-5 font-inter text-xs text-text-muted-custom leading-relaxed border-t border-surface-mist pt-4">
-        El WellScore™ determina cuántos WellPoints cuesta quedarse en esta vivienda por noche. 
+        El WellRank™ determina cuántos WellPoints cuesta quedarse en esta vivienda por noche. 
         Cuanto mayor es el puntaje, más atractiva es la vivienda para el intercambio — y más WP gana el anfitrión al hospedar.
       </p>
     </div>

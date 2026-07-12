@@ -620,7 +620,7 @@ function DiscoverCarousel() {
               ? p.images[0]
               : `https://images.unsplash.com/photo-${['1500382017468-9049fed747ef','1499793983690-e29da59ef1c2','1502672260266-1c1ef2d93688'][i % 3]}?auto=format&fit=crop&w=800&q=80`,
             verified: true,
-            wellScore: Math.max(30, Math.min((p.capacity * 15) + (p.bedrooms * 20) + (p.bathrooms * 10), 300)),
+            wellRank: Math.max(30, Math.min((p.capacity * 15) + (p.bedrooms * 20) + (p.bathrooms * 10), 300)),
           })))
         }
       })
@@ -881,7 +881,7 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
                     {' · '}<strong>{ex.nights} noches</strong>
                   </p>
                   <p className="text-xs text-[#6b7280] mt-0.5">
-                    WellScore: {ex.wellscore_snapshot} WP/noche = {ex.wellscore_snapshot * ex.nights} WP totales
+                    WellRank: {ex.wellrank_snapshot} WP/noche = {ex.wellrank_snapshot * ex.nights} WP totales
                   </p>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">

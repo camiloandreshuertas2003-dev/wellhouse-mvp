@@ -15,7 +15,7 @@ export default function DesignSystemPage() {
     { name: 'accent-mango-light', hex: '#FFE4D9', class: 'bg-accent-mango-light text-accent-mango', use: 'Fondos suaves para resaltar' },
     { name: 'signal-green', hex: '#1FAE6E', class: 'bg-signal-green text-white', use: 'Éxito, verificado, confirmación' },
     { name: 'signal-red', hex: '#D64545', class: 'bg-signal-red text-white', use: 'Errores, penalizaciones' },
-    { name: 'wellpoint-gold', hex: '#E3A93B', class: 'bg-wellpoint-gold text-white', use: 'Exclusivo para WellPoints (saldo, WellScore)' },
+    { name: 'wellpoint-gold', hex: '#E3A93B', class: 'bg-wellpoint-gold text-white', use: 'Exclusivo para WellPoints (saldo, WellRank)' },
     { name: 'text-muted', hex: '#6B7370', class: 'bg-text-muted text-white', use: 'Texto secundario o terciario (ayuda)' },
   ]
 

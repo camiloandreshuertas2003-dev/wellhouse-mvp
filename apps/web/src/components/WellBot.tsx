@@ -21,7 +21,7 @@ function getBotResponse(userMsg: string): string {
   const msg = userMsg.toLowerCase()
 
   if (msg.includes('eje') || msg.includes('cafetero') || msg.includes('salento') || msg.includes('quindío') || msg.includes('finca')) {
-    return '¡El Eje Cafetero es uno de los destinos más populares en Wellhouse! 🌾\n\nTenemos fincas cafeteras en **Salento**, **Montenegro** y **Filandia** con WellScores entre 80 y 200 WP/noche.\n\n[Ver fincas en el Eje →](/search?category=fincas&q=eje+cafetero)'
+    return '¡El Eje Cafetero es uno de los destinos más populares en Wellhouse! 🌾\n\nTenemos fincas cafeteras en **Salento**, **Montenegro** y **Filandia** con WellRanks entre 80 y 200 WP/noche.\n\n[Ver fincas en el Eje →](/search?category=fincas&q=eje+cafetero)'
   }
   if (msg.includes('costa') || msg.includes('cartagena') || msg.includes('santa marta') || msg.includes('caribe') || msg.includes('playa')) {
     return 'La Costa Caribe tiene algunas de las mejores viviendas de Wellhouse 🌊\n\nEncontramos opciones en **Cartagena**, **Santa Marta** y **Barranquilla**, muchas con acceso a playa privada.\n\n[Explorar Playa y costa →](/search?category=playa)'
@@ -30,7 +30,7 @@ function getBotResponse(userMsg: string): string {
     return 'Bogotá tiene una gran oferta de apartamentos modernos y lofts en zonas como **Chapinero**, **Usaquén** y **La Candelaria** 🏙️\n\n[Ver viviendas urbanas →](/search?category=urbano&q=bogota)'
   }
   if (msg.includes('wellpoint') || msg.includes('punto') || msg.includes('wp') || msg.includes('ganar') || msg.includes('cómo funciona')) {
-    return '¡Los **WellPoints** son la moneda de confianza de Wellhouse! 🌟\n\n**¿Cómo ganarlos?**\n• Publicar tu vivienda completa: +200 WP\n• Hospedar a alguien: WP calculados por tu WellScore™\n• Completar tu perfil y verificarte\n\n**¿Cómo usarlos?**\n• Para quedarte en cualquier vivienda de la plataforma\n\n[Ver WellPoints en tu dashboard →](/dashboard)'
+    return '¡Los **WellPoints** son la moneda de confianza de Wellhouse! 🌟\n\n**¿Cómo ganarlos?**\n• Publicar tu vivienda completa: +200 WP\n• Hospedar a alguien: WP calculados por tu WellRank™\n• Completar tu perfil y verificarte\n\n**¿Cómo usarlos?**\n• Para quedarte en cualquier vivienda de la plataforma\n\n[Ver WellPoints en tu dashboard →](/dashboard)'
   }
   if (msg.includes('publicar') || msg.includes('registrar') || msg.includes('mi vivienda') || msg.includes('subir')) {
     return 'Publicar tu vivienda en Wellhouse es muy fácil 🏡\n\n**Pasos:**\n1. Ve a tu **Dashboard**\n2. Clic en "Registrar vivienda"\n3. Completa el wizard de 6 pasos\n4. Sube tus fotos\n5. Espera la aprobación del equipo Wellhouse\n\nAl publicar ganas **+200 WP** automáticamente.\n\n[Ir a registrar vivienda →](/properties/create)'
@@ -45,7 +45,7 @@ function getBotResponse(userMsg: string): string {
     return 'El Llano tiene fincas ganaderas espectaculares con horizontes infinitos 🐄🌅\n\nVillavicencio y sus alrededores son perfectos para desconectarse.\n\n[Ver fincas en el Llano →](/search?category=fincas&q=llano)'
   }
   if (msg.includes('precio') || msg.includes('cuánto') || msg.includes('costo') || msg.includes('vale')) {
-    return 'En Wellhouse no pagas con dinero, sino con **WellPoints** 💛\n\nCada vivienda tiene un **WellScore™** que indica cuántos WP cuesta por noche. Cuanto más completa y mejor valorada sea, más WP pedirá — y más WP recibirás tú por hospedar.\n\nEl rango típico es de **30 a 300 WP por noche**.'
+    return 'En Wellhouse no pagas con dinero, sino con **WellPoints** 💛\n\nCada vivienda tiene un **WellRank™** que indica cuántos WP cuesta por noche. Cuanto más completa y mejor valorada sea, más WP pedirá — y más WP recibirás tú por hospedar.\n\nEl rango típico es de **30 a 300 WP por noche**.'
   }
 
   // Fallback

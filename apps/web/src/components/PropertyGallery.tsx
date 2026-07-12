@@ -110,7 +110,7 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
         {/* Low photo nudge for owner */}
         {isOwner && safeImages.length < 5 && (
           <div className="bg-wellpoint-gold/10 border border-wellpoint-gold/30 mx-4 mt-3 px-4 py-2 rounded-radius-sm text-xs font-inter text-wellpoint-gold">
-            💡 Añadir al menos 5 fotos aumenta tu WellScore™ y tus posibilidades de intercambio.
+            💡 Añadir al menos 5 fotos aumenta tu WellRank™ y tus posibilidades de intercambio.
           </div>
         )}
       </div>
@@ -174,7 +174,7 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
             />
             {isOwner && (
               <div className="absolute bottom-4 left-4 bg-wellpoint-gold/90 backdrop-blur-sm text-white text-xs font-inter font-semibold px-3 py-1.5 rounded-full">
-                + Añade más fotos para mejorar tu WellScore™
+                + Añade más fotos para mejorar tu WellRank™
               </div>
             )}
           </div>

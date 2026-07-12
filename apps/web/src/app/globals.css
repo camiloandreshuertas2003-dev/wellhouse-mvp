@@ -30,11 +30,13 @@
     --ink-teal-700: #1C5253;
     --ink-teal-500: #3A7274;
     --base-paper: #FBFAF7;
-    --surface-mist: #EFEFE9;
-    --surface-mist-dark: #E2E1D9;
-    --accent-mango: #FF6A3D;
-    --accent-mango-hover: #E65A30;
-    --accent-mango-light: #FFE4D9;
+    --surface-mist: #E8E6E2;
+    --surface-mist-dark: #D1CEC7;
+    --accent-mango: #E3A93B;
+    --accent-mango-hover: #C99532;
+    --accent-mango-light: #F4DFB8;
+    --primary-cobalt: #2D6FE0;
+    --secondary-ink: #0F3D3E;
     --signal-green: #1FAE6E;
     --signal-red: #D64545;
     --wellpoint-gold: #E3A93B;
