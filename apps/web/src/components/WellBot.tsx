@@ -84,20 +84,44 @@ function renderBotText(text: string) {
   })
 }
 
-export default function WellBot() {
-  const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([{ role: 'bot', text: WELCOME }])
-  const [input, setInput] = useState('')
-  const [typing, setTyping] = useState(false)
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+interface WellBotProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+  initialMessage?: string;
+}
+
+export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessage }: WellBotProps = {}) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = externalIsOpen !== undefined ? externalIsOpen : internalOpen;
+  
+  const handleSetOpen = (newState: boolean) => {
+    if (externalIsOpen === undefined) {
+      setInternalOpen(newState);
+    } else if (!newState && onClose) {
+      onClose();
+    }
+  };
+
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'bot', text: initialMessage || WELCOME }
+  ]);
+  const [input, setInput] = useState('');
+  const [typing, setTyping] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialMessage && messages.length === 1 && messages[0].text !== initialMessage) {
+      setMessages([{ role: 'bot', text: initialMessage }]);
+    }
+  }, [initialMessage]);
 
   useEffect(() => {
     if (open) {
-      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-      setTimeout(() => inputRef.current?.focus(), 100)
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [open, messages])
+  }, [open, messages]);
 
   const send = (text: string) => {
     if (!text.trim()) return
@@ -119,7 +143,7 @@ export default function WellBot() {
       {/* ── Floating bubble ─────────────────────────────────── */}
       <button
         id="wellbot-toggle"
-        onClick={() => setOpen(!open)}
+        onClick={() => handleSetOpen(!open)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-radius-full shadow-shadow-lg flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-mango ${
           open ? 'bg-ink-teal-900 rotate-90' : 'bg-accent-mango hover:bg-accent-mango-hover hover:scale-110'
         } md:bottom-8 md:right-8`}
@@ -165,16 +189,14 @@ export default function WellBot() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-inter font-semibold text-white text-sm leading-tight">WellBot</p>
-              <p className="font-inter text-white/60 text-xs">Tu asistente Wellhouse</p>
+              <h3 className="font-fraunces font-semibold text-white">WellBot 🏡</h3>
             </div>
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 bg-signal-green rounded-full" aria-hidden="true"/>
-              <span className="font-inter text-white/60 text-xs">En línea</span>
             </div>
             <button
-              onClick={() => setOpen(false)}
-              className="ml-2 text-white/60 hover:text-white transition-colors md:hidden"
+              onClick={() => handleSetOpen(false)}
+              className="text-white/80 hover:text-white transition-colors p-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-mango rounded-radius-sm"
               aria-label="Cerrar WellBot"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">

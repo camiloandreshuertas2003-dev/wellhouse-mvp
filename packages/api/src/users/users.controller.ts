@@ -12,7 +12,7 @@ export class UsersController {
       const { data: users, error } = await client.from('users').select('*');
       if (error) throw error;
       return { success: true, data: users };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
@@ -24,7 +24,7 @@ export class UsersController {
       const { data: user, error } = await client.from('users').select('*').eq('id', id).single();
       if (error) throw error;
       return { success: true, data: user };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
@@ -36,7 +36,7 @@ export class UsersController {
       const { data: user, error } = await client.from('users').insert(userData).select().single();
       if (error) throw error;
       return { success: true, data: user };
-    } catch (error) {
+    } catch (error: any) {
       return { success: false, error: error.message };
     }
   }
