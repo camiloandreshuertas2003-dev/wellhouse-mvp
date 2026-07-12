@@ -19,15 +19,17 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number) {
 }
 
 // Parse structured description from combined field (legacy compat)
-function parseDescription(raw: string | null): { space: string; area: string; directions: string } {
-  if (!raw) return { space: '', area: '', directions: '' }
+function parseDescription(raw: string | null): { space: string; area: string; directions: string; host: string } {
+  if (!raw) return { space: '', area: '', directions: '', host: '' }
   const spaceMatch = raw.match(/El espacio:\s*([\s\S]*?)(?=\n\nLa zona:|$)/)
   const areaMatch = raw.match(/La zona:\s*([\s\S]*?)(?=\n\nCómo llegar:|$)/)
-  const dirMatch = raw.match(/Cómo llegar:\s*([\s\S]*)/)
+  const dirMatch = raw.match(/Cómo llegar:\s*([\s\S]*?)(?=\n\nEl anfitrión:|$)/)
+  const hostMatch = raw.match(/El anfitrión:\s*([\s\S]*)/)
   return {
-    space: spaceMatch ? spaceMatch[1].trim() : raw.trim(),
+    space: spaceMatch ? spaceMatch[1].trim() : (raw && !raw.includes('El espacio:') ? raw.trim() : ''),
     area: areaMatch ? areaMatch[1].trim() : '',
     directions: dirMatch ? dirMatch[1].trim() : '',
+    host: hostMatch ? hostMatch[1].trim() : ''
   }
 }
 
@@ -169,6 +171,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const [spaceExpanded, setSpaceExpanded] = useState(false)
   const [areaExpanded, setAreaExpanded] = useState(false)
   const [dirExpanded, setDirExpanded] = useState(false)
+  const [hostExpanded, setHostExpanded] = useState(false)
 
   const MOCK_IDS = Object.keys(MOCK_DATA)
   const isMock = MOCK_IDS.includes(params.id)
@@ -479,6 +482,21 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
               <DescSection title="El espacio" text={desc.space} expanded={spaceExpanded} onToggle={() => setSpaceExpanded(p => !p)} />
               <DescSection title="La zona" text={desc.area} expanded={areaExpanded} onToggle={() => setAreaExpanded(p => !p)} />
               <DescSection title="Cómo llegar" text={desc.directions} expanded={dirExpanded} onToggle={() => setDirExpanded(p => !p)} />
+              
+              {desc.host && (
+                <div className="mt-8 pt-8 border-t border-surface-mist">
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="w-14 h-14 bg-primary-cobalt/10 rounded-full flex items-center justify-center">
+                      <Users className="w-6 h-6 text-primary-cobalt" />
+                    </div>
+                    <div>
+                      <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900">Conoce a tu anfitrión</h2>
+                      <p className="text-sm text-text-muted-custom font-inter">Anfitrión verificado</p>
+                    </div>
+                  </div>
+                  <DescSection title="Sobre mí" text={desc.host} expanded={hostExpanded} onToggle={() => setHostExpanded(p => !p)} />
+                </div>
+              )}
             </div>
 
             {/* Amenities grid */}

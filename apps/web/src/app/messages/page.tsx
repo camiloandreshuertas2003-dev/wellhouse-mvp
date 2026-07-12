@@ -49,13 +49,17 @@ function MessagesContent() {
           .order('updated_at', { ascending: false })
 
         if (convData) {
+          const otherUserIds = [...new Set(convData.map(c => c.user_one_id === user.id ? c.user_two_id : c.user_one_id))]
+          const { data: usersData } = await supabase.from('users').select('id, full_name, email').in('id', otherUserIds)
+          const userMap = new Map((usersData || []).map(u => [u.id, u.full_name || u.email || 'Anfitrión']))
+
           const mapped = convData.map((c) => {
             const isUserOne = c.user_one_id === user.id
             const otherUserId = isUserOne ? c.user_two_id : c.user_one_id
             return {
               ...c,
               otherUserId,
-              displayName: `Usuario #${otherUserId.substring(0, 5)}`,
+              displayName: userMap.get(otherUserId) || `Usuario #${otherUserId.substring(0, 5)}`,
             }
           })
           setConversations(mapped)
@@ -155,16 +159,10 @@ function MessagesContent() {
   }
 
   return (
-    <div className="min-h-screen bg-base-paper flex flex-col h-screen overflow-hidden font-inter text-ink-teal-900">
-      {/* Header */}
-      <div className="bg-white border-b border-surface-mist-dark px-6 py-4 flex justify-between items-center shrink-0 shadow-sm z-10">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="font-fraunces font-bold text-2xl text-primary-cobalt hover:text-primary-cobalt-hover transition-colors">
-            Wellhouse
-          </Link>
-          <span className="text-surface-mist-dark text-xl">|</span>
-          <h1 className="text-lg font-semibold">Mensajes</h1>
-        </div>
+    <div className="h-[calc(100vh-64px)] bg-base-paper flex flex-col overflow-hidden font-inter text-ink-teal-900">
+      {/* Messages Toolbar */}
+      <div className="bg-white border-b border-surface-mist-dark px-6 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
+        <h1 className="text-xl font-bold font-fraunces text-ink-teal-900">Mensajes</h1>
         <div className="flex items-center gap-4">
           {!hasPriorityPlan && (
             <button 
@@ -175,9 +173,6 @@ function MessagesContent() {
               Hazte Priority
             </button>
           )}
-          <Link href="/dashboard" className="text-sm font-semibold text-ink-teal-600 hover:text-ink-teal-900 transition-colors">
-            Mi Dashboard
-          </Link>
         </div>
       </div>
 

@@ -19,6 +19,7 @@ interface FormData {
   description_space: string
   description_area: string
   description_directions: string
+  description_host: string
   rules: string
   address: string
   city: string
@@ -98,7 +99,7 @@ export default function CreatePropertyPage() {
 
   const [form, setForm] = useState<FormData>({
     title: '', type: '', category: '', description_space: '', description_area: '',
-    description_directions: '', rules: '', address: '', city: '', country: '',
+    description_directions: '', description_host: '', rules: '', address: '', city: '', country: '',
     postalCode: '', bedrooms: '', bathrooms: '', capacity: '', beds: '',
     areaSqm: '', availableFrom: '', availableTo: '', minStay: '1', maxStay: '30',
   })
@@ -126,7 +127,8 @@ export default function CreatePropertyPage() {
           const desc = prop.description || ''
           const spaceMatch = desc.match(/El espacio:\s*([\s\S]*?)(?=\n\nLa zona:|$)/)
           const areaMatch = desc.match(/La zona:\s*([\s\S]*?)(?=\n\nCómo llegar:|$)/)
-          const dirMatch = desc.match(/Cómo llegar:\s*([\s\S]*)/)
+          const dirMatch = desc.match(/Cómo llegar:\s*([\s\S]*?)(?=\n\nEl anfitrión:|$)/)
+          const hostMatch = desc.match(/El anfitrión:\s*([\s\S]*)/)
 
           setForm(f => ({
             ...f,
@@ -143,9 +145,10 @@ export default function CreatePropertyPage() {
             minStay: prop.min_stay?.toString() || '',
             maxStay: prop.max_stay?.toString() || '',
             rules: prop.rules || '',
-            description_space: spaceMatch ? spaceMatch[1].trim() : desc,
+            description_space: spaceMatch ? spaceMatch[1].trim() : (desc && !desc.includes('El espacio:') ? desc : ''),
             description_area: areaMatch ? areaMatch[1].trim() : '',
             description_directions: dirMatch ? dirMatch[1].trim() : '',
+            description_host: hostMatch ? hostMatch[1].trim() : '',
           }))
           setAmenities(prop.amenities || [])
           setPhotos(prop.images || [])
@@ -223,6 +226,7 @@ export default function CreatePropertyPage() {
       form.description_space && `El espacio: ${form.description_space}`,
       form.description_area && `La zona: ${form.description_area}`,
       form.description_directions && `Cómo llegar: ${form.description_directions}`,
+      form.description_host && `El anfitrión: ${form.description_host}`,
     ].filter(Boolean).join('\n\n') || form.title
 
     try {
@@ -573,6 +577,16 @@ function Step5Description({ form, set }: { form: FormData; set: (f: keyof FormDa
             value={form.description_area}
             onChange={e => set('description_area', e.target.value)}
             placeholder="¿Qué hay cerca? Parques, restaurantes, transporte..."
+          />
+        </div>
+
+        <div>
+          <label className={labelClass}>Conoce al Anfitrión</label>
+          <textarea
+            className={`${inputClass} min-h-[100px] resize-y`}
+            value={form.description_host}
+            onChange={e => set('description_host', e.target.value)}
+            placeholder="¿A qué te dedicas? ¿Cuáles son tus hobbies? Cuéntales a los huéspedes quién eres."
           />
         </div>
 
