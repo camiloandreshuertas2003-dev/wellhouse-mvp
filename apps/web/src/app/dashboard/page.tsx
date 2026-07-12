@@ -178,25 +178,6 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4]">
-
-      {/* ── Top Header ─────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-[#e8e4dc] sticky top-0 z-40">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-3 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="font-fraunces font-bold text-lg text-[#1a3c34]">Wellhouse</Link>
-            <span className="text-[#cbd5cc]">|</span>
-            <span className="text-sm font-medium text-[#4a6b5e]">Panel de control</span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-sm font-medium text-[#6b7280] hover:text-[#1a3c34] transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Salir</span>
-          </button>
-        </div>
-      </div>
-
       <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-3 pb-24 md:pb-6">
         <div className="flex gap-4 items-start">
 
@@ -264,7 +245,10 @@ export default function DashboardPage() {
               {ALL_TABS.map((tab) => (
                 <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (tab.id === 'messages') router.push('/messages')
+                    else setActiveTab(tab.id)
+                  }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm transition-colors mb-0.5 last:mb-0 ${
                     activeTab === tab.id
                       ? 'bg-[#1a3c34] text-white font-semibold'
@@ -319,7 +303,10 @@ export default function DashboardPage() {
           {MAIN_TABS.map((tab) => (
             <button
               key={tab.id}
-              onClick={() => { setActiveTab(tab.id); setMoreOpen(false) }}
+              onClick={() => {
+                if (tab.id === 'messages') router.push('/messages')
+                else { setActiveTab(tab.id); setMoreOpen(false) }
+              }}
               className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl min-w-[44px] min-h-[44px] transition-colors ${
                 activeTab === tab.id && !moreOpen
                   ? 'text-[#1a3c34]'
