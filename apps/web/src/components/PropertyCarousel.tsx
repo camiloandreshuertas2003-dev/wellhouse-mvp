@@ -96,14 +96,14 @@ export default function PropertyCarousel({
           </div>
         </div>
 
-        {/* Scrollable Container (Módulo A.1 & Módulo D: peeking on mobile and snap-align) */}
+        {/* Scrollable Container (2 rows on mobile, 1 row on desktop) */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-6 px-6 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
+          className="grid grid-rows-2 md:grid-rows-1 grid-flow-col auto-cols-max gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {properties.map((p) => (
-            <div key={p.id} className="snap-start flex-shrink-0">
+            <div key={p.id} className="snap-start">
               <PropertyCard property={p} variant="carousel" />
             </div>
           ))}

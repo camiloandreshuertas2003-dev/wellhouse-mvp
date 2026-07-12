@@ -176,6 +176,12 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   const MOCK_IDS = Object.keys(MOCK_DATA)
   const isMock = MOCK_IDS.includes(params.id)
 
+  const [questions, setQuestions] = useState<any[]>([])
+  const [newQuestion, setNewQuestion] = useState('')
+  const [asking, setAsking] = useState(false)
+  const [answeringId, setAnsweringId] = useState<string | null>(null)
+  const [answerText, setAnswerText] = useState('')
+
   useEffect(() => {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
@@ -186,16 +192,59 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
         setLoading(false)
         return
       }
+      
       const { data } = await supabase
         .from('properties')
         .select('*')
         .eq('id', params.id)
         .maybeSingle()
       setProperty(data)
+      
+      // Load questions
+      if (data) {
+        const { data: qData } = await supabase
+          .from('property_questions')
+          .select('*, users:user_id(full_name, email)')
+          .eq('property_id', data.id)
+          .order('created_at', { ascending: true })
+        if (qData) setQuestions(qData)
+      }
+      
       setLoading(false)
     }
     load()
-  }, [params.id])
+  }, [params.id, isMock])
+
+  const handleAskQuestion = async () => {
+    if (!newQuestion.trim() || !currentUser || isMock) return
+    setAsking(true)
+    const { data, error } = await supabase.from('property_questions').insert({
+      property_id: property.id,
+      user_id: currentUser.id,
+      question: newQuestion.trim()
+    }).select('*, users:user_id(full_name, email)').single()
+    
+    if (!error && data) {
+      setQuestions(prev => [...prev, data])
+      setNewQuestion('')
+    }
+    setAsking(false)
+  }
+
+  const handleAnswerQuestion = async (qId: string) => {
+    if (!answerText.trim() || !currentUser || isMock) return
+    
+    const { error } = await supabase.from('property_questions').update({
+      answer: answerText.trim(),
+      answered_at: new Date().toISOString()
+    }).eq('id', qId)
+
+    if (!error) {
+      setQuestions(prev => prev.map(q => q.id === qId ? { ...q, answer: answerText.trim(), answered_at: new Date().toISOString() } : q))
+      setAnsweringId(null)
+      setAnswerText('')
+    }
+  }
 
   const nights = checkin && checkout
     ? Math.max(0, Math.round((new Date(checkout).getTime() - new Date(checkin).getTime()) / 86400000))
@@ -247,6 +296,16 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       wellrank_snapshot: wellRank,
       status: 'pending',
     })
+    
+    // Create conversation if it doesn't exist
+    if (!insertError && property.user_id) {
+      const [u1, u2] = [user.id, property.user_id].sort()
+      const { data: conv } = await supabase.from('conversations')
+        .select('id').eq('user_one_id', u1).eq('user_two_id', u2).maybeSingle()
+      if (!conv) {
+        await supabase.from('conversations').insert({ user_one_id: u1, user_two_id: u2 })
+      }
+    }
 
     setSubmitting(false)
     if (insertError) { setBookError(insertError.message); return }
@@ -350,25 +409,6 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             Los WP se descuentan solo cuando el anfitrión confirma y se finaliza el hospedaje.
           </p>
 
-          {!isMock && property?.user_id && currentUser && property.user_id !== currentUser.id && (
-            <button
-              onClick={async () => {
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) { router.push('/login'); return }
-                const [u1, u2] = [user.id, property.user_id].sort()
-                let { data: conv } = await supabase.from('conversations').select('id').eq('user_one_id', u1).eq('user_two_id', u2).maybeSingle()
-                if (!conv) {
-                  const { data: newConv } = await supabase.from('conversations').insert({ user_one_id: u1, user_two_id: u2 }).select('id').single()
-                  conv = newConv
-                }
-                if (conv) router.push(`/messages?chat=${conv.id}`)
-              }}
-              className="w-full border border-neutral-200 text-ink-teal-900 py-2.5 rounded-radius-sm font-inter font-medium hover:bg-surface-mist transition-colors text-sm flex items-center justify-center gap-2"
-            >
-              <MessageCircle className="w-4 h-4" />
-              Consultar al anfitrión
-            </button>
-          )}
         </>
       )}
     </div>
@@ -547,6 +587,94 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   <p className="font-inter text-xs text-text-muted-custom mt-1">La ubicación exacta se revela al confirmar el intercambio</p>
                 </div>
               </div>
+            </div>
+
+            {/* Q&A Section */}
+            <div className="border-t border-surface-mist pt-8">
+              <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-6">Preguntas y respuestas</h2>
+              
+              <div className="space-y-6 mb-8">
+                {questions.length === 0 ? (
+                  <p className="font-inter text-sm text-text-muted-custom italic">Nadie ha preguntado todavía. ¡Sé el primero!</p>
+                ) : (
+                  questions.map(q => (
+                    <div key={q.id} className="bg-surface-mist rounded-xl p-5">
+                      <div className="flex justify-between items-start mb-2">
+                        <p className="font-inter font-medium text-ink-teal-900">{q.question}</p>
+                        <span className="font-inter text-xs text-text-muted-custom">
+                          {new Date(q.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="font-inter text-xs text-text-muted-custom mb-3">Preguntado por: {q.users?.full_name || q.users?.email || 'Usuario'}</p>
+                      
+                      {q.answer ? (
+                        <div className="bg-white rounded-lg p-4 border border-neutral-200 mt-3 relative">
+                          <div className="absolute -top-2 left-4 w-4 h-4 bg-white border-t border-l border-neutral-200 transform rotate-45"></div>
+                          <p className="font-inter text-sm text-ink-teal-900 relative z-10">{q.answer}</p>
+                          <p className="font-inter text-xs text-text-muted-custom mt-2 relative z-10">Respuesta del anfitrión el {new Date(q.answered_at).toLocaleDateString()}</p>
+                        </div>
+                      ) : (
+                        currentUser && property.user_id === currentUser.id && (
+                          <div className="mt-4 border-t border-neutral-200 pt-4">
+                            {answeringId === q.id ? (
+                              <div className="flex gap-2">
+                                <input
+                                  type="text"
+                                  value={answerText}
+                                  onChange={e => setAnswerText(e.target.value)}
+                                  placeholder="Escribe tu respuesta..."
+                                  className="flex-1 px-3 py-2 border border-neutral-200 rounded-radius-sm font-inter text-sm focus:outline-none focus:border-accent-mango"
+                                />
+                                <button
+                                  onClick={() => handleAnswerQuestion(q.id)}
+                                  className="px-4 py-2 bg-ink-teal-900 text-white rounded-radius-sm text-sm font-semibold hover:bg-ink-teal-800"
+                                >
+                                  Responder
+                                </button>
+                                <button
+                                  onClick={() => { setAnsweringId(null); setAnswerText(''); }}
+                                  className="px-4 py-2 text-text-muted-custom text-sm font-semibold hover:text-ink-teal-900"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setAnsweringId(q.id)}
+                                className="text-sm font-semibold text-accent-mango hover:underline"
+                              >
+                                Responder a esta pregunta
+                              </button>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {currentUser && property.user_id !== currentUser.id && !isMock && (
+                <div className="bg-white border border-neutral-200 rounded-xl p-5">
+                  <h3 className="font-inter font-semibold text-sm text-ink-teal-900 mb-3">Pregúntale al anfitrión</h3>
+                  <div className="flex gap-3">
+                    <input
+                      type="text"
+                      value={newQuestion}
+                      onChange={e => setNewQuestion(e.target.value)}
+                      placeholder="Ej: ¿Hay supermercados cerca?"
+                      className="flex-1 px-4 py-2 border border-neutral-200 rounded-radius-sm font-inter text-sm focus:outline-none focus:border-accent-mango focus:ring-1 focus:ring-accent-mango"
+                    />
+                    <button
+                      onClick={handleAskQuestion}
+                      disabled={asking || !newQuestion.trim()}
+                      className="px-6 py-2 bg-accent-mango text-white rounded-radius-sm text-sm font-semibold hover:bg-accent-mango/90 disabled:opacity-50"
+                    >
+                      {asking ? 'Enviando...' : 'Preguntar'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
           </div>

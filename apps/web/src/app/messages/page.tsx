@@ -77,10 +77,13 @@ function MessagesContent() {
     init()
   }, [router, activeChatId])
 
+  const [isHostInExchange, setIsHostInExchange] = useState(false)
+
   useEffect(() => {
     if (!activeChatId || !currentUser) return
 
-    const loadMessages = async () => {
+    const loadMessagesAndHostStatus = async () => {
+      // Load messages
       const { data } = await supabase
         .from('messages')
         .select('*')
@@ -88,9 +91,29 @@ function MessagesContent() {
         .order('created_at', { ascending: true })
       setMessages(data || [])
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+
+      // Find the other user in this conversation
+      const { data: convData } = await supabase
+        .from('conversations')
+        .select('user_one_id, user_two_id')
+        .eq('id', activeChatId)
+        .single()
+      
+      if (convData) {
+        const otherUserId = convData.user_one_id === currentUser.id ? convData.user_two_id : convData.user_one_id
+        // Check if the current user is the host for this other user in any exchange
+        const { data: hostExchanges } = await supabase
+          .from('exchanges')
+          .select('id')
+          .eq('host_id', currentUser.id)
+          .eq('guest_id', otherUserId)
+          .limit(1)
+        
+        setIsHostInExchange((hostExchanges && hostExchanges.length > 0) || false)
+      }
     }
 
-    loadMessages()
+    loadMessagesAndHostStatus()
 
     const channel = supabase
       .channel(`chat:${activeChatId}`)
@@ -111,9 +134,9 @@ function MessagesContent() {
 
   // Count my messages in active chat
   const myMessagesCount = messages.filter(m => m.sender_id === currentUser?.id).length
-  // For Fase 2, users without priority plan can only send 1 message per conversation
+  // For Fase 2, users without priority plan can only send 1 message per conversation, unless they are the host replying
   const hasPriorityPlan = userProfile?.has_priority_plan || false
-  const canSendMessage = hasPriorityPlan || myMessagesCount < 1
+  const canSendMessage = hasPriorityPlan || isHostInExchange || myMessagesCount < 1
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()

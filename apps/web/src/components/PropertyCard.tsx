@@ -40,7 +40,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
   
   // High-density responsive width supporting ~7 visible cards on large displays
   const widthClass = variant === 'carousel'
-    ? 'w-[72vw] max-w-[240px] sm:w-[210px] md:w-[195px] lg:w-[185px] xl:w-[180px]'
+    ? 'w-[42vw] max-w-[240px] sm:w-[210px] md:w-[195px] lg:w-[185px] xl:w-[180px]'
     : 'w-full'
 
   return (
@@ -83,43 +83,43 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
         </div>
       </Link>
 
-      {/* Heart overlay button in top-right — matches reference screenshot */}
+      {/* Heart overlay button in top-right */}
       <button
         onClick={(e) => {
           e.preventDefault()
           e.stopPropagation()
           setIsLiked(!isLiked)
         }}
-        className="absolute top-2.5 right-2.5 z-10 p-1 text-white hover:scale-110 transition-transform focus:outline-none"
+        className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 p-1 text-white hover:scale-110 transition-transform focus:outline-none"
         aria-label={isLiked ? "Quitar de favoritos" : "Guardar en favoritos"}
       >
         <svg
-          width="24"
-          height="24"
+          width="20"
+          height="20"
           viewBox="0 0 32 32"
           fill={isLiked ? "#E11D48" : "rgba(0, 0, 0, 0.45)"}
           stroke="white"
           strokeWidth="2"
-          className="transition-colors drop-shadow-md"
+          className="transition-colors drop-shadow-md sm:w-6 sm:h-6"
         >
           <path d="M16 28.268c-.412 0-.816-.164-1.116-.456l-10.4-10.1C2.08 15.355 1 12.247 1 9.07 1 4.62 4.62 1 9.07 1c2.518 0 4.887 1.182 6.4 3.197C16.983 2.182 19.352 1 21.87 1c4.45 0 8.07 3.62 8.07 8.07 0 3.177-1.08 6.285-3.484 8.643l-10.4 10.1c-.3.292-.704.456-1.116.456z" />
         </svg>
       </button>
 
-      {/* Card Body — ultra-clean minimalist 2-line layout matching reference screenshot */}
-      <Link href={`/properties/${property.id}`} className="mt-2.5 flex flex-col gap-0.5 min-w-0 focus:outline-none">
-        {/* Line 1: Title (semi-bold/medium, text-sm, neutral-950) */}
-        <h3 className="font-inter font-semibold text-neutral-900 text-sm leading-snug line-clamp-1 group-hover:text-accent-mango transition-colors">
+      {/* Card Body */}
+      <Link href={`/properties/${property.id}`} className="mt-2 flex flex-col gap-0.5 min-w-0 focus:outline-none">
+        {/* Line 1: Title */}
+        <h3 className="font-inter font-semibold text-neutral-900 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-accent-mango transition-colors">
           {property.title}
         </h3>
 
-        {/* Line 2: Details: Location/Nights/Wellpoints Rate + Rating */}
-        <p className="text-text-muted-custom font-inter text-xs leading-normal line-clamp-1 flex items-center justify-between">
+        {/* Line 2: Details */}
+        <p className="text-text-muted-custom font-inter text-[10px] sm:text-xs leading-normal line-clamp-1 flex items-center justify-between">
           <span>
-            {property.location.split(',')[0]} · {property.wellRank} WP por noche
+            {property.location.split(',')[0]} · {property.wellRank} WP
           </span>
           <span className="flex items-center gap-0.5 font-semibold text-neutral-800 shrink-0 ml-1">
-            <svg width="9" height="9" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0">
+            <svg width="8" height="8" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0 sm:w-[9px] sm:h-[9px]">
               <path d="M7 1.5l1.545 3.13L12 5.13l-2.5 2.435.59 3.44L7 9.27l-3.09 1.735.59-3.44L2 5.13l3.455-.5L7 1.5z" fill="currentColor"/>
             </svg>
             {property.reviews > 0 ? property.rating.toFixed(1) : '5.0'}
