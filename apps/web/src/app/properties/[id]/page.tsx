@@ -506,9 +506,9 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 bathrooms={property.bathrooms}
                 capacity={property.capacity}
                 hasPhotos={images.length >= 3}
-                isVerified={true}
+                isVerified={isMock ? true : false}
                 hasCalendar={!!(property.available_from && property.available_to)}
-                reviewCount={12}
+                reviewCount={isMock ? 12 : 0}
               />
             </div>
 

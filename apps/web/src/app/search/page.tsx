@@ -131,10 +131,10 @@ export default function SearchPage() {
             bedrooms: p.bedrooms || 1,
             bathrooms: p.bathrooms || 1,
             capacity: p.capacity || 2,
-            rating: 4.8, 
+            rating: 0, 
             reviews: 0,
             image: p.images?.[0] || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
-            verified: true,
+            verified: false,
             isMock: false,
             wellScore: calcWellScore(p.capacity || 2, p.bedrooms || 1, p.bathrooms || 1),
           }))

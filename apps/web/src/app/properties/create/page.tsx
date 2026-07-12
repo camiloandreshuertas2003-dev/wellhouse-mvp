@@ -91,6 +91,7 @@ export default function CreatePropertyPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [propertyId, setPropertyId] = useState<string | null>(null)
   const [photos, setPhotos] = useState<string[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [amenities, setAmenities] = useState<string[]>([])
@@ -102,13 +103,58 @@ export default function CreatePropertyPage() {
     areaSqm: '', availableFrom: '', availableTo: '', minStay: '1', maxStay: '30',
   })
 
-  useEffect(() => { setMounted(true) }, [])
-
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) { router.push('/login'); return }
-      setUserId(user.id)
-    })
+    setMounted(true)
+    const initUserAndProperty = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        setUserId(user.id)
+        
+        // Fetch existing property to edit
+        const { data: prop } = await supabase
+          .from('properties')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        if (prop) {
+          setPropertyId(prop.id)
+          
+          // Parse description
+          const desc = prop.description || ''
+          const spaceMatch = desc.match(/El espacio:\s*([\s\S]*?)(?=\n\nLa zona:|$)/)
+          const areaMatch = desc.match(/La zona:\s*([\s\S]*?)(?=\n\nCómo llegar:|$)/)
+          const dirMatch = desc.match(/Cómo llegar:\s*([\s\S]*)/)
+
+          setForm(f => ({
+            ...f,
+            title: prop.title || '',
+            type: prop.type || '',
+            country: prop.country || '',
+            city: prop.city || '',
+            address: prop.address || '',
+            capacity: prop.capacity?.toString() || '',
+            bedrooms: prop.bedrooms?.toString() || '',
+            bathrooms: prop.bathrooms?.toString() || '',
+            availableFrom: prop.available_from || '',
+            availableTo: prop.available_to || '',
+            minStay: prop.min_stay?.toString() || '',
+            maxStay: prop.max_stay?.toString() || '',
+            rules: prop.rules || '',
+            description_space: spaceMatch ? spaceMatch[1].trim() : desc,
+            description_area: areaMatch ? areaMatch[1].trim() : '',
+            description_directions: dirMatch ? dirMatch[1].trim() : '',
+          }))
+          setAmenities(prop.amenities || [])
+          setPhotos(prop.images || [])
+        }
+      } else {
+        router.push('/login')
+      }
+    }
+    initUserAndProperty()
   }, [router])
 
   const set = (field: keyof FormData, value: string) =>
@@ -183,7 +229,7 @@ export default function CreatePropertyPage() {
       try { await supabase.auth.refreshSession() } catch {}
 
       const { error: saveErr } = await supabase.rpc('upsert_property', {
-        p_property_id:    null,
+        p_property_id:    propertyId,
         p_user_id:        userId,
         p_title:          form.title,
         p_description:    combinedDescription,
@@ -209,12 +255,14 @@ export default function CreatePropertyPage() {
         throw new Error(saveErr.message || 'Error al guardar la vivienda')
       }
 
-      // Automatically award 100 WellPoints for completing registration
-      await fetch('/api/wellpoints/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId })
-      })
+      // Automatically award 100 WellPoints only if it's a new property (propertyId is null)
+      if (!propertyId) {
+        await fetch('/api/wellpoints/onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId })
+        })
+      }
 
       router.push('/dashboard?published=true')
     } catch (err) {

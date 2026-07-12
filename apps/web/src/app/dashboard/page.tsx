@@ -126,11 +126,14 @@ export default function DashboardPage() {
       setTransactions(recentTrans)
       setLoadingProfile(false)
 
-      // Property
+      // Property (Fetch the most recent in case there are accidental duplicates)
       const { data: propData } = await supabase
         .from('properties')
         .select('id, title, city, country, status, type')
-        .eq('user_id', authUser.id).maybeSingle()
+        .eq('user_id', authUser.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
       setProperty(propData || null)
       setLoadingProperty(false)
     }
