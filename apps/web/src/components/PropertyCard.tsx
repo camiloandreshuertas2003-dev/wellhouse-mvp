@@ -40,7 +40,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
   
   // High-density responsive width supporting ~7 visible cards on large displays
   const widthClass = variant === 'carousel'
-    ? 'w-[42vw] max-w-[240px] sm:w-[210px] md:w-[195px] lg:w-[185px] xl:w-[180px]'
+    ? 'w-[72vw] max-w-[240px] sm:w-[210px] md:w-[195px] lg:w-[185px] xl:w-[180px]'
     : 'w-full'
 
   return (

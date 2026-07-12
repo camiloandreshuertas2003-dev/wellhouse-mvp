@@ -96,10 +96,10 @@ export default function PropertyCarousel({
           </div>
         </div>
 
-        {/* Scrollable Container (2 rows on mobile, 1 row on desktop) */}
+        {/* Scrollable Container (1 row on all devices) */}
         <div
           ref={scrollRef}
-          className="grid grid-rows-2 md:grid-rows-1 grid-flow-col auto-cols-max gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {properties.map((p) => (
