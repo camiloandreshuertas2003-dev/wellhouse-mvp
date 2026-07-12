@@ -117,11 +117,11 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
 
       {/* ── Desktop: Mosaico WellHouse ───────────────────────────────── */}
       <div className="hidden md:block">
-        {hasEnoughForMosaic ? (
-          <div className="grid grid-cols-[60fr_40fr] gap-2 rounded-[16px] overflow-hidden h-[420px] lg:h-[480px]">
+        {safeImages.length >= 5 ? (
+          <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-[16px] overflow-hidden h-[420px] lg:h-[480px]">
             {/* Main photo */}
             <div
-              className="relative cursor-pointer overflow-hidden"
+              className="relative cursor-pointer overflow-hidden col-span-2 row-span-2"
               onClick={() => openModal(0)}
             >
               <img
@@ -132,33 +132,31 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
               />
             </div>
 
-            {/* Column of 3 thumbnails */}
-            <div className="grid grid-rows-3 gap-2">
-              {[1, 2, 3].map((imgIdx) => (
-                <div
-                  key={imgIdx}
-                  className="relative cursor-pointer overflow-hidden"
-                  onClick={() => openModal(imgIdx < safeImages.length ? imgIdx : 0)}
-                >
-                  <img
-                    src={safeImages[imgIdx] || safeImages[0]}
-                    alt={`${title} — foto ${imgIdx + 1}`}
-                    className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300"
-                    loading="lazy"
-                  />
-                  {/* Last thumbnail: remaining count overlay */}
-                  {imgIdx === 3 && remainingCount > 0 && (
-                    <div
-                      className="absolute inset-0 bg-ink-teal-900/70 flex flex-col items-center justify-center text-white cursor-pointer"
-                      onClick={() => openModal(3)}
-                    >
-                      <span className="font-fraunces font-semibold text-2xl">+{remainingCount}</span>
-                      <span className="font-inter text-xs mt-0.5 text-white/80">fotos</span>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
+            {/* 4 Thumbnails */}
+            {[1, 2, 3, 4].map((imgIdx) => (
+              <div
+                key={imgIdx}
+                className="relative cursor-pointer overflow-hidden"
+                onClick={() => openModal(imgIdx < safeImages.length ? imgIdx : 0)}
+              >
+                <img
+                  src={safeImages[imgIdx]}
+                  alt={`${title} — foto ${imgIdx + 1}`}
+                  className="w-full h-full object-cover hover:scale-[1.02] transition-transform duration-300"
+                  loading="lazy"
+                />
+                {/* Last thumbnail: remaining count overlay */}
+                {imgIdx === 4 && safeImages.length > 5 && (
+                  <div
+                    className="absolute inset-0 bg-ink-teal-900/70 flex flex-col items-center justify-center text-white cursor-pointer"
+                    onClick={() => openModal(4)}
+                  >
+                    <span className="font-fraunces font-semibold text-2xl">+{safeImages.length - 5}</span>
+                    <span className="font-inter text-xs mt-0.5 text-white/80">fotos</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         ) : (
           /* Single large photo when < 4 photos */
