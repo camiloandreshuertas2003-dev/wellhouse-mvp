@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import WizardStep from './WizardStep';
 import PathSelectorCard from './PathSelectorCard';
 import FAQAccordion, { FAQItem } from './FAQAccordion';
@@ -52,14 +53,30 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   const totalSteps = 6;
 
   // Track the flow
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 2 && !selectedPath) return; // Must select a path
     if (step < totalSteps) {
       setStep(s => s + 1);
     } else {
       // CTA at step 6
       if (selectedPath === 'host') {
-        router.push('/properties/create');
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: prop } = await supabase
+            .from('properties')
+            .select('id')
+            .eq('user_id', user.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (prop) {
+            router.push('/dashboard');
+          } else {
+            router.push('/properties/create');
+          }
+        } else {
+          router.push('/properties/create');
+        }
       } else {
         router.push('/dashboard'); // Or packages page
       }

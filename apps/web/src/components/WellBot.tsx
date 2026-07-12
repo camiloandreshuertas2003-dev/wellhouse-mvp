@@ -117,6 +117,20 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
   }, [initialMessage]);
 
   useEffect(() => {
+    const handleOpenWellBot = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const context = customEvent.detail?.context;
+      if (context) {
+        setMessages([{ role: 'bot', text: `¡Hola! Vi que estabas en la página de "Cómo Funciona". ¿En qué te puedo ayudar con el tema: "${context}"?` }]);
+      }
+      handleSetOpen(true);
+    };
+
+    window.addEventListener('open-wellbot', handleOpenWellBot);
+    return () => window.removeEventListener('open-wellbot', handleOpenWellBot);
+  }, []);
+
+  useEffect(() => {
     if (open) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       setTimeout(() => inputRef.current?.focus(), 100);
