@@ -2,7 +2,6 @@
   "name": "wellhouse-mvp",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -13,16 +12,6 @@
     "turbo": "^1.13.3"
   },
   "engines": {
-    "node": ">=18.0.0"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "@nestjs/core",
-      "@prisma/client",
-      "@prisma/engines",
-      "@swc/core",
-      "bcrypt",
-      "prisma"
-    ]
+    "node": "22.x"
   }
 }
