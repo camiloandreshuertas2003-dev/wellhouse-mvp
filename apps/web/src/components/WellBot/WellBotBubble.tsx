@@ -101,9 +101,9 @@ export default function WellBotBubble() {
                     {m.content}
                     
                     {/* Render tool invocations */}
-                    {m.toolInvocations?.map(tool => (
+                    {m.toolInvocations?.map((tool: any) => (
                       <div key={tool.toolCallId} className="mt-2 text-[10px] bg-surface-mist p-2 rounded-lg text-text-muted-custom font-mono">
-                        {tool.state === 'result' ? `✓ Consultó: ${tool.toolName}` : `⏳ Consultando: ${tool.toolName}...`}
+                        {'result' in tool ? `✓ Consultó: ${tool.toolName}` : `⏳ Consultando: ${tool.toolName}...`}
                       </div>
                     ))}
                   </div>
