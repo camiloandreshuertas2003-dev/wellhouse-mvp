@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 
 export interface HostStory {
   id: string
@@ -31,6 +31,23 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
   const [timeLeft, setTimeLeft] = useState(60)
   const currentStory = stories[currentIndex]
+  const iframeRef = useRef<HTMLIFrameElement>(null)
+
+  const handleIframeLoad = () => {
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      // Force play and unmute via YouTube Iframe API postMessage command
+      setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
+          '*'
+        )
+        iframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'unMute', args: '' }),
+          '*'
+        )
+      }, 300)
+    }
+  }
 
   // Cambiar historia automáticamente después de 60 segundos si no interactúa
   useEffect(() => {
@@ -119,11 +136,14 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
         {/* REPRODUCTOR DE YOUTUBE (Embed vertical para Shorts) */}
         <div className="flex-1 w-full bg-black relative">
           <iframe
+            ref={iframeRef}
+            key={currentIndex}
             src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`}
             title="Host Story"
             className="w-full h-full object-cover"
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
+            onLoad={handleIframeLoad}
           />
 
           {/* Zonas de click invisible para navegar */}

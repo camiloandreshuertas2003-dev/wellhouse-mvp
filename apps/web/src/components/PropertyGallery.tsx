@@ -60,9 +60,9 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
 
   return (
     <>
-      {/* ── Mobile: Full-bleed carousel ──────────────────────────────── */}
+      {/* ── Mobile: Rounded card carousel ──────────────────────────────── */}
       <div className="md:hidden relative">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-none bg-surface-mist">
+        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface-mist shadow-sm">
           <img
             src={safeImages[mobileIndex]}
             alt={`${title} — foto ${mobileIndex + 1}`}
