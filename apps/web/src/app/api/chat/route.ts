@@ -54,7 +54,14 @@ export async function POST(req: Request) {
       tools: tools,
     })
 
-    return result.toDataStreamResponse()
+    const anyResult = result as any
+    if (anyResult.toDataStreamResponse) {
+      return anyResult.toDataStreamResponse()
+    } else if (anyResult.toAIStreamResponse) {
+      return anyResult.toAIStreamResponse()
+    } else {
+      return anyResult.toTextStreamResponse()
+    }
   } catch (error) {
     console.error('Chat API Error:', error)
     return NextResponse.json({ error: 'Failed to process chat' }, { status: 500 })
