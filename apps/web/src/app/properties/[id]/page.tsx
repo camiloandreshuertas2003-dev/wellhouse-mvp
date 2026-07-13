@@ -543,7 +543,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   return (
     <div className="min-h-screen bg-white">
       {/* ── Page content ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 pt-6 pb-24 lg:pb-8">
 
         {/* ── Breadcrumb ── */}
         <nav className="flex items-center gap-1.5 mb-4 font-inter text-sm text-text-muted-custom">

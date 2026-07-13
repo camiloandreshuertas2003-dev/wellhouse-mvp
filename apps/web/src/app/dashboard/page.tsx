@@ -193,7 +193,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f7f4]">
-      <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-3 pb-24 md:pb-6">
+      <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8 py-3 pb-24 md:pb-6">
         <div className="flex gap-4 items-start">
 
           {/* ── Desktop Sidebar ───────────────────────────────────────────── */}
