@@ -13,7 +13,7 @@ export default function StoriesBar({ stories, loading }: StoriesBarProps) {
 
   if (loading) {
     return (
-      <div className="w-full bg-white border-b border-surface-mist-dark py-4 px-6 md:px-8 lg:px-8">
+      <div className="w-full bg-white border-b border-surface-mist-dark py-4 px-4 md:px-8 lg:px-8">
         <div className="max-w-[1440px] mx-auto">
           <h3 className="font-fraunces font-bold text-sm text-ink-teal-900 mb-3 flex items-center gap-1.5 animate-pulse">
             <span className="w-4 h-4 bg-neutral-200 rounded-full inline-block"></span>
@@ -40,7 +40,7 @@ export default function StoriesBar({ stories, loading }: StoriesBarProps) {
   }
 
   return (
-    <div className="w-full bg-white border-b border-surface-mist-dark py-4 px-6 md:px-8 lg:px-8">
+    <div className="w-full bg-white border-b border-surface-mist-dark py-4 px-4 md:px-8 lg:px-8">
       <div className="max-w-[1440px] mx-auto">
         <h3 className="font-fraunces font-bold text-sm text-ink-teal-900 mb-3 flex items-center gap-1.5">
           <span>✨</span> Experiencias de Anfitriones

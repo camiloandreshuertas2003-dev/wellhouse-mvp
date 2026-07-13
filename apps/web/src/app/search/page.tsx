@@ -312,7 +312,7 @@ export default function SearchPage() {
 
       {/* ── Sticky Search + Categories bar ─────────────────────────────── */}
       <div className="bg-white border-b border-surface-mist-dark sticky top-16 z-30 shadow-shadow-sm">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
 
           {/* Search row */}
           <div className="flex items-center gap-3 py-2.5">
@@ -463,7 +463,7 @@ export default function SearchPage() {
 
       {/* FILTERED view: specific category OR search query → show grid */}
       {(category !== 'all' || debouncedQuery) && (
-        <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8 py-6">
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-6">
 
           {/* Section header */}
           <div className="flex items-center justify-between mb-5">

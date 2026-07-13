@@ -96,10 +96,10 @@ export default function PropertyCarousel({
           </div>
         </div>
 
-        {/* Scrollable Container (1 row on all devices) */}
+        {/* Scrollable Container: pl-4 keeps a visual left margin on mobile so 1st card is never edge-to-edge */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 px-4 md:-mx-6 md:px-6 lg:-mx-8 lg:px-8 snap-x snap-mandatory"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 pl-4 pr-4 md:-mx-6 md:pl-6 md:pr-6 lg:-mx-8 lg:pl-8 lg:pr-8 snap-x snap-mandatory"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {properties.map((p) => (
