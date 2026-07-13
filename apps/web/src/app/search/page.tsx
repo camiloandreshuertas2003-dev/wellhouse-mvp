@@ -117,7 +117,7 @@ export default function SearchPage() {
 
         let queryBuilder = supabase
           .from('properties')
-          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images')
+          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to')
           .eq('status', 'published')
           .limit(PAGE_SIZE)
 
@@ -125,6 +125,10 @@ export default function SearchPage() {
         if (user) {
           queryBuilder = queryBuilder.neq('user_id', user.id)
         }
+
+        // Filter out properties that are no longer available (available_to is in the past)
+        const today = new Date().toISOString().split('T')[0]
+        queryBuilder = queryBuilder.or(`available_to.gte.${today},available_to.is.null`)
 
         const { data, error } = await queryBuilder
 

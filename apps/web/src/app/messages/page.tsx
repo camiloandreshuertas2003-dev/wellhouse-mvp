@@ -78,6 +78,7 @@ function MessagesContent() {
   }, [router, activeChatId])
 
   const [isHostInExchange, setIsHostInExchange] = useState(false)
+  const [exchangeDetails, setExchangeDetails] = useState<any>(null)
 
   useEffect(() => {
     if (!activeChatId || !currentUser) return
@@ -101,15 +102,26 @@ function MessagesContent() {
       
       if (convData) {
         const otherUserId = convData.user_one_id === currentUser.id ? convData.user_two_id : convData.user_one_id
-        // Check if the current user is the host for this other user in any exchange
-        const { data: hostExchanges } = await supabase
-          .from('exchanges')
-          .select('id')
-          .eq('host_id', currentUser.id)
-          .eq('guest_id', otherUserId)
-          .limit(1)
         
-        setIsHostInExchange((hostExchanges && hostExchanges.length > 0) || false)
+        // Fetch exchange info between these two users
+        const { data: exchangeInfo } = await supabase
+          .from('exchanges')
+          .select(`
+            id, host_id, guest_id, checkin_date, checkout_date, nights, wellrank_snapshot, status,
+            properties (id, title, city, images)
+          `)
+          .or(`and(host_id.eq.${currentUser.id},guest_id.eq.${otherUserId}),and(host_id.eq.${otherUserId},guest_id.eq.${currentUser.id})`)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        
+        if (exchangeInfo) {
+          setExchangeDetails(exchangeInfo)
+          setIsHostInExchange(exchangeInfo.host_id === currentUser.id)
+        } else {
+          setExchangeDetails(null)
+          setIsHostInExchange(false)
+        }
       }
     }
 
@@ -183,21 +195,7 @@ function MessagesContent() {
 
   return (
     <div className="h-[calc(100vh-64px)] bg-base-paper flex flex-col overflow-hidden font-inter text-ink-teal-900">
-      {/* Messages Toolbar */}
-      <div className="bg-white border-b border-surface-mist-dark px-6 py-3 flex justify-between items-center shrink-0 shadow-sm z-10">
-        <h1 className="text-xl font-bold font-fraunces text-ink-teal-900">Mensajes</h1>
-        <div className="flex items-center gap-4">
-          {!hasPriorityPlan && (
-            <button 
-              onClick={() => setShowPaywall(true)}
-              className="text-xs font-bold text-wellpoint-gold bg-wellpoint-gold/10 px-3 py-1.5 rounded-full hover:bg-wellpoint-gold/20 transition-colors flex items-center gap-1"
-            >
-              <Star className="w-3 h-3" />
-              Hazte Priority
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Messages Toolbar REMOVED (No double header) */}
 
       {/* Main Grid Layout */}
       <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
@@ -263,6 +261,47 @@ function MessagesContent() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Exchange Context Panel */}
+                  {exchangeDetails && (
+                    <div className="bg-surface-mist border-b border-surface-mist-dark p-4 shrink-0 flex items-center gap-4">
+                      {exchangeDetails.properties?.images?.[0] ? (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                          <img src={exchangeDetails.properties.images[0]} alt="Propiedad" className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shrink-0 text-2xl">
+                          🏠
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-ink-teal-900 truncate">
+                          {exchangeDetails.properties?.title || 'Vivienda'}
+                        </p>
+                        <p className="text-sm text-text-muted-custom truncate">
+                          Del {exchangeDetails.checkin_date} al {exchangeDetails.checkout_date} ({exchangeDetails.nights} noches)
+                        </p>
+                        <p className="text-xs font-bold text-accent-mango mt-1">
+                          {exchangeDetails.nights * exchangeDetails.wellrank_snapshot} WP comprometidos
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        {isHostInExchange && exchangeDetails.status === 'pending' && (
+                          <div className="flex gap-2">
+                            <button className="bg-signal-green text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-signal-green/90">
+                              Aceptar
+                            </button>
+                            <button className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100">
+                              Rechazar
+                            </button>
+                          </div>
+                        )}
+                        <Link href={`/properties/${exchangeDetails.properties?.id}`} className="text-xs font-semibold text-primary-cobalt hover:underline text-center">
+                          Ver vivienda →
+                        </Link>
+                      </div>
+                    </div>
+                  )}
 
                   <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#fcfcfc]">
                     {messages.map((m) => {

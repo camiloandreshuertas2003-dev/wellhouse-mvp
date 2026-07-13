@@ -160,6 +160,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   // Booking panel state
   const [checkin, setCheckin] = useState('')
   const [checkout, setCheckout] = useState('')
+  const [initialMessage, setInitialMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [bookError, setBookError] = useState('')
@@ -272,6 +273,14 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     if (!user) { router.push('/login'); return }
 
     if (property?.user_id === user.id) { setBookError('No puedes solicitar tu propia vivienda'); return }
+    
+    // Check availability
+    if (property?.available_from && checkin < property.available_from) {
+      setBookError(`La propiedad está disponible a partir del ${property.available_from}`); return
+    }
+    if (property?.available_to && checkout > property.available_to) {
+      setBookError(`La propiedad solo está disponible hasta el ${property.available_to}`); return
+    }
 
     const { data: bal } = await supabase
       .from('wellpoint_balances')
@@ -298,12 +307,29 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     })
     
     // Create conversation if it doesn't exist
+    let conversationId = null;
     if (!insertError && property.user_id) {
       const [u1, u2] = [user.id, property.user_id].sort()
       const { data: conv } = await supabase.from('conversations')
         .select('id').eq('user_one_id', u1).eq('user_two_id', u2).maybeSingle()
+      
       if (!conv) {
-        await supabase.from('conversations').insert({ user_one_id: u1, user_two_id: u2 })
+        const { data: newConv } = await supabase.from('conversations').insert({ user_one_id: u1, user_two_id: u2 }).select().single()
+        conversationId = newConv?.id
+      } else {
+        conversationId = conv.id
+      }
+      
+      // Insert the initial free message
+      if (conversationId && initialMessage.trim()) {
+        await supabase.from('messages').insert({
+          conversation_id: conversationId,
+          sender_id: user.id,
+          content: initialMessage.trim(),
+          is_priority: false // The first message is free and not priority unless they are priority, but we'll default to false for simplicity or we can check.
+        })
+        
+        await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
       }
     }
 
@@ -369,7 +395,8 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 type="date"
                 value={checkin}
                 onChange={e => setCheckin(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
+                min={property?.available_from && property.available_from > new Date().toISOString().split('T')[0] ? property.available_from : new Date().toISOString().split('T')[0]}
+                max={property?.available_to || undefined}
                 className="w-full px-3 py-2.5 border border-neutral-200 rounded-radius-sm font-inter text-sm text-ink-teal-900 focus:ring-2 focus:ring-accent-mango focus:border-transparent outline-none transition-all"
               />
             </div>
@@ -379,10 +406,22 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 type="date"
                 value={checkout}
                 onChange={e => setCheckout(e.target.value)}
-                min={checkin || new Date().toISOString().split('T')[0]}
+                min={checkin || (property?.available_from && property.available_from > new Date().toISOString().split('T')[0] ? property.available_from : new Date().toISOString().split('T')[0])}
+                max={property?.available_to || undefined}
                 className="w-full px-3 py-2.5 border border-neutral-200 rounded-radius-sm font-inter text-sm text-ink-teal-900 focus:ring-2 focus:ring-accent-mango focus:border-transparent outline-none transition-all"
               />
             </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block font-inter text-xs font-semibold text-ink-teal-900 mb-1">Mensaje para el anfitrión (Gratis)</label>
+            <textarea
+              value={initialMessage}
+              onChange={e => setInitialMessage(e.target.value)}
+              placeholder="¡Hola! Me encantaría hospedarme en tu casa..."
+              rows={3}
+              className="w-full px-3 py-2.5 border border-neutral-200 rounded-radius-sm font-inter text-sm text-ink-teal-900 focus:ring-2 focus:ring-accent-mango focus:border-transparent outline-none transition-all resize-none"
+            />
           </div>
 
           {nights > 0 && (
