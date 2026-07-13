@@ -357,7 +357,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   }
 
   // ── Booking form (shared between sidebar & modal) ──────────────────────────
-  const BookingForm = () => (
+  const renderBookingForm = () => (
     <div className="space-y-4">
       {/* Price */}
       <div>
@@ -721,7 +721,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
           {/* ─ Right column: Sticky booking panel (desktop only) ─ */}
           <div className="hidden lg:block">
             <div className="sticky top-24 bg-white border border-neutral-200 rounded-[20px] shadow-lg p-6">
-              <BookingForm />
+              {renderBookingForm()}
             </div>
           </div>
         </div>
@@ -752,7 +752,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 <X className="w-5 h-5 text-ink-teal-900" />
               </button>
             </div>
-            <BookingForm />
+            {renderBookingForm()}
           </div>
         </div>
       )}
