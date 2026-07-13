@@ -78,38 +78,22 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-base-paper flex">
       {/* Left panel — branding (desktop only) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-ink-teal-900 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-accent-mango/20 blur-3xl pointer-events-none" aria-hidden="true"/>
-        <div className="absolute -bottom-24 -left-24 w-[400px] h-[400px] rounded-full bg-ink-teal-500/30 blur-3xl pointer-events-none" aria-hidden="true"/>
-        <div className="relative z-10">
-          <div className="flex items-center gap-1">
-            <span className="font-fraunces font-semibold text-3xl text-white">Well</span>
-            <span className="font-fraunces font-semibold text-3xl text-accent-mango">house</span>
-          </div>
+      <div 
+        className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-cover bg-center"
+        style={{ backgroundImage: "url('/login_bg.jpg')" }}
+      >
+        <div className="absolute inset-0 bg-ink-teal-900/30 backdrop-blur-[1px] pointer-events-none" aria-hidden="true"/>
+        <div className="relative z-10" />
+        <div className="relative z-10 max-w-lg mb-12">
+          <h2 className="font-fraunces text-4xl text-white font-bold leading-tight mb-4 drop-shadow-lg">
+            Encuentra tu próximo hogar de intercambio
+          </h2>
+          <p className="font-inter text-white/90 text-lg leading-relaxed drop-shadow-md">
+            Conecta con anfitriones de todo el país y viaja sin pagar hospedaje usando tus WellPoints.
+          </p>
         </div>
         <div className="relative z-10">
-          <blockquote className="font-fraunces text-3xl text-white leading-snug mb-6">
-            &ldquo;Hospedé a una familia de Cartagena y dos meses después yo estaba disfrutando de su finca en el Eje Cafetero.&rdquo;
-          </blockquote>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-radius-full bg-accent-mango-light flex items-center justify-center font-inter font-semibold text-accent-mango text-sm">MC</div>
-            <div>
-              <p className="font-inter font-semibold text-white text-sm">María Camila Torres</p>
-              <p className="font-inter text-white/50 text-xs">Medellín · Miembro desde 2025</p>
-            </div>
-          </div>
-        </div>
-        <div className="relative z-10 flex gap-6">
-          {[
-            { value: '500+', label: 'Viviendas' },
-            { value: '1.2K', label: 'Intercambios' },
-            { value: '4.9★', label: 'Valoración' },
-          ].map((s) => (
-            <div key={s.label}>
-              <div className="font-plex font-medium text-wellpoint-gold text-xl">{s.value}</div>
-              <div className="font-inter text-white/50 text-xs">{s.label}</div>
-            </div>
-          ))}
+          <p className="font-inter text-white/60 text-xs tracking-wider">Wellhouse © 2026 · Comunidad de Intercambio</p>
         </div>
       </div>
 
