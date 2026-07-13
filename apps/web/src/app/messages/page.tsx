@@ -19,6 +19,8 @@ function MessagesContent() {
   const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  // Mobile: show chat panel vs list panel
+  const [mobileChatOpen, setMobileChatOpen] = useState(false)
   
   // Upsell Modal State
   const [showPaywall, setShowPaywall] = useState(false)
@@ -65,7 +67,10 @@ function MessagesContent() {
           setConversations(mapped)
 
           if (mapped.length > 0 && !activeChatId) {
-            router.replace(`/messages?chat=${mapped[0].id}`)
+            // On desktop auto-open first; on mobile stay on list
+            if (window.innerWidth >= 768) {
+              router.replace(`/messages?chat=${mapped[0].id}`)
+            }
           }
         }
       } catch (err) {
@@ -195,8 +200,6 @@ function MessagesContent() {
 
   return (
     <div className="h-[calc(100vh-64px)] bg-base-paper flex flex-col overflow-hidden font-inter text-ink-teal-900">
-      {/* Messages Toolbar REMOVED (No double header) */}
-
       {/* Main Grid Layout */}
       <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
         {conversations.length === 0 ? (
@@ -213,9 +216,9 @@ function MessagesContent() {
             </Link>
           </div>
         ) : (
-          <div className="flex flex-1 m-4 lg:my-8 bg-white rounded-[16px] shadow-sm border border-surface-mist-dark overflow-hidden">
-            {/* Sidebar */}
-            <div className="w-full md:w-80 bg-base-paper border-r border-surface-mist-dark flex flex-col overflow-y-auto shrink-0">
+          <div className="flex flex-1 m-2 md:m-4 lg:my-8 bg-white rounded-[16px] shadow-sm border border-surface-mist-dark overflow-hidden">
+            {/* Sidebar — hidden on mobile when chat is open */}
+            <div className={`${mobileChatOpen ? 'hidden' : 'flex'} md:flex w-full md:w-80 bg-base-paper border-r border-surface-mist-dark flex-col overflow-y-auto shrink-0`}>
               <div className="p-4 border-b border-surface-mist-dark shrink-0 bg-white">
                 <p className="text-xs font-bold text-ink-teal-500 uppercase tracking-wider">Tus Conversaciones</p>
               </div>
@@ -225,7 +228,10 @@ function MessagesContent() {
                   return (
                     <button
                       key={c.id}
-                      onClick={() => router.push(`/messages?chat=${c.id}`)}
+                      onClick={() => {
+                        router.push(`/messages?chat=${c.id}`)
+                        setMobileChatOpen(true)
+                      }}
                       className={`w-full text-left p-4 flex items-center gap-3 transition-colors ${isActive ? 'bg-primary-cobalt/5 border-l-4 border-primary-cobalt' : 'hover:bg-surface-mist'}`}
                     >
                       <div className="w-12 h-12 bg-primary-cobalt/10 rounded-full flex items-center justify-center shrink-0">
@@ -243,12 +249,20 @@ function MessagesContent() {
               </div>
             </div>
 
-            {/* Chat Room */}
-            <div className="hidden md:flex flex-1 flex-col bg-white overflow-hidden relative">
+            {/* Chat Room — visible on mobile when mobileChatOpen=true */}
+            <div className={`${mobileChatOpen ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white overflow-hidden relative`}>
               {activeChat ? (
                 <>
-                  <div className="bg-white border-b border-surface-mist-dark px-6 py-4 flex justify-between items-center shrink-0 shadow-sm z-10">
-                    <div className="flex items-center gap-4">
+                  <div className="bg-white border-b border-surface-mist-dark px-4 md:px-6 py-4 flex justify-between items-center shrink-0 shadow-sm z-10">
+                    <div className="flex items-center gap-3">
+                      {/* Back button on mobile */}
+                      <button
+                        className="md:hidden text-ink-teal-700 hover:text-ink-teal-900 p-1 -ml-1 transition-colors"
+                        onClick={() => setMobileChatOpen(false)}
+                        aria-label="Volver a conversaciones"
+                      >
+                        ← 
+                      </button>
                       <div className="w-10 h-10 bg-primary-cobalt/10 rounded-full flex items-center justify-center">
                         <span className="font-bold text-primary-cobalt">{activeChat.displayName.charAt(0)}</span>
                       </div>
