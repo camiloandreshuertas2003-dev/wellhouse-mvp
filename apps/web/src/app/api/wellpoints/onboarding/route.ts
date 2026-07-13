@@ -15,45 +15,56 @@ export async function POST(req: NextRequest) {
 
     // Check if onboarding bonus already exists
     const { data: existing } = await supabaseAdmin
-      .from('wellpoint_transactions')
+      .from('user_points_transactions')
       .select('id')
       .eq('user_id', userId)
-      .eq('transaction_type', 'onboarding_bonus')
-      .single()
+      .eq('type', 'WELCOME_BONUS')
+      .maybeSingle()
 
     if (existing) {
       return NextResponse.json({ ok: true, message: "Onboarding bonus already granted." })
     }
 
-    // Grant 100 wellpoints
+    // Grant 100 wellpoints in transactions
     const { error: insertErr } = await supabaseAdmin
-      .from('wellpoint_transactions')
+      .from('user_points_transactions')
       .insert({
         user_id: userId,
         amount: 100,
-        transaction_type: 'onboarding_bonus',
-        description: 'Bono de bienvenida por registrar tu primera vivienda',
-        status: 'completed'
+        type: 'WELCOME_BONUS',
+        description: 'Bono de bienvenida por registrar tu primera vivienda'
       })
 
     if (insertErr) {
       throw insertErr
     }
 
-    // Also update users table wellpoints_balance
-    // Using RPC or raw query if RPC exists, but since we don't know, we let triggers handle it if they exist
-    // Or we update it directly:
-    const { data: userRecord } = await supabaseAdmin
-      .from('users')
-      .select('wellpoints_balance')
-      .eq('id', userId)
-      .single()
+    // Also update/insert in wellpoint_balances table
+    const { data: balRecord } = await supabaseAdmin
+      .from('wellpoint_balances')
+      .select('current_balance, total_earned_lifetime')
+      .eq('user_id', userId)
+      .maybeSingle()
 
-    if (userRecord) {
+    if (balRecord) {
       await supabaseAdmin
-        .from('users')
-        .update({ wellpoints_balance: (userRecord.wellpoints_balance || 0) + 100 })
-        .eq('id', userId)
+        .from('wellpoint_balances')
+        .update({
+          current_balance: (balRecord.current_balance || 0) + 100,
+          total_earned_lifetime: (balRecord.total_earned_lifetime || 0) + 100,
+          last_activity_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+    } else {
+      await supabaseAdmin
+        .from('wellpoint_balances')
+        .insert({
+          user_id: userId,
+          current_balance: 100,
+          total_earned_lifetime: 100,
+          last_activity_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+        })
     }
 
     return NextResponse.json({ ok: true, message: "Onboarding wellpoints granted." })
