@@ -80,20 +80,20 @@ export default function LoginPage() {
       {/* Left panel — branding (desktop only) */}
       <div 
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: "url('/login_bg.jpg')" }}
+        style={{ backgroundImage: "url('/login_bg_v2.jpg')" }}
       >
-        <div className="absolute inset-0 bg-ink-teal-900/30 backdrop-blur-[1px] pointer-events-none" aria-hidden="true"/>
+        <div className="absolute inset-0 bg-gradient-to-t from-ink-teal-950/90 via-ink-teal-950/60 to-ink-teal-900/40 backdrop-blur-[1px] pointer-events-none" aria-hidden="true"/>
         <div className="relative z-10" />
         <div className="relative z-10 max-w-lg mb-12">
-          <h2 className="font-fraunces text-4xl text-white font-bold leading-tight mb-4 drop-shadow-lg">
+          <h2 className="font-fraunces text-4xl text-white font-bold leading-tight mb-4 drop-shadow-[0_2px_10px_rgba(0,0,0,0.5)]">
             Encuentra tu próximo hogar de intercambio
           </h2>
-          <p className="font-inter text-white/90 text-lg leading-relaxed drop-shadow-md">
+          <p className="font-inter text-white/95 text-lg leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.4)]">
             Conecta con anfitriones de todo el país y viaja sin pagar hospedaje usando tus WellPoints.
           </p>
         </div>
         <div className="relative z-10">
-          <p className="font-inter text-white/60 text-xs tracking-wider">Wellhouse © 2026 · Comunidad de Intercambio</p>
+          <p className="font-inter text-white/70 text-xs tracking-wider">Wellhouse © 2026 · Comunidad de Intercambio</p>
         </div>
       </div>
 

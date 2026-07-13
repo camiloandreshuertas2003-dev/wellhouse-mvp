@@ -46,6 +46,7 @@ export default function DashboardPage() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userMetadata, setUserMetadata] = useState<any>(null)
   const [property, setProperty] = useState<Property | null>(null)
   const [transactions, setTransactions] = useState<any[]>([])
   const [exchanges, setExchanges] = useState<any[]>([])
@@ -57,86 +58,97 @@ export default function DashboardPage() {
   // mobile "Más" sheet
   const [moreOpen, setMoreOpen] = useState(false)
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: { user: authUser } } = await supabase.auth.getUser()
-      setUserId(authUser?.id || '')
-      if (!authUser) { router.push('/login'); return }
+  const fetchData = async () => {
+    const { data: { user: authUser } } = await supabase.auth.getUser()
+    if (!authUser) { router.push('/login'); return }
+    setUserId(authUser.id)
 
-      const memberSince = new Date(authUser.created_at)
-        .toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+    const memberSince = new Date(authUser.created_at)
+      .toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
 
-      // WellPoints balance
-      let userPoints = 100
-      try {
-        const { data } = await supabase
-          .from('wellpoint_balances').select('current_balance')
-          .eq('user_id', authUser.id).maybeSingle()
-        if (data) userPoints = data.current_balance
-      } catch { /* fallback */ }
+    // WellPoints balance
+    let userPoints = 100
+    try {
+      const { data } = await supabase
+        .from('wellpoint_balances').select('current_balance')
+        .eq('user_id', authUser.id).maybeSingle()
+      if (data) userPoints = data.current_balance
+    } catch { /* fallback */ }
 
-      // Member level
-      let userLevel = 'newcomer'
-      try {
-        const { data } = await supabase
-          .from('member_levels').select('level')
-          .eq('user_id', authUser.id).maybeSingle()
-        if (data) userLevel = data.level
-      } catch { /* fallback */ }
+    // Member level
+    let userLevel = 'newcomer'
+    try {
+      const { data } = await supabase
+        .from('member_levels').select('level')
+        .eq('user_id', authUser.id).maybeSingle()
+      if (data) userLevel = data.level
+    } catch { /* fallback */ }
 
-      // Recent transactions
-      let recentTrans: any[] = []
-      try {
-        const { data } = await supabase
-          .from('wellpoint_transactions').select('*')
-          .eq('user_id', authUser.id)
-          .order('created_at', { ascending: false }).limit(10)
-        if (data) recentTrans = data
-      } catch { /* fallback */ }
-
-      // Self-heal user row
-      try {
-        const { data: userData } = await supabase
-          .from('users').select('role').eq('id', authUser.id).maybeSingle()
-        if (!userData) {
-          const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario'
-          await supabase.from('users').insert({
-            id: authUser.id, email: authUser.email || '',
-            name, role: 'user', plan: 'free', status: 'active',
-          })
-        }
-      } catch { /* ignore */ }
-
-      // Exchanges
-      try {
-        const { data } = await supabase
-          .from('exchanges').select('*')
-          .or(`host_id.eq.${authUser.id},guest_id.eq.${authUser.id}`)
-          .order('created_at', { ascending: false })
-        if (data) setExchanges(data)
-      } catch { /* fallback */ }
-
-      setProfile({
-        name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario',
-        email: authUser.email || '',
-        memberSince,
-        wellPoints: userPoints,
-      })
-      setLevel(userLevel)
-      setTransactions(recentTrans)
-      setLoadingProfile(false)
-
-      // Property (Fetch the most recent in case there are accidental duplicates)
-      const { data: propData } = await supabase
-        .from('properties')
-        .select('id, title, city, country, status, type')
+    // Recent transactions
+    let recentTrans: any[] = []
+    try {
+      const { data } = await supabase
+        .from('wellpoint_transactions').select('*')
         .eq('user_id', authUser.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
+        .order('created_at', { ascending: false }).limit(10)
+      if (data) recentTrans = data
+    } catch { /* fallback */ }
+
+    // Fetch / self-heal public.users fields
+    let meta: any = null
+    try {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('name, bio, avatar_url, phone, is_verified')
+        .eq('id', authUser.id)
         .maybeSingle()
-      setProperty(propData || null)
-      setLoadingProperty(false)
-    }
+      
+      if (!userData) {
+        const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario'
+        const defaultUser = {
+          id: authUser.id, email: authUser.email || '',
+          name, role: 'user', plan: 'free', status: 'active',
+        }
+        await supabase.from('users').insert(defaultUser)
+        meta = { name, bio: '', avatar_url: '', phone: '', is_verified: false }
+      } else {
+        meta = userData
+      }
+      setUserMetadata(meta)
+    } catch { /* ignore */ }
+
+    // Exchanges
+    try {
+      const { data } = await supabase
+        .from('exchanges').select('*')
+        .or(`host_id.eq.${authUser.id},guest_id.eq.${authUser.id}`)
+        .order('created_at', { ascending: false })
+      if (data) setExchanges(data)
+    } catch { /* fallback */ }
+
+    setProfile({
+      name: meta?.name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario',
+      email: authUser.email || '',
+      memberSince,
+      wellPoints: userPoints,
+    })
+    setLevel(userLevel)
+    setTransactions(recentTrans)
+    setLoadingProfile(false)
+
+    // Property
+    const { data: propData } = await supabase
+      .from('properties')
+      .select('id, title, city, country, status, type')
+      .eq('user_id', authUser.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    setProperty(propData || null)
+    setLoadingProperty(false)
+  }
+
+  useEffect(() => {
     fetchData()
   }, [router])
 
@@ -154,9 +166,10 @@ export default function DashboardPage() {
     { id: 'messages',    label: 'Mensajes',      Icon: MessageCircle },
   ]
   const MORE_TABS = [
-    { id: 'favorites', label: 'Favoritos',     Icon: Heart },
-    { id: 'reviews',   label: 'Reseñas',       Icon: Star },
-    { id: 'settings',  label: 'Configuración', Icon: Settings },
+    { id: 'quests',     label: 'Mis Retos',      Icon: Sparkles },
+    { id: 'favorites',  label: 'Favoritos',      Icon: Heart },
+    { id: 'reviews',    label: 'Reseñas',        Icon: Star },
+    { id: 'settings',   label: 'Configuración',  Icon: Settings },
   ]
   const ALL_TABS = [...MAIN_TABS, ...MORE_TABS]
 
@@ -237,6 +250,11 @@ export default function DashboardPage() {
                   <span className="text-[#6b7280]">Miembro desde</span>
                   <span className="text-[#1a3c34] capitalize">{profile?.memberSince}</span>
                 </div>
+                <div className="pt-2">
+                  <Link href="/rankings" className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#1a3c34] bg-[#f8f7f4] hover:bg-[#e8e4dc] transition-colors">
+                    Ver Tabla de Líderes 🏆
+                  </Link>
+                </div>
               </div>
             </div>
 
@@ -289,10 +307,15 @@ export default function DashboardPage() {
             {activeTab === 'exchanges' && (
               <ExchangesTab hasProperty={!!property} userId={userId} exchanges={exchanges} />
             )}
+            {activeTab === 'quests' && (
+              <QuestsTab userId={userId} onComplete={fetchData} />
+            )}
             {activeTab === 'messages' && <MessagesTab />}
             {activeTab === 'favorites' && <FavoritesTab />}
             {activeTab === 'reviews' && <ReviewsTab hasProperty={!!property} />}
-            {activeTab === 'settings' && <SettingsTab profile={profile} />}
+            {activeTab === 'settings' && (
+              <SettingsTab userMetadata={userMetadata} userId={userId} onSave={fetchData} />
+            )}
           </main>
         </div>
       </div>
@@ -989,40 +1012,187 @@ function ReviewsTab({ hasProperty }: { hasProperty: boolean }) {
 }
 
 // ─── SETTINGS TAB ─────────────────────────────────────────────────────────────
-function SettingsTab({ profile }: { profile: UserProfile | null }) {
+function SettingsTab({ 
+  userMetadata, 
+  userId, 
+  onSave 
+}: { 
+  userMetadata: any
+  userId: string
+  onSave: () => void 
+}) {
+  const [name, setName] = useState(userMetadata?.name || '')
+  const [bio, setBio] = useState(userMetadata?.bio || '')
+  const [phone, setPhone] = useState(userMetadata?.phone || '')
+  const [avatarUrl, setAvatarUrl] = useState(userMetadata?.avatar_url || '')
+  const [saving, setSaving] = useState(false)
+  const [message, setMessage] = useState<string | null>(null)
+
+  const handleSave = async () => {
+    setSaving(true)
+    setMessage(null)
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ name, bio, phone, avatar_url: avatarUrl })
+        .eq('id', userId)
+      
+      if (error) throw error
+      setMessage('Perfil guardado exitosamente. Si completaste un reto, tus puntos ya han sido acreditados.')
+      onSave()
+    } catch (err: any) {
+      setMessage('Error al guardar: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
       <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Configuración de cuenta</h2>
+      {message && (
+        <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+          {message}
+        </div>
+      )}
       <div className="space-y-4 max-w-md">
         <div>
           <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Nombre</label>
           <input
             type="text"
-            defaultValue={profile?.name}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Email</label>
-          <input
-            type="email"
-            defaultValue={profile?.email}
-            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#6b7280] bg-[#f8f7f4] cursor-not-allowed"
-            disabled
+          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Biografía / Descripción corta</label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={3}
+            placeholder="Cuéntanos un poco sobre ti y tus preferencias de viaje..."
+            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition resize-none"
           />
-          <p className="text-[10px] text-[#9ca3af] mt-1">El email no se puede cambiar por seguridad</p>
         </div>
         <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Notificaciones</label>
-          <Link href="/settings/notifications"
-            className="flex items-center justify-between w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] hover:bg-[#f8f7f4] transition-colors">
-            <span>Configurar notificaciones</span>
-            <ChevronRight className="w-4 h-4 text-[#6b7280]" />
-          </Link>
+          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Teléfono de contacto</label>
+          <input
+            type="text"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="+57 300 123 4567"
+            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+          />
         </div>
-        <button className="bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
-          Guardar cambios
+        <div>
+          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Foto de perfil (URL)</label>
+          <input
+            type="text"
+            value={avatarUrl}
+            onChange={(e) => setAvatarUrl(e.target.value)}
+            placeholder="https://ejemplo.com/foto.jpg"
+            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+          />
+        </div>
+        <button 
+          onClick={handleSave}
+          disabled={saving}
+          className="bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Guardando...' : 'Guardar cambios'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── QUESTS TAB ──────────────────────────────────────────────────────────────
+interface Quest {
+  key: string
+  title: string
+  description: string
+  reward: number
+  status: 'completed' | 'in_progress'
+}
+
+function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => void }) {
+  const [quests, setQuests] = useState<Quest[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchQuests = async () => {
+      const { data: userQuests } = await supabase
+        .from('user_quests')
+        .select('quest_key, status')
+        .eq('user_id', userId)
+      
+      const completedKeys = (userQuests || [])
+        .filter(q => q.status === 'completed')
+        .map(q => q.quest_key)
+
+      const defaultQuests: Quest[] = [
+        {
+          key: 'complete_profile',
+          title: 'Completa tu Perfil',
+          description: 'Añade tu nombre, biografía y foto (avatar) en la pestaña de Configuración para desbloquear la confianza de la comunidad.',
+          reward: 50,
+          status: completedKeys.includes('complete_profile') ? 'completed' : 'in_progress'
+        },
+        {
+          key: 'list_property',
+          title: 'Registra tu primera Vivienda',
+          description: 'Añade tu casa o apartamento con fotos y detalles en "Mi Vivienda" o mediante el formulario de registro.',
+          reward: 150,
+          status: completedKeys.includes('list_property') ? 'completed' : 'in_progress'
+        },
+        {
+          key: 'verify_identity',
+          title: 'Verifica tu Identidad',
+          description: 'Solicita la marca de verificación al administrador para validar tu cuenta e identidad.',
+          reward: 100,
+          status: completedKeys.includes('verify_identity') ? 'completed' : 'in_progress'
+        }
+      ]
+
+      setQuests(defaultQuests)
+      setLoading(false)
+    }
+    fetchQuests()
+  }, [userId])
+
+  if (loading) return <div className="text-center py-10">Cargando retos...</div>
+
+  return (
+    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+      <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-1">Mis Retos de Bienvenida</h2>
+      <p className="text-sm text-[#6b7280] mb-6">Completa estas tareas para recibir WellPoints extras y comenzar a intercambiar hogares.</p>
+      
+      <div className="space-y-4">
+        {quests.map(quest => (
+          <div key={quest.key} className={`border border-[#e8e4dc] rounded-2xl p-5 flex items-start gap-4 transition-all ${quest.status === 'completed' ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white'}`}>
+            <div className="shrink-0 mt-0.5">
+              {quest.status === 'completed' ? (
+                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">✓</div>
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-[#f0ede8] flex items-center justify-center text-[#cbd5cc] font-bold text-sm">⏳</div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start gap-2 flex-wrap mb-1">
+                <h3 className={`font-semibold text-sm ${quest.status === 'completed' ? 'text-emerald-900' : 'text-[#1a3c34]'}`}>
+                  {quest.title}
+                </h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${quest.status === 'completed' ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                  +{quest.reward} WP
+                </span>
+              </div>
+              <p className="text-xs text-[#6b7280] leading-relaxed">
+                {quest.description}
+              </p>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
