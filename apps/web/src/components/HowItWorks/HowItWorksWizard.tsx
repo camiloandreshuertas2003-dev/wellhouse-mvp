@@ -55,6 +55,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   // Track the flow
   const handleNext = async () => {
     if (step === 2 && !selectedPath) return; // Must select a path
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (step < totalSteps) {
       setStep(s => s + 1);
     } else {
@@ -84,6 +85,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   };
 
   const handleBack = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     if (step > 1) setStep(s => s - 1);
   };
 
@@ -242,7 +244,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFAF7] py-12 px-4 md:py-20 md:px-8">
+    <div className="min-h-screen bg-[#FBFAF7] py-4 px-4 md:py-20 md:px-8">
       {renderStep()}
     </div>
   );

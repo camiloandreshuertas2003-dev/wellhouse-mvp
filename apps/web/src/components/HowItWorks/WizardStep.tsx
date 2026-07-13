@@ -26,9 +26,9 @@ export default function WizardStep({
   nextLabel = "Siguiente",
 }: WizardStepProps) {
   return (
-    <div className="w-full max-w-4xl mx-auto min-h-[70vh] flex flex-col lg:flex-row items-center gap-10">
+    <div className="w-full max-w-4xl mx-auto h-[calc(100vh-100px)] lg:h-auto lg:min-h-[70vh] flex flex-col lg:flex-row items-center gap-4 lg:gap-10 pb-4">
       {/* Mobile progress indicators (top) */}
-      <div className="w-full lg:hidden flex items-center justify-center gap-2 mb-4">
+      <div className="w-full lg:hidden flex items-center justify-center gap-2 mt-2 mb-2">
         {Array.from({ length: totalSteps }).map((_, i) => (
           <div
             key={i}
@@ -40,13 +40,13 @@ export default function WizardStep({
       </div>
 
       {/* Image Side */}
-      <div className="w-full lg:w-1/2 flex justify-center">
-        <div className="relative w-full max-w-[400px] aspect-square rounded-[24px] overflow-hidden bg-[#FBFAF7] border border-[#e8e4dc] shadow-sm">
+      <div className="w-full lg:w-1/2 flex justify-center flex-1 min-h-0 overflow-hidden">
+        <div className="relative w-full max-w-[280px] lg:max-w-[400px] h-full lg:aspect-square rounded-[24px] bg-[#FBFAF7] border border-[#e8e4dc] shadow-sm animate-float">
           <Image
             src={imageSrc}
             alt={title}
             fill
-            className="object-contain p-6"
+            className="object-contain p-4 lg:p-6"
             priority={step === 1}
           />
         </div>
