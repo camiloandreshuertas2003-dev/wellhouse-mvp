@@ -765,10 +765,11 @@ function Step6Review({ form, photos, set }: {
         </div>
       </div>
 
-      <div className="p-4 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl flex gap-3 text-[#1a3c34]">
-        <Sparkles className="w-5 h-5 flex-shrink-0 text-[#10b981]" />
+      <div className="p-5 bg-surface-mist border border-accent-mango/30 rounded-2xl flex gap-4 text-ink-teal-900 mt-8 mb-6 shadow-sm">
+        <Sparkles className="w-6 h-6 flex-shrink-0 text-accent-mango" />
         <div>
-          <p className="text-sm font-medium">Al completar el registro, recibirás <strong>100 WellPoints</strong> en tu balance para que puedas realizar tu primera solicitud de intercambio inmediatamente.</p>
+          <h4 className="font-fraunces font-bold text-lg mb-1">¡Tu viaje comienza aquí!</h4>
+          <p className="font-inter text-sm text-text-muted-custom">Completa tu registro para publicar tu vivienda. ¡Recuerda que al completar los retos de anfitrión podrás ganar WellPoints para tu primer intercambio!</p>
         </div>
       </div>
     </div>

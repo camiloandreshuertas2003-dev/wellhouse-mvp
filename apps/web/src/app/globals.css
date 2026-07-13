@@ -25,22 +25,22 @@
     --ring: 240 5.9% 10%;
     --radius: 0.5rem;
 
-    /* Design System Tokens - Azul Playa Theme */
-    --ink-teal-900: #0B3B60; /* Deep Ocean */
-    --ink-teal-700: #145DA0; /* Sea Blue */
-    --ink-teal-500: #2E8BC0; /* Cerulean */
-    --base-paper: #F6F9FC; /* Light Sea Breeze */
-    --surface-mist: #E8F1F8;
-    --surface-mist-dark: #D0E1F0;
-    --accent-mango: #00B4D8; /* Wave Cyan (Accent) */
-    --accent-mango-hover: #0096B4;
-    --accent-mango-light: #90E0EF;
-    --primary-cobalt: #03045E; /* Deepest Blue */
-    --secondary-ink: #0B3B60;
-    --signal-green: #1FAE6E;
-    --signal-red: #D64545;
-    --wellpoint-gold: #00B4D8; /* Replaced gold with cyan for full blue theme, or keep gold? The user said "tonos azules" */
-    --text-muted: #64748B; /* Slate gray */
+    /* Design System Tokens - Nature & Elegance Theme */
+    --ink-teal-900: #1A3C34; /* Deep Forest/Ink Teal */
+    --ink-teal-700: #2A5A4F; /* Muted Emerald */
+    --ink-teal-500: #4A8B7A; /* Sage Green */
+    --base-paper: #FCFBF9; /* Warm Alabaster */
+    --surface-mist: #F4F2EC; /* Sandstone / Off-white */
+    --surface-mist-dark: #E6E2D6; /* Deeper Sandstone */
+    --accent-mango: #D4AF37; /* Metallic Gold / Mustard */
+    --accent-mango-hover: #C5A017;
+    --accent-mango-light: #F2E3AB;
+    --primary-cobalt: #2C3E50; /* Deep Navy (if needed for contrast) */
+    --secondary-ink: #1A3C34;
+    --signal-green: #10B981;
+    --signal-red: #EF4444;
+    --wellpoint-gold: #D4AF37; /* Premium Gold */
+    --text-muted: #78716C; /* Warm Stone Gray */
   }
 
   .dark {
