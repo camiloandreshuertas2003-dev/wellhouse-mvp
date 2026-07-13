@@ -94,22 +94,22 @@ export default function PropertyCarousel({
       </div>
 
       {/* ── Scroll strip ──
-          Key fix: the outer wrapper has overflow-hidden so iOS Safari clips correctly.
-          The inner div has overflow-x-auto + explicit px-4 so the first card
-          always appears 16px from the screen edge on any device. */}
+          Mobile: No padding on container, ml-4 on first item so the margin "scrolls away"
+          Desktop: px-6 lg:px-8 max-w-[1440px] mx-auto (just like before) */}
       <div className="w-full overflow-hidden">
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 snap-x snap-mandatory"
+          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 snap-x snap-mandatory md:px-6 lg:px-8 md:max-w-[1440px] md:mx-auto"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',
-            paddingLeft: '1rem',
-            paddingRight: '1rem',
           }}
         >
-          {properties.map((p) => (
-            <div key={p.id} className="snap-start flex-shrink-0">
+          {properties.map((p, i) => (
+            <div 
+              key={p.id} 
+              className={`snap-start flex-shrink-0 ${i === 0 ? 'ml-4 md:ml-0' : ''}`}
+            >
               <PropertyCard property={p} variant="carousel" />
             </div>
           ))}
@@ -119,6 +119,9 @@ export default function PropertyCarousel({
               <RowEndCard count={properties.length} categorySlug={categorySlug} />
             </div>
           )}
+          
+          {/* Spacer para dar margen derecho al llegar al final en móvil (gap-3 + w-1 = 16px) */}
+          <div className="w-1 flex-shrink-0 md:hidden" aria-hidden="true" />
         </div>
       </div>
     </section>

@@ -411,59 +411,56 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* ── CONTENT AREA — wrapped in a 12px-margin frame for guaranteed visual breathing room ── */}
-      <div className="mx-3 mt-2 mb-4 rounded-2xl overflow-hidden border border-surface-mist-dark/60 shadow-sm bg-base-paper">
-        <StoriesBar stories={filteredStories} loading={storiesLoading} />
+      {/* ── CONTENT AREA ── */}
+      <StoriesBar stories={filteredStories} loading={storiesLoading} />
 
-        {/* "TODO" view: show all category carousels */}
-        {category === 'all' && !debouncedQuery && (
-          <div className="divide-y divide-surface-mist">
-            {!loading && realProps.length > 0 && (
-              <PropertyCarousel
-                title="Viviendas disponibles ahora"
-                subtitle="Recién publicadas y listas para recibir huéspedes"
-                properties={realProps}
-                viewAllHref="/search?category=all"
-              />
-            )}
+      {/* "TODO" view: all category carousels */}
+      {category === 'all' && !debouncedQuery && (
+        <div className="divide-y divide-surface-mist">
+          {!loading && realProps.length > 0 && (
+            <PropertyCarousel
+              title="Viviendas disponibles ahora"
+              subtitle="Recién publicadas y listas para recibir huéspedes"
+              properties={realProps}
+              viewAllHref="/search?category=all"
+            />
+          )}
+          <PropertyCarousel
+            title="Fincas y campo"
+            subtitle={CATEGORY_SUBTITLES.fincas}
+            properties={getCategoryProps('fincas')}
+            viewAllHref="/search?category=fincas"
+          />
+          <PropertyCarousel
+            title="Playa y costa"
+            subtitle={CATEGORY_SUBTITLES.playa}
+            properties={getCategoryProps('playa')}
+            viewAllHref="/search?category=playa"
+          />
+          <PropertyCarousel
+            title="Urbano"
+            subtitle={CATEGORY_SUBTITLES.urbano}
+            properties={getCategoryProps('urbano')}
+            viewAllHref="/search?category=urbano"
+          />
+          <PropertyCarousel
+            title="Montaña"
+            subtitle={CATEGORY_SUBTITLES.montana}
+            properties={getCategoryProps('montana')}
+            viewAllHref="/search?category=montana"
+          />
+          <PropertyCarousel
+            title="Exclusivo"
+            subtitle={CATEGORY_SUBTITLES.exclusivo}
+            properties={getCategoryProps('exclusivo')}
+            viewAllHref="/search?category=exclusivo"
+          />
+        </div>
+      )}
 
-            <PropertyCarousel
-              title="Fincas y campo"
-              subtitle={CATEGORY_SUBTITLES.fincas}
-              properties={getCategoryProps('fincas')}
-              viewAllHref="/search?category=fincas"
-            />
-            <PropertyCarousel
-              title="Playa y costa"
-              subtitle={CATEGORY_SUBTITLES.playa}
-              properties={getCategoryProps('playa')}
-              viewAllHref="/search?category=playa"
-            />
-            <PropertyCarousel
-              title="Urbano"
-              subtitle={CATEGORY_SUBTITLES.urbano}
-              properties={getCategoryProps('urbano')}
-              viewAllHref="/search?category=urbano"
-            />
-            <PropertyCarousel
-              title="Montaña"
-              subtitle={CATEGORY_SUBTITLES.montana}
-              properties={getCategoryProps('montana')}
-              viewAllHref="/search?category=montana"
-            />
-            <PropertyCarousel
-              title="Exclusivo"
-              subtitle={CATEGORY_SUBTITLES.exclusivo}
-              properties={getCategoryProps('exclusivo')}
-              viewAllHref="/search?category=exclusivo"
-            />
-          </div>
-        )}
-
-        {/* FILTERED view */}
-        {(category !== 'all' || debouncedQuery) && (
-          <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-6">
-
+      {/* FILTERED view */}
+      {(category !== 'all' || debouncedQuery) && (
+        <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8 py-6">
           {/* Section header */}
           <div className="flex items-center justify-between mb-5">
             <p className="font-fraunces font-semibold text-xl text-ink-teal-900">
@@ -519,10 +516,8 @@ export default function SearchPage() {
               ))}
             </div>
           )}
-          </div>
-        )}
-
-      </div>{/* end frame wrapper */}
+        </div>
+      )}
 
     </div>
   )
