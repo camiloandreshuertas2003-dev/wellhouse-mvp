@@ -221,8 +221,26 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   }, [params.id, isMock])
 
   const handleAskQuestion = async () => {
-    if (!newQuestion.trim() || !currentUser || isMock) return
+    if (!newQuestion.trim() || !currentUser) return
     setAsking(true)
+
+    if (isMock) {
+      const mockQ = {
+        id: 'mock-q-' + Date.now(),
+        property_id: params.id,
+        user_id: currentUser.id,
+        question: newQuestion.trim(),
+        created_at: new Date().toISOString(),
+        users: {
+          full_name: currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'Tú'
+        }
+      }
+      setQuestions(prev => [...prev, mockQ])
+      setNewQuestion('')
+      setAsking(false)
+      return
+    }
+
     const { data, error } = await supabase.from('property_questions').insert({
       property_id: property.id,
       user_id: currentUser.id,
@@ -237,7 +255,18 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
   }
 
   const handleAnswerQuestion = async (qId: string) => {
-    if (!answerText.trim() || !currentUser || isMock) return
+    if (!answerText.trim() || !currentUser) return
+
+    if (isMock) {
+      setQuestions(prev => prev.map(q => q.id === qId ? {
+        ...q,
+        answer: answerText.trim(),
+        answered_at: new Date().toISOString()
+      } : q))
+      setAnsweringId(null)
+      setAnswerText('')
+      return
+    }
     
     const { error } = await supabase.from('property_questions').update({
       answer: answerText.trim(),
@@ -764,29 +793,31 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                           <p className="font-inter text-xs text-text-muted-custom mt-2 relative z-10">Respuesta del anfitrión el {new Date(q.answered_at).toLocaleDateString()}</p>
                         </div>
                       ) : (
-                        currentUser && property.user_id === currentUser.id && (
+                        currentUser && (property.user_id === currentUser.id || isMock) && (
                           <div className="mt-4 border-t border-neutral-200 pt-4">
                             {answeringId === q.id ? (
-                              <div className="flex gap-2">
+                              <div className="flex flex-col sm:flex-row gap-2 w-full">
                                 <input
                                   type="text"
                                   value={answerText}
                                   onChange={e => setAnswerText(e.target.value)}
                                   placeholder="Escribe tu respuesta..."
-                                  className="flex-1 px-3 py-2 border border-neutral-200 rounded-radius-sm font-inter text-sm focus:outline-none focus:border-accent-mango"
+                                  className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl font-inter text-sm focus:outline-none focus:border-accent-mango focus:ring-1 focus:ring-accent-mango bg-white"
                                 />
-                                <button
-                                  onClick={() => handleAnswerQuestion(q.id)}
-                                  className="px-4 py-2 bg-ink-teal-900 text-white rounded-radius-sm text-sm font-semibold hover:bg-ink-teal-800"
-                                >
-                                  Responder
-                                </button>
-                                <button
-                                  onClick={() => { setAnsweringId(null); setAnswerText(''); }}
-                                  className="px-4 py-2 text-text-muted-custom text-sm font-semibold hover:text-ink-teal-900"
-                                >
-                                  Cancelar
-                                </button>
+                                <div className="flex gap-2 justify-end sm:justify-start">
+                                  <button
+                                    onClick={() => handleAnswerQuestion(q.id)}
+                                    className="px-5 py-2.5 bg-ink-teal-900 text-white rounded-xl text-xs font-semibold hover:bg-ink-teal-800 transition-colors whitespace-nowrap"
+                                  >
+                                    Responder
+                                  </button>
+                                  <button
+                                    onClick={() => { setAnsweringId(null); setAnswerText(''); }}
+                                    className="px-5 py-2.5 text-text-muted-custom text-xs font-semibold hover:text-ink-teal-900 transition-colors"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </div>
                               </div>
                             ) : (
                               <button
@@ -804,21 +835,21 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                 )}
               </div>
 
-              {currentUser && property.user_id !== currentUser.id && !isMock && (
-                <div className="bg-white border border-neutral-200 rounded-xl p-5">
+              {currentUser && (property.user_id !== currentUser.id || isMock) && (
+                <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="font-inter font-semibold text-sm text-ink-teal-900 mb-3">Pregúntale al anfitrión</h3>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <input
                       type="text"
                       value={newQuestion}
                       onChange={e => setNewQuestion(e.target.value)}
                       placeholder="Ej: ¿Hay supermercados cerca?"
-                      className="flex-1 px-4 py-2 border border-neutral-200 rounded-radius-sm font-inter text-sm focus:outline-none focus:border-accent-mango focus:ring-1 focus:ring-accent-mango"
+                      className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl font-inter text-sm focus:outline-none focus:border-accent-mango focus:ring-1 focus:ring-accent-mango bg-base-paper"
                     />
                     <button
                       onClick={handleAskQuestion}
                       disabled={asking || !newQuestion.trim()}
-                      className="px-6 py-2 bg-accent-mango text-white rounded-radius-sm text-sm font-semibold hover:bg-accent-mango/90 disabled:opacity-50"
+                      className="px-6 py-2.5 bg-accent-mango text-white rounded-xl text-sm font-semibold hover:bg-accent-mango-hover disabled:opacity-50 transition-all active:scale-95 whitespace-nowrap"
                     >
                       {asking ? 'Enviando...' : 'Preguntar'}
                     </button>
