@@ -19,25 +19,41 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // 1. Usar Vercel AI SDK para llamar a Gemini 1.5 Flash y estructurar la salida
-    const { object } = await generateObject({
-      model: google('models/gemini-1.5-flash-latest'),
-      schema: z.object({
-        spots: z.array(z.object({
-          name: z.string().describe('Nombre del lugar turístico o actividad'),
-          description: z.string().describe('Breve descripción atractiva del por qué visitarlo (max 150 caracteres)'),
-          distance: z.string().describe('Tiempo estimado desde el centro o distancia aproximada (ej: "A 15 minutos en carro")')
-        })).max(3).describe('Lista de exactamente 3 lugares turísticos populares o joyas ocultas de la zona'),
-        tips: z.array(z.object({
-          title: z.string().describe('Título del consejo (ej: "Mejor forma de moverse", "Plato típico imperdible")'),
-          content: z.string().describe('Contenido del consejo de viaje (max 150 caracteres)')
-        })).max(2).describe('Exactamente 2 consejos útiles locales de viaje para el huésped')
-      }),
-      prompt: `Actúa como un guía local experto para la plataforma de intercambio de casas Wellhouse. 
-El usuario acaba de listar una casa en: ${city}, ${country}.
-Genera una guía de viaje altamente atractiva, auténtica y útil para los futuros huéspedes que se queden en esta zona. 
-Concéntrate en la autenticidad local. Devuelve 3 lugares turísticos y 2 tips de viaje.`,
-    });
+    let object: any = { spots: [], tips: [] };
+
+    // Solo usar Gemini si hay una API Key configurada
+    if (process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+      // 1. Usar Vercel AI SDK para llamar a Gemini 1.5 Flash y estructurar la salida
+      const result = await generateObject({
+        model: google('gemini-1.5-flash'),
+        schema: z.object({
+          spots: z.array(z.object({
+            name: z.string().describe('Nombre del lugar turístico o actividad'),
+            description: z.string().describe('Breve descripción atractiva del por qué visitarlo (max 150 caracteres)'),
+            distance: z.string().describe('Tiempo estimado desde el centro o distancia aproximada (ej: "A 15 minutos en carro")')
+          })).max(3).describe('Lista de exactamente 3 lugares turísticos populares o joyas ocultas de la zona'),
+          tips: z.array(z.object({
+            title: z.string().describe('Título del consejo (ej: "Mejor forma de moverse", "Plato típico imperdible")'),
+            content: z.string().describe('Contenido del consejo de viaje (max 150 caracteres)')
+          })).max(2).describe('Exactamente 2 consejos útiles locales de viaje para el huésped')
+        }),
+        prompt: `Actúa como un guía local experto para la plataforma de intercambio de casas Wellhouse. 
+  El usuario acaba de listar una casa en: ${city}, ${country}.
+  Genera una guía de viaje altamente atractiva, auténtica y útil para los futuros huéspedes que se queden en esta zona. 
+  Concéntrate en la autenticidad local. Devuelve 3 lugares turísticos y 2 tips de viaje.`,
+      });
+      object = result.object;
+    } else {
+      // Fallback si no hay API Key
+      object = {
+        spots: [
+          { name: "La Plaza Principal", description: "Falta configurar la API Key de Gemini en este entorno para ver lugares reales.", distance: "A 5 minutos" }
+        ],
+        tips: [
+          { title: "Atención", content: "Por favor agrega la variable de entorno GEMINI_API_KEY en Vercel." }
+        ]
+      };
+    }
 
     // 2. Guardar el resultado en la base de datos
     const { error: updateError } = await supabase

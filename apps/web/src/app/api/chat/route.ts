@@ -81,6 +81,13 @@ export async function POST(req: Request) {
       }
     }
 
+    if (!process.env.GEMINI_API_KEY) {
+      return new Response('0:"🤖 **WellBot Offline**\\n\\nFalta la variable de entorno \`GEMINI_API_KEY\` en este servidor (Vercel). Por favor añádela para que pueda despertar."\n', { 
+        status: 200, 
+        headers: { 'Content-Type': 'text/plain; charset=utf-8' } 
+      });
+    }
+
     // 2. Generate response with Gemini
     const result = await streamText({
       model: google('gemini-1.5-flash'),
@@ -107,8 +114,10 @@ export async function POST(req: Request) {
     } else {
       return anyResult.toTextStreamResponse()
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Chat API Error:', error)
-    return NextResponse.json({ error: 'Failed to process chat' }, { status: 500 })
+    return NextResponse.json({ 
+      error: error?.message || error?.toString() || 'Failed to process chat' 
+    }, { status: 500 })
   }
 }
