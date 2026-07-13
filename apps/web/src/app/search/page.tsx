@@ -147,11 +147,13 @@ export default function SearchPage() {
   const [realProps, setRealProps] = useState<PropertyCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [stories, setStories] = useState<HostStory[]>([])
+  const [storiesLoading, setStoriesLoading] = useState(true)
 
   // Fetch host stories from Supabase
   useEffect(() => {
     async function loadStories() {
       try {
+        setStoriesLoading(true)
         const { data, error } = await supabase
           .from('host_stories')
           .select(`
@@ -180,6 +182,8 @@ export default function SearchPage() {
       } catch (err) {
         console.error('Error fetching stories:', err)
         setStories(FALLBACK_STORIES)
+      } finally {
+        setStoriesLoading(false)
       }
     }
     loadStories()
@@ -408,7 +412,7 @@ export default function SearchPage() {
       </div>
 
       {/* ── CONTENT AREA ───────────────────────────────────────────────── */}
-      <StoriesBar stories={filteredStories} />
+      <StoriesBar stories={filteredStories} loading={storiesLoading} />
 
       {/* "TODO" view: show all category carousels (exactly like the screenshot) */}
       {category === 'all' && !debouncedQuery && (
