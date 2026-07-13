@@ -44,8 +44,8 @@ export default function PropertyCarousel({
 
   return (
     <section className="py-4 md:py-8 bg-base-paper" aria-labelledby={`carousel-${title.replace(/\s/g, '-')}`}>
+      {/* Header is padded normally */}
       <div className="max-w-[1440px] mx-auto px-4 md:px-6 lg:px-8">
-        {/* Header Row */}
         <div className="flex items-end justify-between mb-3 md:mb-4">
           <div className="flex items-start gap-2.5">
             <div className="mt-1 text-ink-teal-500 flex-shrink-0">
@@ -95,26 +95,27 @@ export default function PropertyCarousel({
             )}
           </div>
         </div>
+      </div>
 
-        {/* Scrollable Container: pl-4 keeps a visual left margin on mobile so 1st card is never edge-to-edge */}
-        <div
-          ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none -mx-4 pl-4 pr-4 md:-mx-6 md:pl-6 md:pr-6 lg:-mx-8 lg:pl-8 lg:pr-8 snap-x snap-mandatory"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-        >
-          {properties.map((p) => (
-            <div key={p.id} className="snap-start">
-              <PropertyCard property={p} variant="carousel" />
-            </div>
-          ))}
-          
-          {/* RowEndCard as a custom brand closer card at the end of the row (Módulo A.3) */}
-          {viewAllHref && (
-            <div className="snap-start flex-shrink-0 w-[72vw] max-w-[240px] sm:w-[200px] md:w-[195px] lg:w-[185px] xl:w-[180px]">
-              <RowEndCard count={properties.length} categorySlug={categorySlug} />
-            </div>
-          )}
-        </div>
+      {/* Scroll strip — sits outside the padded container so it can be full-width,
+          but uses px-4 so first and last cards have breathing room on mobile */}
+      <div
+        ref={scrollRef}
+        className="flex gap-3 overflow-x-auto scroll-smooth pb-3 scrollbar-none px-4 md:px-6 lg:px-8 snap-x snap-mandatory max-w-[1440px] mx-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {properties.map((p) => (
+          <div key={p.id} className="snap-start">
+            <PropertyCard property={p} variant="carousel" />
+          </div>
+        ))}
+        
+        {/* RowEndCard as a custom brand closer card at the end of the row (Módulo A.3) */}
+        {viewAllHref && (
+          <div className="snap-start flex-shrink-0 w-[72vw] max-w-[240px] sm:w-[200px] md:w-[195px] lg:w-[185px] xl:w-[180px]">
+            <RowEndCard count={properties.length} categorySlug={categorySlug} />
+          </div>
+        )}
       </div>
     </section>
   )

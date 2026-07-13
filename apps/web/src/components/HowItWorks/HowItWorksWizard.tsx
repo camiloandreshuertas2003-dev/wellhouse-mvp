@@ -137,7 +137,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
               <p className="font-inter text-lg text-[#4a5568]">Existen dos formas principales de vivir la experiencia Wellhouse.</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto w-full flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto w-full flex-1">
               <PathSelectorCard
                 title="Tengo una vivienda"
                 description="Quiero publicar mi espacio, hospedar a otros miembros de la comunidad y acumular WellPoints para viajar sin pagar alojamiento."
@@ -244,7 +244,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFAF7] py-4 px-4 md:py-20 md:px-8">
+    <div className="min-h-screen bg-[#FBFAF7] py-6 px-4 sm:px-6 md:py-16 md:px-8 lg:py-20">
       {renderStep()}
     </div>
   );
