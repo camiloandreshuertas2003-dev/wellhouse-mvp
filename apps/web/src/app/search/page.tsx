@@ -161,12 +161,12 @@ export default function SearchPage() {
             youtube_video_id,
             thumbnail_url,
             location_tags,
+            users:user_id (
+              full_name:name
+            ),
             properties (
               title,
-              images,
-              users (
-                full_name
-              )
+              images
             )
           `)
           .order('created_at', { ascending: false })

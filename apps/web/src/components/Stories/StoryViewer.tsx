@@ -9,6 +9,9 @@ export interface HostStory {
   youtube_video_id: string
   thumbnail_url: string
   location_tags: string
+  users?: {
+    full_name: string
+  }
   properties?: {
     title: string
     images: string[]
@@ -52,7 +55,7 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
 
   if (!currentStory) return null
 
-  const hostName = currentStory.properties?.users?.full_name || 'Anfitrión'
+  const hostName = currentStory.users?.full_name || currentStory.properties?.users?.full_name || 'Anfitrión'
   const propertyTitle = currentStory.properties?.title || 'Increíble vivienda'
 
   return (

@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     // 3. Extraer insights usando AI SDK
     const { object } = await generateObject({
-      model: google('models/gemini-2.5-flash'),
+      model: google('gemini-2.5-flash') as any,
       schema: insightSchema,
       prompt: `Analiza esta transcripción de chat entre un usuario y WellBot y extrae los insights según el esquema requerido:\n\n${chatText}`,
     })

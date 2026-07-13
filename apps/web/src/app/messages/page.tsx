@@ -50,7 +50,7 @@ function MessagesContent() {
 
         if (convData) {
           const otherUserIds = [...new Set(convData.map(c => c.user_one_id === user.id ? c.user_two_id : c.user_one_id))]
-          const { data: usersData } = await supabase.from('users').select('id, full_name, email').in('id', otherUserIds)
+          const { data: usersData } = await supabase.from('users').select('id, full_name:name, email').in('id', otherUserIds)
           const userMap = new Map((usersData || []).map(u => [u.id, u.full_name || u.email || 'Anfitrión']))
 
           const mapped = convData.map((c) => {

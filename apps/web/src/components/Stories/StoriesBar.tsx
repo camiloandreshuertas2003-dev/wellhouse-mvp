@@ -24,7 +24,7 @@ export default function StoriesBar({ stories }: StoriesBarProps) {
         {/* Contenedor horizontal scrollable */}
         <div className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth pb-1">
           {stories.map((story, index) => {
-            const hostName = story.properties?.users?.full_name?.split(' ')[0] || 'Anfitrión'
+            const hostName = (story.users?.full_name || story.properties?.users?.full_name || 'Anfitrión').split(' ')[0]
             const cityName = story.location_tags.split(',')[0].trim()
 
             return (

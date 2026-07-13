@@ -209,7 +209,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       if (data) {
         const { data: qData } = await supabase
           .from('property_questions')
-          .select('*, users:user_id(full_name, email)')
+          .select('*, users:user_id(full_name:name, email)')
           .eq('property_id', data.id)
           .order('created_at', { ascending: true })
         if (qData) setQuestions(qData)
@@ -227,7 +227,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
       property_id: property.id,
       user_id: currentUser.id,
       question: newQuestion.trim()
-    }).select('*, users:user_id(full_name, email)').single()
+    }).select('*, users:user_id(full_name:name, email)').single()
     
     if (!error && data) {
       setQuestions(prev => [...prev, data])

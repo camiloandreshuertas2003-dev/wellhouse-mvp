@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 
 const WELCOME = '¡Hola! Soy **WellBot**, tu asistente de Wellhouse 🏡\n\nPuedo ayudarte a:\n• Encontrar viviendas por ciudad o región\n• Entender cómo funcionan los WellPoints\n• Guiarte para publicar tu vivienda\n\n¿Qué buscas hoy?'
 
