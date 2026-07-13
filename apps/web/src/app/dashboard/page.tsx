@@ -1025,8 +1025,11 @@ function SettingsTab({
   const [bio, setBio] = useState(userMetadata?.bio || '')
   const [phone, setPhone] = useState(userMetadata?.phone || '')
   const [avatarUrl, setAvatarUrl] = useState(userMetadata?.avatar_url || '')
+  const [isVerified, setIsVerified] = useState(userMetadata?.is_verified || false)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [showCheckout, setShowCheckout] = useState(false)
+  const [paymentLoading, setPaymentLoading] = useState(false)
 
   const handleSave = async () => {
     setSaving(true)
@@ -1038,7 +1041,7 @@ function SettingsTab({
         .eq('id', userId)
       
       if (error) throw error
-      setMessage('Perfil guardado exitosamente. Si completaste un reto, tus puntos ya han sido acreditados.')
+      setMessage('Perfil guardado exitosamente.')
       onSave()
     } catch (err: any) {
       setMessage('Error al guardar: ' + err.message)
@@ -1047,62 +1050,162 @@ function SettingsTab({
     }
   }
 
+  const handlePaymentSuccess = async () => {
+    setPaymentLoading(true)
+    try {
+      // Simular transacción de pago de $15 USD
+      const { error } = await supabase
+        .from('users')
+        .update({ is_verified: true })
+        .eq('id', userId)
+      
+      if (error) throw error
+      setIsVerified(true)
+      setShowCheckout(false)
+      setMessage('¡Pago procesado con éxito! Tu cuenta y tu vivienda asociada han sido verificadas oficialmente. Recibiste +150 WP.')
+      onSave()
+    } catch (err: any) {
+      setMessage('Error en el pago: ' + err.message)
+    } finally {
+      setPaymentLoading(false)
+    }
+  }
+
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-      <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Configuración de cuenta</h2>
-      {message && (
-        <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-          {message}
+    <div className="space-y-6">
+      {/* Sección Configuración */}
+      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+        <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Configuración de cuenta</h2>
+        {message && (
+          <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+            {message}
+          </div>
+        )}
+        <div className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Nombre</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Biografía / Descripción corta</label>
+            <textarea
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              rows={3}
+              placeholder="Cuéntanos un poco sobre ti y tus preferencias de viaje..."
+              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Teléfono de contacto</label>
+            <input
+              type="text"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+57 300 123 4567"
+              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Foto de perfil (URL)</label>
+            <input
+              type="text"
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              placeholder="https://ejemplo.com/foto.jpg"
+              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+            />
+          </div>
+          <button 
+            onClick={handleSave}
+            disabled={saving}
+            className="bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Guardando...' : 'Guardar cambios'}
+          </button>
+        </div>
+      </div>
+
+      {/* Sección Verificación */}
+      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+        <h2 className="text-base font-semibold text-[#1a3c34] mb-3">Verificación de Identidad y Vivienda</h2>
+        <p className="text-xs text-[#6b7280] mb-5 leading-relaxed">
+          Para garantizar la máxima seguridad en nuestra comunidad, ofrecemos una verificación oficial. Al verificar tu identidad y tu vivienda asociada, obtendrás el sello de verificación oficial y desbloquearás una recompensa masiva de 150 WP.
+        </p>
+
+        {isVerified ? (
+          <div className="flex items-center gap-2.5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-semibold">
+            <span className="text-lg">🛡️</span> Cuenta y Vivienda Verificadas Oficialmente
+          </div>
+        ) : (
+          <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="font-semibold text-sm text-[#1a3c34] mb-1">Verificación Total (Pago Único)</p>
+              <p className="text-xs text-[#6b7280]">Incluye verificación de identidad (KYC) y auditoría de tu vivienda.</p>
+            </div>
+            <button 
+              onClick={() => setShowCheckout(true)}
+              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-[#1a1a1a] font-bold text-xs rounded-xl shadow-sm transition-all shrink-0"
+            >
+              Verificar por $15 USD
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Checkout / Pago Simulado */}
+      {showCheckout && (
+        <div className="fixed inset-0 bg-[#1a3c34]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-[#e8e4dc] max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="font-fraunces font-bold text-lg text-[#1a3c34]">Verificación Wellhouse</h3>
+              <button onClick={() => setShowCheckout(false)} className="text-[#6b7280] hover:text-[#1a3c34] text-sm">✕</button>
+            </div>
+
+            <div className="bg-[#f8f7f4] rounded-2xl p-4 mb-6 border border-[#e8e4dc] space-y-3">
+              <div className="flex justify-between text-sm text-[#1a3c34]">
+                <span>Verificación de Identidad (KYC)</span>
+                <span className="font-semibold">$10.00 USD</span>
+              </div>
+              <div className="flex justify-between text-sm text-[#1a3c34]">
+                <span>Verificación de Propiedad / Casa</span>
+                <span className="font-semibold">$5.00 USD</span>
+              </div>
+              <div className="h-px bg-[#e8e4dc]" />
+              <div className="flex justify-between text-base font-bold text-[#1a3c34]">
+                <span>Total a Pagar</span>
+                <span className="text-amber-600">$15.00 USD</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#6b7280] mb-6 leading-relaxed">
+              Al hacer clic en "Confirmar Pago", simularás el pago a través de nuestra pasarela de pagos. Al instante se verificará tu cuenta de usuario y tu propiedad.
+            </p>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setShowCheckout(false)}
+                className="flex-1 py-3 border border-[#e8e4dc] text-[#6b7280] rounded-xl text-xs font-bold hover:bg-[#f8f7f4] transition"
+                disabled={paymentLoading}
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handlePaymentSuccess}
+                className="flex-1 py-3 bg-[#1a3c34] hover:bg-[#2d6a4f] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+                disabled={paymentLoading}
+              >
+                {paymentLoading ? 'Procesando...' : 'Confirmar Pago'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-      <div className="space-y-4 max-w-md">
-        <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Nombre</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Biografía / Descripción corta</label>
-          <textarea
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            rows={3}
-            placeholder="Cuéntanos un poco sobre ti y tus preferencias de viaje..."
-            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition resize-none"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Teléfono de contacto</label>
-          <input
-            type="text"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="+57 300 123 4567"
-            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
-          />
-        </div>
-        <div>
-          <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Foto de perfil (URL)</label>
-          <input
-            type="text"
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            placeholder="https://ejemplo.com/foto.jpg"
-            className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
-          />
-        </div>
-        <button 
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Guardando...' : 'Guardar cambios'}
-        </button>
-      </div>
     </div>
   )
 }
@@ -1135,7 +1238,7 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
         {
           key: 'complete_profile',
           title: 'Completa tu Perfil',
-          description: 'Añade tu nombre, biografía y foto (avatar) en la pestaña de Configuración para desbloquear la confianza de la comunidad.',
+          description: 'Añade tu nombre, biografía y foto (avatar) en la pestaña de Configuración.',
           reward: 50,
           status: completedKeys.includes('complete_profile') ? 'completed' : 'in_progress'
         },
@@ -1148,9 +1251,9 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
         },
         {
           key: 'verify_identity',
-          title: 'Verifica tu Identidad',
-          description: 'Solicita la marca de verificación al administrador para validar tu cuenta e identidad.',
-          reward: 100,
+          title: 'Verificación Total (Identidad y Casa)',
+          description: 'Desbloquea el sello de verificación oficial realizando el pago único de verificación ($15 USD) en Configuración.',
+          reward: 150,
           status: completedKeys.includes('verify_identity') ? 'completed' : 'in_progress'
         }
       ]
