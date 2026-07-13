@@ -119,43 +119,38 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
       case 2:
         return (
           <div className="w-full max-w-4xl mx-auto flex flex-col pb-4">
-            <div className="w-full lg:hidden flex items-center justify-center gap-2 mb-4">
+            {/* Progress */}
+            <div className="w-full flex items-center justify-center gap-2 mb-4">
               {Array.from({ length: totalSteps }).map((_, i) => (
-                <div key={i} className={`h-1.5 rounded-full ${i + 1 === step ? 'w-6 bg-[#2D6FE0]' : i + 1 < step ? 'w-1.5 bg-[#1a3c34]' : 'w-1.5 bg-[#e8e4dc]'}`} />
+                <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i + 1 === step ? 'w-6 bg-[#2D6FE0]' : i + 1 < step ? 'w-1.5 bg-[#1a3c34]' : 'w-1.5 bg-[#e8e4dc]'}`} />
               ))}
               <span className="ml-2 text-xs font-medium text-[#6b7280]">{step}/{totalSteps}</span>
             </div>
-            
-            <div className="hidden lg:flex items-center justify-center gap-2 mb-10 mt-8">
-              {Array.from({ length: totalSteps }).map((_, i) => (
-                <div key={i} className={`h-2 rounded-full ${i + 1 === step ? 'w-8 bg-[#2D6FE0]' : i + 1 < step ? 'w-2 bg-[#1a3c34]' : 'w-2 bg-[#e8e4dc]'}`} />
-              ))}
-              <span className="ml-2 text-sm font-medium text-[#6b7280]">Paso 2 de {totalSteps}</span>
+
+            <div className="text-center mb-4">
+              <h2 className="font-space-grotesk font-semibold text-xl sm:text-3xl md:text-4xl text-[#1a3c34] mb-1">Elige tu camino</h2>
+              <p className="font-inter text-sm sm:text-base text-[#4a5568]">Dos formas de vivir Wellhouse.</p>
             </div>
 
-            <div className="text-center mb-6">
-              <h2 className="font-space-grotesk font-semibold text-2xl md:text-4xl text-[#1a3c34] mb-2">Elige tu camino</h2>
-              <p className="font-inter text-base text-[#4a5568]">Existen dos formas principales de vivir la experiencia Wellhouse.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto w-full">
+            {/* Always 2 columns — compact cards that always fit on screen */}
+            <div className="grid grid-cols-2 gap-3 w-full">
               <PathSelectorCard
                 title="Tengo una vivienda"
-                description="Quiero publicar mi espacio, hospedar a otros miembros de la comunidad y acumular WellPoints para viajar sin pagar alojamiento."
+                description="Publica tu espacio, hospeda y acumula WellPoints para viajar sin pagar alojamiento."
                 imageSrc="/images/como-funciona/step_2a_host_1783887948050.jpg"
                 isSelected={selectedPath === 'host'}
                 onSelect={() => setSelectedPath('host')}
               />
               <PathSelectorCard
                 title="Quiero viajar sin publicar"
-                description="No tengo un espacio para compartir por ahora. Prefiero comprar un paquete de WellPoints o adquirir una membresía para empezar a viajar."
+                description="Compra WellPoints o adquiere una membresía y empieza a viajar de inmediato."
                 imageSrc="/images/como-funciona/step_2b_guest_1783887953987.jpg"
                 isSelected={selectedPath === 'guest'}
                 onSelect={() => setSelectedPath('guest')}
               />
             </div>
 
-            <div className="mt-8 flex items-center justify-between pt-5 border-t border-[#e8e4dc]">
+            <div className="mt-5 flex items-center justify-between pt-4 border-t border-[#e8e4dc]">
               <button onClick={handleBack} className="flex items-center gap-1.5 font-inter font-semibold text-sm text-[#4a5568] hover:text-[#1a3c34] transition-colors">
                 Atrás
               </button>
@@ -164,7 +159,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
                 disabled={!selectedPath}
                 className={`flex items-center gap-2 px-6 py-3 rounded-[12px] font-inter font-semibold text-sm transition-colors shadow-sm ${selectedPath ? 'bg-[#2D6FE0] text-white hover:bg-[#255bc2]' : 'bg-[#e8e4dc] text-[#a0aec0] cursor-not-allowed'}`}
               >
-                Siguiente
+                Siguiente →
               </button>
             </div>
           </div>
@@ -245,7 +240,7 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFAF7] py-6 px-4 sm:px-6 md:py-16 md:px-8 lg:py-20">
+    <div className="min-h-screen bg-[#FBFAF7] py-6 px-4 sm:px-6 md:py-16 md:px-8 lg:py-20 pb-28 md:pb-16">
       {renderStep()}
     </div>
   );

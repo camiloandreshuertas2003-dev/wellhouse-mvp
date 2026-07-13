@@ -1,6 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
-import { ChevronRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 
 interface PathSelectorCardProps {
   title: string;
@@ -20,32 +20,39 @@ export default function PathSelectorCard({
   return (
     <button
       onClick={onSelect}
-      className={`relative w-full p-4 sm:p-6 bg-white rounded-[20px] border-2 text-left transition-all duration-300 hover:-translate-y-1 ${
+      className={`relative w-full bg-white rounded-2xl border-2 text-left transition-all duration-300 overflow-hidden ${
         isSelected
-          ? 'border-[#2D6FE0] shadow-md'
-          : 'border-[#e8e4dc] hover:border-[#2D6FE0]/50 hover:shadow-sm'
+          ? 'border-[#2D6FE0] shadow-lg shadow-[#2D6FE0]/10'
+          : 'border-[#e8e4dc] hover:border-[#2D6FE0]/40 hover:shadow-md'
       }`}
     >
-      {/* Image — shorter on mobile so the card fits on screen */}
-      <div className="aspect-[16/9] sm:aspect-[4/3] relative w-full mb-3 sm:mb-5 rounded-[12px] bg-[#FBFAF7] overflow-hidden border border-[#e8e4dc]">
+      {/* Selection badge */}
+      {isSelected && (
+        <div className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-[#2D6FE0] flex items-center justify-center shadow-sm">
+          <Check className="w-3.5 h-3.5 text-white" strokeWidth={3} />
+        </div>
+      )}
+
+      {/* Image — 16:9 compact on all devices */}
+      <div className="aspect-[16/9] relative w-full bg-[#FBFAF7] overflow-hidden">
         <Image
           src={imageSrc}
           alt={title}
           fill
           className="object-cover"
         />
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
       </div>
 
-      <h3 className="font-space-grotesk font-semibold text-lg sm:text-2xl text-[#1a3c34] mb-1 sm:mb-2">
-        {title}
-      </h3>
-
-      <p className="font-inter text-sm sm:text-base text-[#4a5568] mb-3 sm:mb-5 leading-relaxed line-clamp-3">
-        {description}
-      </p>
-
-      <div className={`flex items-center font-inter font-semibold text-sm ${isSelected ? 'text-[#2D6FE0]' : 'text-[#4a5568]'}`}>
-        Elegir <ChevronRight className="w-4 h-4 ml-1" />
+      {/* Text block */}
+      <div className="p-3">
+        <h3 className="font-space-grotesk font-bold text-sm sm:text-base text-[#1a3c34] mb-1 leading-tight">
+          {title}
+        </h3>
+        <p className="font-inter text-xs text-[#4a5568] leading-relaxed line-clamp-2">
+          {description}
+        </p>
       </div>
     </button>
   );
