@@ -118,11 +118,12 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
         );
       case 2:
         return (
-          <div className="w-full max-w-4xl mx-auto min-h-[70vh] flex flex-col">
+          <div className="w-full max-w-4xl mx-auto flex flex-col pb-4">
             <div className="w-full lg:hidden flex items-center justify-center gap-2 mb-4">
               {Array.from({ length: totalSteps }).map((_, i) => (
-                <div key={i} className={`h-2 rounded-full ${i + 1 === step ? 'w-8 bg-[#2D6FE0]' : i + 1 < step ? 'w-2 bg-[#1a3c34]' : 'w-2 bg-[#e8e4dc]'}`} />
+                <div key={i} className={`h-1.5 rounded-full ${i + 1 === step ? 'w-6 bg-[#2D6FE0]' : i + 1 < step ? 'w-1.5 bg-[#1a3c34]' : 'w-1.5 bg-[#e8e4dc]'}`} />
               ))}
+              <span className="ml-2 text-xs font-medium text-[#6b7280]">{step}/{totalSteps}</span>
             </div>
             
             <div className="hidden lg:flex items-center justify-center gap-2 mb-10 mt-8">
@@ -132,12 +133,12 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
               <span className="ml-2 text-sm font-medium text-[#6b7280]">Paso 2 de {totalSteps}</span>
             </div>
 
-            <div className="text-center mb-10">
-              <h2 className="font-space-grotesk font-semibold text-3xl md:text-4xl text-[#1a3c34] mb-4">Elige tu camino</h2>
-              <p className="font-inter text-lg text-[#4a5568]">Existen dos formas principales de vivir la experiencia Wellhouse.</p>
+            <div className="text-center mb-6">
+              <h2 className="font-space-grotesk font-semibold text-2xl md:text-4xl text-[#1a3c34] mb-2">Elige tu camino</h2>
+              <p className="font-inter text-base text-[#4a5568]">Existen dos formas principales de vivir la experiencia Wellhouse.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto w-full flex-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto w-full">
               <PathSelectorCard
                 title="Tengo una vivienda"
                 description="Quiero publicar mi espacio, hospedar a otros miembros de la comunidad y acumular WellPoints para viajar sin pagar alojamiento."
@@ -154,14 +155,14 @@ export default function HowItWorksWizard({ onOpenBot }: HowItWorksWizardProps) {
               />
             </div>
 
-            <div className="mt-12 flex items-center justify-between pt-6 border-t border-[#e8e4dc]">
-              <button onClick={handleBack} className="flex items-center gap-2 font-inter font-semibold text-[#4a5568] hover:text-[#1a3c34] transition-colors">
+            <div className="mt-8 flex items-center justify-between pt-5 border-t border-[#e8e4dc]">
+              <button onClick={handleBack} className="flex items-center gap-1.5 font-inter font-semibold text-sm text-[#4a5568] hover:text-[#1a3c34] transition-colors">
                 Atrás
               </button>
-              <button 
-                onClick={handleNext} 
+              <button
+                onClick={handleNext}
                 disabled={!selectedPath}
-                className={`flex items-center gap-2 px-8 py-3.5 rounded-[12px] font-inter font-semibold transition-colors shadow-sm ${selectedPath ? 'bg-[#2D6FE0] text-white hover:bg-[#255bc2]' : 'bg-[#e8e4dc] text-[#a0aec0] cursor-not-allowed'}`}
+                className={`flex items-center gap-2 px-6 py-3 rounded-[12px] font-inter font-semibold text-sm transition-colors shadow-sm ${selectedPath ? 'bg-[#2D6FE0] text-white hover:bg-[#255bc2]' : 'bg-[#e8e4dc] text-[#a0aec0] cursor-not-allowed'}`}
               >
                 Siguiente
               </button>
