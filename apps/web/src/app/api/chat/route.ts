@@ -51,11 +51,52 @@ export async function POST(req: Request) {
       ...(m.toolInvocations ? { toolInvocations: m.toolInvocations } : {})
     }))
 
+    // 1. Check cache for exact match
+    const lastMessage = messages?.[messages.length - 1];
+    const userQuestion = lastMessage?.role === 'user' ? lastMessage.content.trim() : '';
+    const normalizedQuestion = userQuestion.toLowerCase().replace(/\s+/g, ' ');
+
+    // Use service role for database writes if available
+    const serviceSupabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey)
+
+    if (normalizedQuestion) {
+      const { data: cached } = await serviceSupabase
+        .from('wellbot_qa')
+        .select('answer, usage_count')
+        .eq('question', normalizedQuestion)
+        .maybeSingle();
+
+      if (cached) {
+        // Increment usage count in background (fire and forget)
+        serviceSupabase.from('wellbot_qa')
+          .update({ usage_count: (cached.usage_count || 0) + 1 })
+          .eq('question', normalizedQuestion)
+          .then();
+
+        // Return cached answer using Vercel AI SDK Data Stream protocol format
+        return new Response('0:' + JSON.stringify(cached.answer) + '\n', { 
+          status: 200, 
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' } 
+        });
+      }
+    }
+
+    // 2. Generate response with Gemini
     const result = await streamText({
       model: google('gemini-1.5-flash'),
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
       messages: coreMessages,
       tools: tools,
+      onFinish: async ({ text, toolCalls }) => {
+        // Only cache if no tools were used (to avoid caching dynamic info like property search)
+        if (text && (!toolCalls || toolCalls.length === 0) && normalizedQuestion) {
+          await serviceSupabase.from('wellbot_qa').insert({
+            question: normalizedQuestion,
+            answer: text,
+            usage_count: 1
+          }).select() // ignore error if unique constraint fails
+        }
+      }
     })
 
     const anyResult = result as any

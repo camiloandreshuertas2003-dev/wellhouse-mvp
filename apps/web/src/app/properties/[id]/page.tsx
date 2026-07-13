@@ -10,7 +10,7 @@ import AmenityIcon from '@/components/AmenityIcon'
 import CategoryIcon from '@/components/CategoryIcon'
 import {
   ChevronRight, Users, BedDouble, Bath, ArrowLeft, Share2, Heart,
-  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X
+  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass
 } from 'lucide-react'
 
 // WellRank formula
@@ -167,6 +167,10 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
 
   // Mobile booking modal
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
+
+  // AI Local Guide
+  const [generatingGuide, setGeneratingGuide] = useState(false)
+  const [guideError, setGuideError] = useState('')
 
   // Description expand state
   const [spaceExpanded, setSpaceExpanded] = useState(false)
@@ -338,6 +342,35 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
     setSubmitted(true)
     setBookingModalOpen(false)
   }
+
+  const handleGenerateGuide = async () => {
+    if (!property || isMock) return
+    setGeneratingGuide(true)
+    setGuideError('')
+    try {
+      const res = await fetch('/api/properties/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          propertyId: property.id,
+          city: property.city,
+          country: property.country
+        })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error)
+      
+      // Update local state
+      setProperty({ ...property, local_guide: data.data })
+    } catch (err: any) {
+      setGuideError(err.message || 'Error al generar la guía')
+    } finally {
+      setGeneratingGuide(false)
+    }
+  }
+
+  const isOwner = currentUser?.id === property?.user_id
+  const hasLocalGuide = !!property?.local_guide
 
   if (loading) {
     return (
@@ -612,7 +645,7 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
             {/* Placeholder map section */}
             <div className="border-t border-surface-mist pt-8">
               <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-4">Dónde vas a estar</h2>
-              <div className="h-48 bg-surface-mist rounded-[16px] flex items-center justify-center">
+              <div className="h-48 bg-surface-mist rounded-[16px] flex items-center justify-center mb-8">
                 <div className="text-center">
                   <p className="font-inter text-sm font-medium text-text-muted-custom">{property.city}, {property.country}</p>
                   <a
@@ -625,6 +658,84 @@ export default function PropertyDetailPage({ params }: { params: { id: string } 
                   </a>
                   <p className="font-inter text-xs text-text-muted-custom mt-1">La ubicación exacta se revela al confirmar el intercambio</p>
                 </div>
+              </div>
+              
+              {/* AI Local Guide Section */}
+              <div className="bg-gradient-to-br from-[#F5F8F7] to-white border border-[#E0EBE8] rounded-2xl p-6 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                  <Sparkles size={120} />
+                </div>
+                
+                <div className="flex justify-between items-start mb-6 relative z-10">
+                  <div>
+                    <h3 className="font-fraunces font-semibold text-2xl text-ink-teal-900 flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-accent-mango" />
+                      Guía Local de Wellhouse
+                    </h3>
+                    <p className="font-inter text-sm text-text-muted-custom mt-1">
+                      Generada con IA para ofrecerte las mejores experiencias en {property.city}
+                    </p>
+                  </div>
+                  
+                  {isOwner && !hasLocalGuide && !isMock && (
+                    <button
+                      onClick={handleGenerateGuide}
+                      disabled={generatingGuide}
+                      className="bg-accent-mango text-white px-4 py-2 rounded-xl font-inter font-medium text-sm flex items-center gap-2 hover:bg-[#e07525] transition-colors disabled:opacity-50"
+                    >
+                      {generatingGuide ? (
+                        <><RefreshCw className="w-4 h-4 animate-spin" /> Generando...</>
+                      ) : (
+                        <><Sparkles className="w-4 h-4" /> Generar Guía</>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {guideError && (
+                  <p className="text-red-500 text-sm mb-4 font-inter">{guideError}</p>
+                )}
+
+                {hasLocalGuide ? (
+                  <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                    <div>
+                      <h4 className="font-inter font-semibold text-ink-teal-900 mb-4 flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-accent-mango" /> Lugares Imperdibles
+                      </h4>
+                      <div className="space-y-4">
+                        {property.local_guide?.spots?.map((spot: any, i: number) => (
+                          <div key={i} className="bg-white p-4 rounded-xl border border-surface-mist shadow-sm">
+                            <h5 className="font-inter font-semibold text-ink-teal-900 text-sm">{spot.name}</h5>
+                            <p className="font-inter text-xs text-text-muted-custom mt-1 mb-2">{spot.description}</p>
+                            <span className="inline-block bg-[#F5F8F7] text-ink-teal-900 text-[10px] font-medium px-2 py-1 rounded-full">
+                              {spot.distance}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-inter font-semibold text-ink-teal-900 mb-4 flex items-center gap-2">
+                        <Compass className="w-4 h-4 text-accent-mango" /> Tips de Viaje Locales
+                      </h4>
+                      <div className="space-y-4">
+                        {property.local_guide?.tips?.map((tip: any, i: number) => (
+                          <div key={i} className="bg-[#113B3A] text-white p-4 rounded-xl shadow-sm">
+                            <h5 className="font-inter font-semibold text-sm mb-1">{tip.title}</h5>
+                            <p className="font-inter text-xs text-white/80">{tip.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 relative z-10 bg-white/50 rounded-xl backdrop-blur-sm border border-white/40">
+                    <Compass className="w-8 h-8 text-surface-mist mx-auto mb-2" />
+                    <p className="font-inter text-sm text-text-muted-custom">
+                      Aún no hay una guía local para esta propiedad.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

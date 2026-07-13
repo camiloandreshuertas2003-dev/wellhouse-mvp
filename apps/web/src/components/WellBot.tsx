@@ -1,11 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-
-interface Message {
-  role: 'user' | 'bot'
-  text: string
-}
+import { useChat } from 'ai/react'
 
 const WELCOME = '¡Hola! Soy **WellBot**, tu asistente de Wellhouse 🏡\n\nPuedo ayudarte a:\n• Encontrar viviendas por ciudad o región\n• Entender cómo funcionan los WellPoints\n• Guiarte para publicar tu vivienda\n\n¿Qué buscas hoy?'
 
@@ -16,41 +12,7 @@ const QUICK_PROMPTS = [
   '✨ ¿Cómo gano WellPoints?',
 ]
 
-// Smart mock responses — will be replaced by real LLM endpoint in a future phase
-function getBotResponse(userMsg: string): string {
-  const msg = userMsg.toLowerCase()
-
-  if (msg.includes('eje') || msg.includes('cafetero') || msg.includes('salento') || msg.includes('quindío') || msg.includes('finca')) {
-    return '¡El Eje Cafetero es uno de los destinos más populares en Wellhouse! 🌾\n\nTenemos fincas cafeteras en **Salento**, **Montenegro** y **Filandia** con WellRanks entre 80 y 200 WP/noche.\n\n[Ver fincas en el Eje →](/search?category=fincas&q=eje+cafetero)'
-  }
-  if (msg.includes('costa') || msg.includes('cartagena') || msg.includes('santa marta') || msg.includes('caribe') || msg.includes('playa')) {
-    return 'La Costa Caribe tiene algunas de las mejores viviendas de Wellhouse 🌊\n\nEncontramos opciones en **Cartagena**, **Santa Marta** y **Barranquilla**, muchas con acceso a playa privada.\n\n[Explorar Playa y costa →](/search?category=playa)'
-  }
-  if (msg.includes('bogotá') || msg.includes('bogota') || msg.includes('ciudad') || msg.includes('urbano') || msg.includes('apartamento')) {
-    return 'Bogotá tiene una gran oferta de apartamentos modernos y lofts en zonas como **Chapinero**, **Usaquén** y **La Candelaria** 🏙️\n\n[Ver viviendas urbanas →](/search?category=urbano&q=bogota)'
-  }
-  if (msg.includes('wellpoint') || msg.includes('punto') || msg.includes('wp') || msg.includes('ganar') || msg.includes('cómo funciona')) {
-    return '¡Los **WellPoints** son la moneda de confianza de Wellhouse! 🌟\n\n**¿Cómo ganarlos?**\n• Publicar tu vivienda completa: +200 WP\n• Hospedar a alguien: WP calculados por tu WellRank™\n• Completar tu perfil y verificarte\n\n**¿Cómo usarlos?**\n• Para quedarte en cualquier vivienda de la plataforma\n\n[Ver WellPoints en tu dashboard →](/dashboard)'
-  }
-  if (msg.includes('publicar') || msg.includes('registrar') || msg.includes('mi vivienda') || msg.includes('subir')) {
-    return 'Publicar tu vivienda en Wellhouse es muy fácil 🏡\n\n**Pasos:**\n1. Ve a tu **Dashboard**\n2. Clic en "Registrar vivienda"\n3. Completa el wizard de 6 pasos\n4. Sube tus fotos\n5. Espera la aprobación del equipo Wellhouse\n\nAl publicar ganas **+200 WP** automáticamente.\n\n[Ir a registrar vivienda →](/properties/create)'
-  }
-  if (msg.includes('hola') || msg.includes('buenas') || msg.includes('hey') || msg.includes('buenos')) {
-    return '¡Hola! 👋 Estoy aquí para ayudarte a encontrar el alojamiento perfecto o resolver tus dudas sobre Wellhouse.\n\n¿Buscas vivienda en alguna región específica de Colombia?'
-  }
-  if (msg.includes('medellín') || msg.includes('medellin') || msg.includes('antioquia') || msg.includes('poblado')) {
-    return 'Medellín tiene opciones increíbles en Wellhouse, especialmente en **El Poblado** y **Laureles** 🌸\n\nEncontramos lofts modernos y casas con jardín disponibles.\n\n[Buscar en Medellín →](/search?q=medellin)'
-  }
-  if (msg.includes('villav') || msg.includes('llano') || msg.includes('meta')) {
-    return 'El Llano tiene fincas ganaderas espectaculares con horizontes infinitos 🐄🌅\n\nVillavicencio y sus alrededores son perfectos para desconectarse.\n\n[Ver fincas en el Llano →](/search?category=fincas&q=llano)'
-  }
-  if (msg.includes('precio') || msg.includes('cuánto') || msg.includes('costo') || msg.includes('vale')) {
-    return 'En Wellhouse no pagas con dinero, sino con **WellPoints** 💛\n\nCada vivienda tiene un **WellRank™** que indica cuántos WP cuesta por noche. Cuanto más completa y mejor valorada sea, más WP pedirá — y más WP recibirás tú por hospedar.\n\nEl rango típico es de **30 a 300 WP por noche**.'
-  }
-
-  // Fallback
-  return `Entendí "${userMsg}" 🤔\n\nPor ahora puedo ayudarte con:\n• Buscar viviendas por región colombiana\n• Información sobre WellPoints\n• Cómo publicar tu vivienda\n\n¿Quieres que busque viviendas en algún destino específico?`
-}
+// Real LLM endpoint logic is now handled via useChat hooks from ai/react
 
 // Render markdown-lite: bold (**text**) and links ([text](url))
 function renderBotText(text: string) {
@@ -102,17 +64,19 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
     }
   };
 
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'bot', text: initialMessage || WELCOME }
-  ]);
-  const [input, setInput] = useState('');
-  const [typing, setTyping] = useState(false);
+  const { messages, input, handleInputChange, handleSubmit, setMessages, append, isLoading } = useChat({
+    api: '/api/chat',
+    initialMessages: [
+      { id: 'welcome', role: 'assistant', content: initialMessage || WELCOME }
+    ]
+  });
+
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (initialMessage && messages.length === 1 && messages[0].text !== initialMessage) {
-      setMessages([{ role: 'bot', text: initialMessage }]);
+    if (initialMessage && messages.length === 1 && messages[0].content !== initialMessage) {
+      setMessages([{ id: 'welcome', role: 'assistant', content: initialMessage }]);
     }
   }, [initialMessage]);
 
@@ -121,7 +85,7 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
       const customEvent = e as CustomEvent;
       const context = customEvent.detail?.context;
       if (context) {
-        setMessages([{ role: 'bot', text: `¡Hola! Vi que estabas en la página de "Cómo Funciona". ¿En qué te puedo ayudar con el tema: "${context}"?` }]);
+        setMessages([{ id: 'welcome', role: 'assistant', content: `¡Hola! Vi que estabas en la página de "Cómo Funciona". ¿En qué te puedo ayudar con el tema: "${context}"?` }]);
       }
       handleSetOpen(true);
     };
@@ -137,19 +101,21 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
     }
   }, [open, messages]);
 
-  const send = (text: string) => {
+  const sendPrompt = (text: string) => {
     if (!text.trim()) return
-    setMessages((prev) => [...prev, { role: 'user', text: text.trim() }])
-    setInput('')
-    setTyping(true)
-    setTimeout(() => {
-      setMessages((prev) => [...prev, { role: 'bot', text: getBotResponse(text) }])
-      setTyping(false)
-    }, 700 + Math.random() * 400)
+    append({ role: 'user', content: text })
   }
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input) }
+  const handleKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) { 
+      e.preventDefault(); 
+      if (input.trim() && !isLoading) {
+        // useChat's handleSubmit usually takes a form event, but we can synthesize one or just use append
+        append({ role: 'user', content: input });
+        // The input clearing is handled manually if we use append, or we can use fake event
+        handleInputChange({ target: { value: '' } } as any);
+      }
+    }
   }
 
   return (
@@ -221,8 +187,8 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-base-paper">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div
                   className={`max-w-[85%] px-4 py-3 rounded-radius-md font-inter text-sm leading-relaxed ${
                     msg.role === 'user'
@@ -230,13 +196,13 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
                       : 'bg-white text-ink-teal-900 border border-surface-mist-dark rounded-bl-sm shadow-shadow-sm'
                   }`}
                 >
-                  {msg.role === 'bot' ? renderBotText(msg.text) : msg.text}
+                  {msg.role === 'assistant' ? renderBotText(msg.content) : msg.content}
                 </div>
               </div>
             ))}
 
             {/* Typing indicator */}
-            {typing && (
+            {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white border border-surface-mist-dark rounded-radius-md rounded-bl-sm px-4 py-3 shadow-shadow-sm flex gap-1 items-center">
                   {[0, 1, 2].map((i) => (
@@ -259,7 +225,7 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
               {QUICK_PROMPTS.map((prompt) => (
                 <button
                   key={prompt}
-                  onClick={() => send(prompt)}
+                  onClick={() => sendPrompt(prompt)}
                   className="flex-shrink-0 bg-white border border-surface-mist-dark text-ink-teal-700 font-inter text-xs px-3 py-2 rounded-radius-sm hover:border-ink-teal-500 hover:text-ink-teal-900 transition-all whitespace-nowrap"
                 >
                   {prompt}
@@ -275,14 +241,19 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
               type="text"
               placeholder="Escribe tu pregunta…"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={handleInputChange}
               onKeyDown={handleKey}
               className="flex-1 px-3 py-2.5 border border-surface-mist-dark rounded-radius-sm font-inter text-sm text-ink-teal-900 placeholder:text-text-muted-custom bg-base-paper focus:outline-none focus:ring-2 focus:ring-ink-teal-500 transition-all"
               aria-label="Mensaje para WellBot"
             />
             <button
-              onClick={() => send(input)}
-              disabled={!input.trim() || typing}
+              onClick={() => {
+                if (input.trim() && !isLoading) {
+                  append({ role: 'user', content: input });
+                  handleInputChange({ target: { value: '' } } as any);
+                }
+              }}
+              disabled={!input.trim() || isLoading}
               className="w-10 h-10 bg-accent-mango rounded-radius-sm flex items-center justify-center text-white hover:bg-accent-mango-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex-shrink-0"
               aria-label="Enviar mensaje"
             >
