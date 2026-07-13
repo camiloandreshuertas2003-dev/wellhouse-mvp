@@ -8,8 +8,13 @@ import {
   Wifi, ChefHat, Car, Snowflake, Thermometer, WashingMachine, Tv,
   Waves, Dumbbell, Trees, Mountain, ArrowUp, PawPrint, Laptop, Flame,
   Umbrella, Coffee, BedDouble, Star, Home, MapPin, Bed, Camera, Edit3, Send,
-  Building, Tent, Palmtree, Map, Sparkles
+  Building, Tent, Palmtree, Map as MapIcon, Sparkles, Search
 } from 'lucide-react'
+import { GoogleMap, useLoadScript, Marker } from '@react-google-maps/api'
+import usePlacesAutocomplete, { getGeocode, getLatLng } from 'use-places-autocomplete'
+
+const Map = GoogleMap as any
+const MapMarker = Marker as any
 
 // No more fake wellrank calculations
 interface FormData {
@@ -34,6 +39,8 @@ interface FormData {
   availableTo: string
   minStay: string
   maxStay: string
+  latitude: number | null
+  longitude: number | null
 }
 
 const STEPS = [
@@ -81,9 +88,11 @@ const PROPERTY_CATEGORIES = [
   { id: 'urbano', label: 'Urbano', desc: 'Ciudad, barrio cultural', Icon: Building },
   { id: 'playa', label: 'Playa y costa', desc: 'A orillas del mar', Icon: Palmtree },
   { id: 'montana', label: 'Montaña', desc: 'Andes, paisaje de altura', Icon: Mountain },
-  { id: 'finca', label: 'Fincas y campo', desc: 'Finca cafetera, rural', Icon: Map },
+  { id: 'finca', label: 'Fincas y campo', desc: 'Finca cafetera, rural', Icon: MapIcon },
   { id: 'exclusivo', label: 'Exclusivo', desc: 'Villa, lujo premium', Icon: Sparkles },
 ]
+
+const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places']
 
 export default function CreatePropertyPage() {
   const router = useRouter()
@@ -97,11 +106,19 @@ export default function CreatePropertyPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [amenities, setAmenities] = useState<string[]>([])
 
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+    libraries,
+  })
+
   const [form, setForm] = useState<FormData>({
     title: '', type: '', category: '', description_space: '', description_area: '',
     description_directions: '', description_host: '', rules: '', address: '', city: '', country: '',
     postalCode: '', bedrooms: '', bathrooms: '', capacity: '', beds: '',
-    areaSqm: '', availableFrom: '', availableTo: '', minStay: '1', maxStay: '30',
+    areaSqm: '', availableFrom: '', availableTo: '', minStay: '2',
+    maxStay: '30',
+    latitude: null,
+    longitude: null,
   })
 
   useEffect(() => {
@@ -149,6 +166,8 @@ export default function CreatePropertyPage() {
             description_area: areaMatch ? areaMatch[1].trim() : '',
             description_directions: dirMatch ? dirMatch[1].trim() : '',
             description_host: hostMatch ? hostMatch[1].trim() : '',
+            latitude: prop.latitude || null,
+            longitude: prop.longitude || null,
           }))
           setAmenities(prop.amenities || [])
           setPhotos(prop.images || [])
@@ -160,7 +179,7 @@ export default function CreatePropertyPage() {
     initUserAndProperty()
   }, [router])
 
-  const set = (field: keyof FormData, value: string) =>
+  const set = (field: keyof FormData, value: string | number | null) =>
     setForm(prev => ({ ...prev, [field]: value }))
 
   const toggleAmenity = (id: string) =>
@@ -252,7 +271,9 @@ export default function CreatePropertyPage() {
         p_max_stay:       parseInt(form.maxStay) || 30,
         p_rules:          form.rules || null,
         p_status:         'published',
-        p_wellrank:      0, // The property starts with 0 WellRank
+        p_wellrank:       0, // The property starts with 0 WellRank
+        p_latitude:       form.latitude,
+        p_longitude:      form.longitude,
       })
 
       if (saveErr) {
@@ -324,7 +345,7 @@ export default function CreatePropertyPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-[#e8e4dc] p-6 md:p-10 mb-8">
           {step === 1 && <Step1Type form={form} set={set} />}
-          {step === 2 && <Step2Location form={form} set={set} />}
+          {step === 2 && <Step2Location form={form} set={set} isLoaded={isLoaded} loadError={loadError} />}
           {step === 3 && <Step3Details form={form} set={set} amenities={amenities} toggleAmenity={toggleAmenity} />}
           {step === 4 && <Step4Photos photos={photos} onUpload={uploadPhotos} uploading={uploadingPhoto} onRemove={(url) => setPhotos(p => p.filter(x => x !== url))} onMove={movePhoto} />}
           {step === 5 && <Step5Description form={form} set={set} />}
@@ -411,33 +432,146 @@ function Step1Type({ form, set }: { form: FormData; set: (f: keyof FormData, v: 
   )
 }
 
-function Step2Location({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
+function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set: (f: keyof FormData, v: string | number | null) => void; isLoaded: boolean; loadError: Error | undefined }) {
   const inputClass = "w-full p-4 bg-white border border-[#cbd5cc] rounded-xl font-inter text-[#1a3c34] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
   const labelClass = "block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-2"
+
+  const {
+    ready,
+    value,
+    setValue,
+    suggestions: { status, data },
+    clearSuggestions,
+    init
+  } = usePlacesAutocomplete({
+    initOnMount: false,
+    requestOptions: {
+      // You could restrict to a country here, e.g. componentRestrictions: { country: 'co' }
+    },
+    debounce: 300,
+    defaultValue: form.address,
+  });
+
+  useEffect(() => {
+    if (isLoaded) {
+      init();
+    }
+  }, [isLoaded, init]);
+
+  const handleSelect = async (address: string) => {
+    setValue(address, false);
+    clearSuggestions();
+    try {
+      const results = await getGeocode({ address });
+      const { lat, lng } = await getLatLng(results[0]);
+      
+      set('address', address);
+      set('latitude', lat);
+      set('longitude', lng);
+
+      // Try to parse city and country
+      const addressComponents = results[0].address_components;
+      let city = '';
+      let country = '';
+      let postalCode = '';
+
+      addressComponents.forEach((component: any) => {
+        if (component.types.includes('locality')) {
+          city = component.long_name;
+        } else if (component.types.includes('country')) {
+          country = component.long_name;
+        } else if (component.types.includes('postal_code')) {
+          postalCode = component.long_name;
+        }
+      });
+
+      if (city) set('city', city);
+      if (country) set('country', country);
+      if (postalCode) set('postalCode', postalCode);
+
+    } catch (error) {
+      console.error("Error: ", error);
+    }
+  };
+
+  const center = {
+    lat: form.latitude || 4.7110, // Default to Colombia center if null
+    lng: form.longitude || -74.0721
+  };
 
   return (
     <div>
       <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">¿Dónde está ubicada?</h2>
-      <p className="text-[#6b7280] mb-8">La dirección exacta se revelará a tus huéspedes solo cuando el intercambio esté confirmado.</p>
+      <p className="text-[#6b7280] mb-8">Busca tu dirección. La ubicación exacta se revelará a tus huéspedes solo cuando el intercambio esté confirmado.</p>
       
       <div className="space-y-6">
-        <div>
-          <label className={labelClass}>País *</label>
-          <input className={inputClass} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
+        <div className="relative">
+          <label className={labelClass}>Buscador de dirección</label>
+          <div className="relative">
+            <Search className="absolute left-4 top-4 text-[#9ca3af] w-5 h-5" />
+            <input 
+              className={`${inputClass} pl-12`} 
+              value={value} 
+              onChange={e => setValue(e.target.value)} 
+              disabled={!ready}
+              placeholder="Empieza a escribir tu dirección..." 
+            />
+          </div>
+          {status === "OK" && (
+            <ul className="absolute z-10 w-full bg-white border border-[#cbd5cc] rounded-xl mt-1 shadow-lg max-h-60 overflow-y-auto">
+              {data.map(({ place_id, description }) => (
+                <li
+                  key={place_id}
+                  onClick={() => handleSelect(description)}
+                  className="p-3 hover:bg-[#f8f7f4] cursor-pointer text-[#1a3c34] border-b border-[#f3f4f6] last:border-0"
+                >
+                  {description}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* The map */}
+        <div className="h-[300px] w-full rounded-xl overflow-hidden border border-[#cbd5cc] bg-gray-100">
+          {loadError ? (
+            <div className="w-full h-full flex items-center justify-center text-red-500">Error cargando mapa</div>
+          ) : !isLoaded ? (
+            <div className="w-full h-full flex items-center justify-center">Cargando mapa...</div>
+          ) : (
+            <Map
+              mapContainerStyle={{ width: '100%', height: '100%' }}
+              center={center}
+              zoom={form.latitude ? 15 : 5}
+              options={{ disableDefaultUI: true, zoomControl: true }}
+              onClick={(e: any) => {
+                if (e.latLng) {
+                  set('latitude', e.latLng.lat());
+                  set('longitude', e.latLng.lng());
+                }
+              }}
+            >
+              {form.latitude && form.longitude && (
+                <MapMarker position={{ lat: form.latitude, lng: form.longitude }} draggable onDragEnd={(e: any) => {
+                  if (e.latLng) {
+                    set('latitude', e.latLng.lat());
+                    set('longitude', e.latLng.lng());
+                  }
+                }} />
+              )}
+            </Map>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#e8e4dc]">
+          <div>
+            <label className={labelClass}>País *</label>
+            <input className={inputClass} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
+          </div>
           <div>
             <label className={labelClass}>Ciudad *</label>
             <input className={inputClass} value={form.city} onChange={e => set('city', e.target.value)} placeholder="Ej: Medellín" />
           </div>
-          <div>
-            <label className={labelClass}>Código Postal</label>
-            <input className={inputClass} value={form.postalCode} onChange={e => set('postalCode', e.target.value)} placeholder="050001" />
-          </div>
-        </div>
-        <div>
-          <label className={labelClass}>Dirección (privada)</label>
-          <input className={inputClass} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Calle 10 #43-25" />
         </div>
       </div>
     </div>

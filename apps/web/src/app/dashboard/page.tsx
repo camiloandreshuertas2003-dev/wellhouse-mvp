@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Home, Repeat, MessageCircle, Heart, Star,
-  Settings, Coins, LogOut, ChevronRight, Sparkles, MoreHorizontal,
+  Settings, Coins, LogOut, Trash2, ChevronRight, Sparkles, MoreHorizontal,
   PlusCircle, Eye, Pencil, TrendingUp, CheckCircle2, Clock, XCircle, ArrowUpRight,
   Video
 } from 'lucide-react'
@@ -727,6 +727,28 @@ function WellPointsTab({ profile, transactions }: { profile: UserProfile | null;
 
 // ─── MY PROPERTY TAB (Módulo 3.3) ────────────────────────────────────────────
 function MyPropertyTab({ property, loadingProperty }: { property: Property | null; loadingProperty: boolean }) {
+  const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
+
+  const handleDelete = async () => {
+    if (!property) return
+    const confirmed = window.confirm('¿Estás seguro de que deseas eliminar tu vivienda? Esta acción no se puede deshacer y borrará permanentemente todos los datos asociados a ella.')
+    if (!confirmed) return
+
+    setIsDeleting(true)
+    try {
+      const { error } = await supabase.from('properties').delete().eq('id', property.id)
+      if (error) throw error
+      alert('Vivienda eliminada exitosamente.')
+      window.location.reload()
+    } catch (err: any) {
+      console.error(err)
+      alert('Error al eliminar la vivienda: ' + err.message)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (loadingProperty) {
     return (
       <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6 space-y-3">
@@ -807,6 +829,10 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
           className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-[#e8e4dc] rounded-xl text-sm font-semibold text-[#1a3c34] hover:bg-[#f8f7f4] transition-colors">
           <Eye className="w-4 h-4" /> Ver como huésped
         </Link>
+        <button onClick={handleDelete} disabled={isDeleting}
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-red-200 bg-red-50 text-red-600 rounded-xl text-sm font-semibold hover:bg-red-100 transition-colors disabled:opacity-50">
+          <Trash2 className="w-4 h-4" /> {isDeleting ? 'Eliminando...' : 'Eliminar'}
+        </button>
       </div>
     </div>
   )
@@ -898,6 +924,12 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
                   <p className="text-xs text-[#6b7280] mt-0.5">
                     WellRank: {ex.wellrank_snapshot} WP/noche = {ex.wellrank_snapshot * ex.nights} WP totales
                   </p>
+                  <div className="mt-2">
+                    <Link href={`/users/${isHost ? ex.guest_id : ex.host_id}`}
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                      Ver Perfil del {isHost ? 'Huésped' : 'Anfitrión'}
+                    </Link>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1.5 shrink-0">
                   {isHost && ex.status === 'pending' && (
