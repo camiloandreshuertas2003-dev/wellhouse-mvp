@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useChat } from 'ai/react'
 import { usePathname, useSearchParams } from 'next/navigation'
 
-export default function WellBotBubble() {
+function WellBotBubbleContent() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -149,5 +149,13 @@ export default function WellBotBubble() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function WellBotBubble() {
+  return (
+    <React.Suspense fallback={null}>
+      <WellBotBubbleContent />
+    </React.Suspense>
   )
 }
