@@ -1422,14 +1422,14 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
       <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
         <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-1">Historias de Anfitriones 🎥</h2>
         <p className="text-sm text-[#6b7280] mb-4">
-          Muestra tu casa y las actividades de tu zona con videos cortos tipo Instagram. Solo necesitas subir tu video a YouTube (puede ser oculto si quieres privacidad) y pegar el enlace aquí.
+          Muestra tu casa y las actividades de tu zona con videos cortos tipo Instagram. Solo necesitas subir tu video a YouTube (puede ser oculto si quieres privacidad) y pegar el enlace aquí. <strong>Nota importante: El video debe tener una duración máxima de 1 minuto</strong>.
         </p>
 
         {/* Formulario */}
         <form onSubmit={handleAddStory} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-[#1a3c34] mb-1">
-              Enlace de YouTube Short o Video
+              Enlace de YouTube Short o Video (Máx. 1 minuto)
             </label>
             <div className="flex gap-2">
               <input
@@ -1448,8 +1448,8 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
                 {adding ? 'Guardando...' : 'Publicar'}
               </button>
             </div>
-            <p className="text-[10px] text-[#6b7280] mt-1.5">
-              Acepta formatos como: `youtube.com/shorts/...`, `youtu.be/...`, o `youtube.com/watch?v=...`
+            <p className="text-[10px] text-[#6b7280] mt-1.5 flex items-center gap-1">
+              <span>ℹ️</span> Acepta formatos como `youtube.com/shorts/...`, `youtu.be/...`, o `youtube.com/watch?v=...`. Tu video se reproducirá automáticamente en la máxima resolución HD posible.
             </p>
           </div>
 

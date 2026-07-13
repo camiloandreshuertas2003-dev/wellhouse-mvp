@@ -29,14 +29,24 @@ interface StoryViewerProps {
 
 export default function StoryViewer({ stories, initialIndex, onClose }: StoryViewerProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex)
+  const [timeLeft, setTimeLeft] = useState(60)
   const currentStory = stories[currentIndex]
 
-  // Cambiar historia automáticamente después de 15 segundos si no interactúa
+  // Cambiar historia automáticamente después de 60 segundos si no interactúa
   useEffect(() => {
-    const timer = setTimeout(() => {
-      handleNext()
-    }, 15000)
-    return () => clearTimeout(timer)
+    setTimeLeft(60)
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval)
+          handleNext()
+          return 60
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
   }, [currentIndex])
 
   const handleNext = () => {
@@ -59,20 +69,23 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
   const propertyTitle = currentStory.properties?.title || 'Increíble vivienda'
 
   return (
-    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center select-none md:p-4">
+    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center select-none md:p-4 animate-in fade-in duration-300">
       {/* Container vertical tipo celular */}
       <div className="relative w-full h-full md:max-w-[420px] md:h-[85vh] md:rounded-[20px] overflow-hidden bg-black flex flex-col justify-between shadow-2xl">
         
         {/* Barra de progreso de historias (estilo Instagram) */}
         <div className="absolute top-3 left-0 right-0 z-30 flex gap-1 px-3">
           {stories.map((_, index) => {
-            let width = 'w-0'
-            if (index < currentIndex) width = 'w-full' // Completadas
-            if (index === currentIndex) width = 'animate-story-progress' // En curso (15s)
+            let widthStyle = '0%'
+            if (index < currentIndex) widthStyle = '100%'
+            if (index === currentIndex) widthStyle = `${((60 - timeLeft) / 60) * 100}%`
 
             return (
               <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
-                <div className={`h-full bg-white transition-all duration-300 ${width}`} />
+                <div 
+                  className="h-full bg-white transition-all duration-1000 ease-linear" 
+                  style={{ width: widthStyle }}
+                />
               </div>
             )
           })}
@@ -89,18 +102,24 @@ export default function StoryViewer({ stories, initialIndex, onClose }: StoryVie
               <p className="text-xs text-white/80 drop-shadow mt-0.5">{currentStory.location_tags}</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-lg focus:outline-none transition-colors"
-          >
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            <span className="bg-black/60 backdrop-blur-sm border border-white/10 px-2.5 py-1 rounded-full text-[10px] font-bold text-white tracking-wider flex items-center gap-1.5 shadow-sm">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+              {timeLeft}s
+            </span>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center text-lg focus:outline-none transition-colors"
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* REPRODUCTOR DE YOUTUBE (Embed vertical para Shorts) */}
         <div className="flex-1 w-full bg-black relative">
           <iframe
-            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`}
+            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`}
             title="Host Story"
             className="w-full h-full object-cover"
             allow="autoplay; encrypted-media; picture-in-picture"
