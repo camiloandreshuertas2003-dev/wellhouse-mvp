@@ -1,7 +1,7 @@
 import { Inter, Fraunces, IBM_Plex_Mono } from 'next/font/google'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
-import WellBot from '@/components/WellBot'
+import WellBotBubble from '@/components/WellBot/WellBotBubble'
 import './globals.css'
 
 const inter = Inter({ 
@@ -44,7 +44,7 @@ export default function RootLayout({
       <body className="font-inter bg-base-paper text-ink-teal-900 min-h-screen antialiased">
         <Navbar />
         {children}
-        <WellBot />
+        <WellBotBubble />
       </body>
     </html>
   )

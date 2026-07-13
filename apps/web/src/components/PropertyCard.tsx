@@ -76,10 +76,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
             </div>
           )}
 
-          {/* WellRank Ring overlay (44px) at bottom-2 right-2 */}
-          <div className="absolute bottom-2.5 right-2.5">
-            <WellRankRing value={property.wellRank} wp={property.wellRank} size={44} />
-          </div>
+
         </div>
       </Link>
 
