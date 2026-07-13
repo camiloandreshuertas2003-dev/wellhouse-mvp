@@ -1,5 +1,5 @@
 import { google } from '@ai-sdk/google'
-import { streamText, convertToCoreMessages } from 'ai'
+import { streamText } from 'ai'
 import { getWellBotTools } from '@/lib/wellbot-tools'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
@@ -39,10 +39,18 @@ export async function POST(req: Request) {
 
     const tools = getWellBotTools(supabase, userId)
 
+    // Map messages manually to ensure compatibility with CoreMessage
+    const coreMessages = (messages || []).map((m: any) => ({
+      role: m.role,
+      content: m.content,
+      // If there are tool invocations/results in the future, we pass them along
+      ...(m.toolInvocations ? { toolInvocations: m.toolInvocations } : {})
+    }))
+
     const result = await streamText({
       model: google('models/gemini-2.5-flash'),
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
-      messages: convertToCoreMessages(messages),
+      messages: coreMessages,
       tools: tools,
     })
 
