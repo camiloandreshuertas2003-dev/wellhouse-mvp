@@ -59,12 +59,18 @@ export async function POST(req: Request) {
     // Use service role for database writes if available
     const serviceSupabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey)
 
+    let cached: any = null;
     if (normalizedQuestion) {
-      const { data: cached } = await serviceSupabase
-        .from('wellbot_qa')
-        .select('answer, usage_count')
-        .eq('question', normalizedQuestion)
-        .maybeSingle();
+      try {
+        const { data } = await serviceSupabase
+          .from('wellbot_qa')
+          .select('answer, usage_count')
+          .eq('question', normalizedQuestion)
+          .maybeSingle();
+        cached = data;
+      } catch (dbError) {
+        console.error('Database cache read error (falling back to Gemini):', dbError);
+      }
 
       if (cached) {
         // Increment usage count in background (fire and forget)
@@ -97,11 +103,15 @@ export async function POST(req: Request) {
       onFinish: async ({ text, toolCalls }) => {
         // Only cache if no tools were used (to avoid caching dynamic info like property search)
         if (text && (!toolCalls || toolCalls.length === 0) && normalizedQuestion) {
-          await serviceSupabase.from('wellbot_qa').insert({
-            question: normalizedQuestion,
-            answer: text,
-            usage_count: 1
-          }).select() // ignore error if unique constraint fails
+          try {
+            await serviceSupabase.from('wellbot_qa').insert({
+              question: normalizedQuestion,
+              answer: text,
+              usage_count: 1
+            }).select(); // ignore error if unique constraint fails
+          } catch (dbError) {
+            console.error('Database cache write error:', dbError);
+          }
         }
       }
     })
