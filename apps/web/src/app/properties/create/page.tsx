@@ -345,7 +345,9 @@ export default function CreatePropertyPage() {
 
         <div className="bg-white rounded-2xl shadow-sm border border-[#e8e4dc] p-6 md:p-10 mb-8">
           {step === 1 && <Step1Type form={form} set={set} />}
-          {step === 2 && <Step2Location form={form} set={set} isLoaded={isLoaded} loadError={loadError} />}
+          {step === 2 && isLoaded && <Step2Location form={form} set={set} isLoaded={isLoaded} loadError={loadError} />}
+          {step === 2 && !isLoaded && !loadError && <div className="text-center py-10 text-gray-500">Cargando buscador y mapa...</div>}
+          {step === 2 && loadError && <div className="text-center py-10 text-red-500">Error cargando mapa</div>}
           {step === 3 && <Step3Details form={form} set={set} amenities={amenities} toggleAmenity={toggleAmenity} />}
           {step === 4 && <Step4Photos photos={photos} onUpload={uploadPhotos} uploading={uploadingPhoto} onRemove={(url) => setPhotos(p => p.filter(x => x !== url))} onMove={movePhoto} />}
           {step === 5 && <Step5Description form={form} set={set} />}
@@ -442,21 +444,13 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
     setValue,
     suggestions: { status, data },
     clearSuggestions,
-    init
   } = usePlacesAutocomplete({
-    initOnMount: false,
     requestOptions: {
-      // You could restrict to a country here, e.g. componentRestrictions: { country: 'co' }
+      // componentRestrictions: { country: 'co' }
     },
     debounce: 300,
     defaultValue: form.address,
   });
-
-  useEffect(() => {
-    if (isLoaded) {
-      init();
-    }
-  }, [isLoaded, init]);
 
   const handleSelect = async (address: string) => {
     setValue(address, false);

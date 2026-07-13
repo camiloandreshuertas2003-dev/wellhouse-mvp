@@ -463,6 +463,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
         </div>
       ) : (
         <>
+          {property?.available_from && property?.available_to && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 my-2">
+              <p className="font-inter text-xs font-semibold text-blue-800">
+                📅 Disponible del {new Date(property.available_from).toLocaleDateString('es-ES')} al {new Date(property.available_to).toLocaleDateString('es-ES')}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div>
               <label className="block font-inter text-xs font-semibold text-ink-teal-900 mb-1">Check-in</label>
