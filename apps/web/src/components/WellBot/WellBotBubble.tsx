@@ -24,12 +24,28 @@ export default function WellBotBubble() {
     return { page: 'unknown', path }
   }
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const [input, setInput] = useState('')
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)
+
+  const { messages, sendMessage, status } = useChat({
     api: '/api/chat',
     body: {
       page_context: getPageContext()
     }
   })
+
+  const isLoading = status === 'streaming' || status === 'submitted'
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!input.trim()) return
+    
+    // In @ai-sdk/react v4, sendMessage can take a string or an object. 
+    // We pass an object just to be safe.
+    // @ts-ignore
+    sendMessage({ role: 'user', content: input })
+    setInput('')
+  }
 
   // Auto-scroll al fondo cuando hay nuevos mensajes
   useEffect(() => {
