@@ -90,7 +90,7 @@ export async function POST(req: Request) {
 
     // 2. Generate response with Gemini
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: google('models/gemini-1.5-flash'),
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
       messages: coreMessages,
       tools: tools,

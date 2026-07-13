@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase'
 import PropertyCard, { type PropertyCardData } from '@/components/PropertyCard'
 import PropertyCarousel from '@/components/PropertyCarousel'
 import CategoryTabs from '@/components/CategoryTabs'
+import StoriesBar from '@/components/Stories/StoriesBar'
+import { type HostStory } from '@/components/Stories/StoryViewer'
 
 // ─── WellRank Calculator ─────────────────────────────────────────────────────
 function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): number {
@@ -94,6 +96,48 @@ const FALLBACK_REAL_PROPS: PropertyCardData[] = [
   { id: 'e1', title: 'Villa con piscina infinita en Santa Marta', location: 'Santa Marta, Magdalena', type: 'Villa', category: 'Exclusivo', bedrooms: 5, bathrooms: 4, capacity: 12, rating: 5.0, reviews: 71, image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80', verified: true, wellRank: 300 },
 ]
 
+const FALLBACK_STORIES: HostStory[] = [
+  {
+    id: 's1',
+    property_id: 'f1',
+    user_id: 'mock-user-1',
+    youtube_video_id: '5k_G7V6J7wM',
+    thumbnail_url: 'https://img.youtube.com/vi/5k_G7V6J7wM/hqdefault.jpg',
+    location_tags: 'Salento, Quindío',
+    properties: {
+      title: 'Finca cafetera con vista al Nevado',
+      images: ['https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80'],
+      users: { full_name: 'Carlos Mendoza' }
+    }
+  },
+  {
+    id: 's2',
+    property_id: 'p1',
+    user_id: 'mock-user-2',
+    youtube_video_id: 'd26Z_W25q8s',
+    thumbnail_url: 'https://img.youtube.com/vi/d26Z_W25q8s/hqdefault.jpg',
+    location_tags: 'Cartagena, Bolívar',
+    properties: {
+      title: 'Casa frente al mar en Cartagena',
+      images: ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2?auto=format&fit=crop&w=800&q=80'],
+      users: { full_name: 'Ana María' }
+    }
+  },
+  {
+    id: 's3',
+    property_id: 'u1',
+    user_id: 'mock-user-3',
+    youtube_video_id: 'n1Fq121G0o0',
+    thumbnail_url: 'https://img.youtube.com/vi/n1Fq121G0o0/hqdefault.jpg',
+    location_tags: 'Medellín, Antioquia',
+    properties: {
+      title: 'Loft de diseño en El Poblado',
+      images: ['https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'],
+      users: { full_name: 'Juan Pablo' }
+    }
+  }
+]
+
 export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -102,6 +146,55 @@ export default function SearchPage() {
   const [showFilters, setShowFilters] = useState(false)
   const [realProps, setRealProps] = useState<PropertyCardData[]>([])
   const [loading, setLoading] = useState(true)
+  const [stories, setStories] = useState<HostStory[]>([])
+
+  // Fetch host stories from Supabase
+  useEffect(() => {
+    async function loadStories() {
+      try {
+        const { data, error } = await supabase
+          .from('host_stories')
+          .select(`
+            id,
+            property_id,
+            user_id,
+            youtube_video_id,
+            thumbnail_url,
+            location_tags,
+            properties (
+              title,
+              images,
+              users (
+                full_name
+              )
+            )
+          `)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+        if (data && data.length > 0) {
+          setStories(data as any[])
+        } else {
+          setStories(FALLBACK_STORIES)
+        }
+      } catch (err) {
+        console.error('Error fetching stories:', err)
+        setStories(FALLBACK_STORIES)
+      }
+    }
+    loadStories()
+  }, [])
+
+  // Sort stories by matching location with search query
+  const filteredStories = [...stories].sort((a, b) => {
+    if (!debouncedQuery) return 0
+    const q = debouncedQuery.toLowerCase()
+    const aMatch = a.location_tags.toLowerCase().includes(q) || (a.properties?.title || '').toLowerCase().includes(q)
+    const bMatch = b.location_tags.toLowerCase().includes(q) || (b.properties?.title || '').toLowerCase().includes(q)
+    if (aMatch && !bMatch) return -1
+    if (!aMatch && bMatch) return 1
+    return 0
+  })
 
   // Debounce query
   useEffect(() => {
@@ -315,6 +408,7 @@ export default function SearchPage() {
       </div>
 
       {/* ── CONTENT AREA ───────────────────────────────────────────────── */}
+      <StoriesBar stories={filteredStories} />
 
       {/* "TODO" view: show all category carousels (exactly like the screenshot) */}
       {category === 'all' && !debouncedQuery && (

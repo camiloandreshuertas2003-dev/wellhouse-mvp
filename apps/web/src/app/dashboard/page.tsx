@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation'
 import {
   LayoutDashboard, Home, Repeat, MessageCircle, Heart, Star,
   Settings, Coins, LogOut, ChevronRight, Sparkles, MoreHorizontal,
-  PlusCircle, Eye, Pencil, TrendingUp, CheckCircle2, Clock, XCircle, ArrowUpRight
+  PlusCircle, Eye, Pencil, TrendingUp, CheckCircle2, Clock, XCircle, ArrowUpRight,
+  Video
 } from 'lucide-react'
 import PropertyCarousel from '@/components/PropertyCarousel'
 import { type PropertyCardData } from '@/components/PropertyCard'
@@ -167,6 +168,7 @@ export default function DashboardPage() {
   ]
   const MORE_TABS = [
     { id: 'quests',     label: 'Mis Retos',      Icon: Sparkles },
+    { id: 'stories',    label: 'Historias',      Icon: Video },
     { id: 'favorites',  label: 'Favoritos',      Icon: Heart },
     { id: 'reviews',    label: 'Reseñas',        Icon: Star },
     { id: 'settings',   label: 'Configuración',  Icon: Settings },
@@ -309,6 +311,9 @@ export default function DashboardPage() {
             )}
             {activeTab === 'quests' && (
               <QuestsTab userId={userId} onComplete={fetchData} />
+            )}
+            {activeTab === 'stories' && (
+              <StoriesTab property={property} userId={userId} />
             )}
             {activeTab === 'messages' && <MessagesTab />}
             {activeTab === 'favorites' && <FavoritesTab />}
@@ -1296,6 +1301,205 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  )
+}
+
+// ─── STORIES TAB (Módulo Historias de YouTube Shorts) ────────────────────────
+function StoriesTab({ property, userId }: { property: Property | null; userId: string }) {
+  const [stories, setStories] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [youtubeUrl, setYoutubeUrl] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const fetchStories = async () => {
+    if (!property) return
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('host_stories')
+        .select('*')
+        .eq('property_id', property.id)
+        .order('created_at', { ascending: false })
+      if (data) setStories(data)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchStories()
+  }, [property])
+
+  const handleAddStory = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    if (!property) return
+
+    const videoId = getYouTubeId(youtubeUrl)
+    if (!videoId) {
+      setError('Enlace de YouTube no válido. Debe ser un video normal o un Short.')
+      return
+    }
+
+    setAdding(true)
+    const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+    const locationTags = `${property.city}, ${property.country}`
+
+    try {
+      const { error: insertError } = await supabase
+        .from('host_stories')
+        .insert({
+          property_id: property.id,
+          user_id: userId,
+          youtube_url: youtubeUrl,
+          youtube_video_id: videoId,
+          thumbnail_url: thumbnailUrl,
+          location_tags: locationTags
+        })
+
+      if (insertError) throw insertError
+
+      setSuccess('¡Tu historia de YouTube Short ha sido publicada! Ahora aparecerá en la página de búsqueda.')
+      setYoutubeUrl('')
+      fetchStories()
+    } catch (err: any) {
+      setError('Error al guardar: ' + (err.message || err))
+    } finally {
+      setAdding(false)
+    }
+  }
+
+  const handleDeleteStory = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta historia?')) return
+    try {
+      const { error } = await supabase
+        .from('host_stories')
+        .delete()
+        .eq('id', id)
+      if (error) throw error
+      fetchStories()
+    } catch (err: any) {
+      alert('Error al eliminar: ' + err.message)
+    }
+  }
+
+  if (!property) {
+    return (
+      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-8 text-center">
+        <div className="w-16 h-16 bg-[#f8f7f4] rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+          🏡
+        </div>
+        <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-2">Publica tu vivienda primero</h2>
+        <p className="text-sm text-[#6b7280] max-w-sm mx-auto mb-6">
+          Necesitas tener una vivienda registrada y publicada en la plataforma para poder subir historias de video y mostrárselas a los huéspedes.
+        </p>
+        <button
+          onClick={() => window.location.href = '/properties/create'}
+          className="px-5 py-2.5 bg-[#1a3c34] text-white font-semibold rounded-xl text-sm hover:bg-[#122b25] transition-colors"
+        >
+          Publicar mi Vivienda
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Explicación */}
+      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+        <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-1">Historias de Anfitriones 🎥</h2>
+        <p className="text-sm text-[#6b7280] mb-4">
+          Muestra tu casa y las actividades de tu zona con videos cortos tipo Instagram. Solo necesitas subir tu video a YouTube (puede ser oculto si quieres privacidad) y pegar el enlace aquí.
+        </p>
+
+        {/* Formulario */}
+        <form onSubmit={handleAddStory} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#1a3c34] mb-1">
+              Enlace de YouTube Short o Video
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={youtubeUrl}
+                onChange={(e) => setYoutubeUrl(e.target.value)}
+                placeholder="Ej: https://www.youtube.com/shorts/ABC123xyz"
+                className="flex-1 px-4 py-2.5 border border-[#cbd5cc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3c34] bg-[#f8f7f4]"
+                required
+              />
+              <button
+                type="submit"
+                disabled={adding || !youtubeUrl}
+                className="px-5 py-2.5 bg-[#1a3c34] hover:bg-[#122b25] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+              >
+                {adding ? 'Guardando...' : 'Publicar'}
+              </button>
+            </div>
+            <p className="text-[10px] text-[#6b7280] mt-1.5">
+              Acepta formatos como: `youtube.com/shorts/...`, `youtu.be/...`, o `youtube.com/watch?v=...`
+            </p>
+          </div>
+
+          {error && <p className="text-xs text-red-600 font-semibold">{error}</p>}
+          {success && <p className="text-xs text-emerald-600 font-semibold">{success}</p>}
+        </form>
+      </div>
+
+      {/* Grid de Historias Existentes */}
+      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+        <h3 className="font-fraunces font-bold text-sm text-[#1a3c34] mb-4">Tus Historias Publicadas</h3>
+        
+        {loading ? (
+          <p className="text-xs text-[#6b7280]">Cargando tus historias...</p>
+        ) : stories.length === 0 ? (
+          <div className="text-center py-10">
+            <span className="text-3xl block mb-2">✨</span>
+            <p className="text-xs text-[#6b7280]">Aún no tienes historias publicadas. ¡Crea la primera arriba!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+            {stories.map((story) => (
+              <div key={story.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-[#e8e4dc] shadow-sm">
+                <img
+                  src={story.thumbnail_url}
+                  alt="YouTube Thumbnail"
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-300"
+                />
+                
+                {/* Overlay de Degradado */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+
+                {/* Botón de Eliminar */}
+                <button
+                  onClick={() => handleDeleteStory(story.id)}
+                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-600/90 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow-md text-xs font-bold"
+                  title="Eliminar historia"
+                >
+                  ✕
+                </button>
+
+                {/* Info */}
+                <div className="absolute bottom-3 left-3 right-3 text-white">
+                  <p className="text-[10px] font-bold text-amber-400 leading-none">Shorts</p>
+                  <p className="text-xs font-semibold mt-1 truncate">{property.city}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
