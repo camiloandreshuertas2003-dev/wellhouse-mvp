@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { streamText } from 'ai'
 import { getWellBotTools } from '@/lib/wellbot-tools'
 import { createClient } from '@supabase/supabase-js'
@@ -6,6 +6,10 @@ import { NextResponse } from 'next/server'
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+})
 
 const SYSTEM_PROMPT = `
 Eres WellBot, el asistente inteligente de Wellhouse. Tu tono es cercano, claro y colombiano (sin ser exageradamente informal).
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
     }))
 
     const result = await streamText({
-      model: google('models/gemini-2.5-flash'),
+      model: google('gemini-1.5-flash'),
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
       messages: coreMessages,
       tools: tools,
