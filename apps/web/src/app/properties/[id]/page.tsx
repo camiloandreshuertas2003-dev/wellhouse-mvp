@@ -334,7 +334,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       .eq('user_id', user.id)
       .maybeSingle()
 
-    const balance = bal?.current_balance ?? 100
+    const balance = bal?.current_balance ?? 0
     if (balance < totalWP) {
       setBookError(`Necesitas ${totalWP} WP pero tienes ${balance} WP. Hospeda a alguien para ganar más.`)
       return

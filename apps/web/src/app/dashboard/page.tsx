@@ -258,7 +258,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="pt-2">
                   <Link href="/rankings" className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-ink-teal-900 bg-surface-mist hover:bg-surface-mist-dark transition-colors">
-                    Ver Tabla de Líderes 🏆
+                    Ver Tabla de Líderes
                   </Link>
                 </div>
               </div>
@@ -1080,8 +1080,7 @@ function SettingsTab({
       setMessage(null)
       try {
         const fileExt = file.name.split('.').pop()
-        const fileName = `${userId}-${Math.random()}.${fileExt}`
-        const filePath = `avatars/${fileName}`
+        const filePath = `${userId}-${Math.random()}.${fileExt}`
   
         const { error: uploadError } = await supabase.storage
           .from('avatars')
@@ -1104,6 +1103,10 @@ function SettingsTab({
 
 
   const handleSave = async () => {
+    if ((bio || '').trim().length < 100) {
+      setMessage('Error: Tu presentación fraternal debe tener al menos 100 caracteres para transmitir confianza a la comunidad.')
+      return
+    }
     setSaving(true)
     setMessage(null)
     try {
@@ -1164,14 +1167,25 @@ function SettingsTab({
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Biografía / Descripción corta</label>
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Presentación Fraternal (Biografía)</label>
+            <p className="text-[11px] text-[#6b7280] mb-2 leading-relaxed">
+              Preséntate fraternalmente: comparte tu profesión, pasatiempos, cómo viajas y qué te motiva de esta comunidad. Esto aumentará la confianza para futuros intercambios.
+            </p>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              rows={3}
-              placeholder="Cuéntanos un poco sobre ti y tus preferencias de viaje..."
+              rows={4}
+              placeholder="Hola, soy Camilo. Me encanta la música, viajo con mi perro..."
               className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition resize-none"
             />
+            <div className="flex justify-between items-center mt-1">
+              <span className="text-[10px] text-[#6b7280]">
+                Mínimo 100 caracteres para inspirar confianza
+              </span>
+              <span className={`text-[10px] font-bold ${(bio || '').length < 100 ? 'text-red-500' : 'text-blue-600'}`}>
+                {(bio || '').length} caracteres
+              </span>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Teléfono de contacto</label>
@@ -1202,7 +1216,8 @@ function SettingsTab({
                   </label>
                 </div>
                 <div className="text-xs text-text-muted-custom">
-                  Haz clic en la imagen para subir una nueva foto desde tu dispositivo.
+                  Haz clic en el círculo para subir una foto real desde tu galería.<br/>
+                  <span className="text-[10px] text-[#6b7280]">Una foto donde se te vea la cara con buena luz genera más confianza que un logo o una foto de paisaje — los perfiles con foto real reciben más solicitudes de intercambio.</span>
                 </div>
               </div>
           </div>
@@ -1225,7 +1240,7 @@ function SettingsTab({
 
         {isVerified ? (
           <div className="flex items-center gap-2.5 p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-800 text-sm font-semibold">
-            <span className="text-lg">🛡️</span> Cuenta y Vivienda Verificadas Oficialmente
+            <CheckCircle2 className="w-5 h-5 text-blue-600 inline-block mr-1" /> Cuenta y Vivienda Verificadas Oficialmente
           </div>
         ) : (
           <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1363,7 +1378,7 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
               {quest.status === 'completed' ? (
                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">✓</div>
               ) : (
-                <div className="w-8 h-8 rounded-full bg-[#f0ede8] flex items-center justify-center text-[#cbd5cc] font-bold text-sm">⏳</div>
+                <div className="w-8 h-8 rounded-full bg-[#f0ede8] flex items-center justify-center text-[#cbd5cc] font-bold text-sm"><Clock className="w-4 h-4 text-[#cbd5cc]" /></div>
               )}
             </div>
             <div className="flex-1 min-w-0">
@@ -1479,8 +1494,8 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
   if (!property) {
     return (
       <div className="bg-white rounded-2xl border border-surface-mist-dark p-8 text-center">
-        <div className="w-16 h-16 bg-surface-mist rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
-          🏡
+        <div className="w-16 h-16 bg-surface-mist rounded-full flex items-center justify-center mx-auto mb-4">
+          <Home className="w-8 h-8 text-[#cbd5cc]" />
         </div>
         <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-2">Publica tu vivienda primero</h2>
         <p className="text-sm text-[#6b7280] max-w-sm mx-auto mb-6">
@@ -1500,7 +1515,9 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
     <div className="space-y-6">
       {/* Explicación */}
       <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
-        <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-1">Historias de Anfitriones 🎥</h2>
+        <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-1 flex items-center gap-1.5">
+          Historias de Anfitriones <Video className="w-5 h-5 text-ink-teal-900" />
+        </h2>
         <p className="text-sm text-[#6b7280] mb-4">
           Muestra tu casa y las actividades de tu zona con videos cortos tipo Instagram. Solo necesitas subir tu video a YouTube (puede ser oculto si quieres privacidad) y pegar el enlace aquí. <strong>Nota importante: El video debe tener una duración máxima de 1 minuto</strong>.
         </p>
@@ -1546,7 +1563,7 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
           <p className="text-xs text-[#6b7280]">Cargando tus historias...</p>
         ) : stories.length === 0 ? (
           <div className="text-center py-10">
-            <span className="text-3xl block mb-2">✨</span>
+            <Sparkles className="w-8 h-8 text-[#cbd5cc] mx-auto mb-2" />
             <p className="text-xs text-[#6b7280]">Aún no tienes historias publicadas. ¡Crea la primera arriba!</p>
           </div>
         ) : (

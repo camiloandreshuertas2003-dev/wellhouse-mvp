@@ -280,14 +280,8 @@ export default function CreatePropertyPage() {
         throw new Error(saveErr.message || 'Error al guardar la vivienda')
       }
 
-      // Automatically award 100 WellPoints only if it's a new property (propertyId is null)
-      if (!propertyId) {
-        await fetch('/api/wellpoints/onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId })
-        })
-      }
+      // La recompensa de WellPoints por publicar (150 WP) ya está gestionada
+      // completamente por el backend (upsert_property) y la tabla user_quests.
 
       router.push('/dashboard?published=true')
     } catch (err) {
