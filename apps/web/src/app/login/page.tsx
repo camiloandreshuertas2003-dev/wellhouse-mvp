@@ -80,7 +80,7 @@ export default function LoginPage() {
       {/* Left panel — branding (desktop only) */}
       <div 
         className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden bg-cover bg-center"
-        style={{ backgroundImage: "url('/login_bg_v2.jpg')" }}
+        style={{ backgroundImage: "url('/login_bg_v3.jpg')" }}
       >
         <div className="absolute inset-0 bg-gradient-to-t from-ink-teal-950/90 via-ink-teal-950/60 to-ink-teal-900/40 backdrop-blur-[1px] pointer-events-none" aria-hidden="true"/>
         <div className="relative z-10" />

@@ -348,19 +348,7 @@ export default function SearchPage() {
       {/* "TODO" view: all category carousels */}
       {category === 'all' && !debouncedQuery && (
         <div className="divide-y divide-surface-mist">
-          {!loading && realProps.length > 0 ? (
-            <PropertyCarousel
-              title="Viviendas disponibles ahora"
-              subtitle="Recién publicadas y listas para recibir huéspedes"
-              properties={realProps}
-              viewAllHref="/search?category=all"
-            />
-          ) : !loading ? (
-            <div className="py-20 text-center">
-              <h2 className="text-xl font-bold text-ink-teal-900">No hay viviendas aún</h2>
-              <p className="text-ink-teal-600 mt-2">Aún no hay propiedades disponibles en la plataforma.</p>
-            </div>
-          ) : null}
+          
           <PropertyCarousel
             title="Fincas y campo"
             subtitle={CATEGORY_SUBTITLES.fincas}
@@ -458,3 +446,4 @@ export default function SearchPage() {
     </div>
   )
 }
+
