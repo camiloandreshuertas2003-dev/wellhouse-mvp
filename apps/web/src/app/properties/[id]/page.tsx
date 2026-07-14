@@ -12,12 +12,9 @@ import {
   ChevronRight, Users, BedDouble, Bath, ArrowLeft, Share2, Heart,
   MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass, ShieldCheck
 } from 'lucide-react'
-import { GoogleMap, useLoadScript, Circle } from '@react-google-maps/api'
+import dynamic from 'next/dynamic'
 
-const Map = GoogleMap as any
-const MapCircle = Circle as any
-
-const libraries: ("places" | "drawing" | "geometry" | "visualization")[] = ['places']
+const LeafletMap = dynamic(() => import('@/components/LeafletMap'), { ssr: false })
 
 // WellRank formula
 function calcWellRank(capacity: number, bedrooms: number, bathrooms: number) {
@@ -161,10 +158,8 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const { id } = params
   
-  const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
-    libraries,
-  })
+  const isLoaded = true
+  const loadError = null
 
   const [property, setProperty] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -734,31 +729,9 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             {/* Map section */}
             <div className="border-t border-surface-mist pt-8">
               <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-4">Dónde vas a estar</h2>
-              <div className="h-64 w-full bg-surface-mist rounded-[16px] flex items-center justify-center mb-8 overflow-hidden relative">
-                {loadError ? (
-                  <div className="text-red-500 font-inter text-sm">Error al cargar el mapa.</div>
-                ) : !isLoaded ? (
-                  <div className="text-text-muted-custom font-inter text-sm">Cargando mapa...</div>
-                ) : property.latitude && property.longitude ? (
-                  <Map
-                    mapContainerStyle={{ width: '100%', height: '100%' }}
-                    center={{ lat: property.latitude, lng: property.longitude }}
-                    zoom={13}
-                    options={{ disableDefaultUI: true, zoomControl: true, gestureHandling: 'cooperative' }}
-                  >
-                    {/* Draw a circle instead of an exact marker for privacy, like Airbnb does */}
-                    <MapCircle
-                      center={{ lat: property.latitude, lng: property.longitude }}
-                      radius={800}
-                      options={{
-                        fillColor: '#F59346', // accent-mango
-                        fillOpacity: 0.35,
-                        strokeColor: '#F59346',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                      }}
-                    />
-                  </Map>
+              <div className="h-64 w-full bg-surface-mist rounded-[16px] flex items-center justify-center mb-8 overflow-hidden relative z-0">
+                {property.latitude && property.longitude ? (
+                  <LeafletMap lat={property.latitude} lng={property.longitude} />
                 ) : (
                   <div className="text-center">
                     <p className="font-inter text-sm font-medium text-text-muted-custom">{property.city}, {property.country}</p>

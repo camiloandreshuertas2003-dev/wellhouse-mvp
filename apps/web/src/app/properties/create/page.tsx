@@ -520,38 +520,12 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
           )}
         </div>
 
-        {/* The map */}
-        <div className="h-[300px] w-full rounded-xl overflow-hidden border border-surface-mist-dark bg-gray-100">
-          {loadError ? (
-            <div className="w-full h-full flex items-center justify-center text-red-500">Error cargando mapa</div>
-          ) : !isLoaded ? (
-            <div className="w-full h-full flex items-center justify-center">Cargando mapa...</div>
-          ) : (
-            <Map
-              mapContainerStyle={{ width: '100%', height: '100%' }}
-              center={center}
-              zoom={form.latitude ? 15 : 5}
-              options={{ disableDefaultUI: true, zoomControl: true }}
-              onClick={(e: any) => {
-                if (e.latLng) {
-                  set('latitude', e.latLng.lat());
-                  set('longitude', e.latLng.lng());
-                }
-              }}
-            >
-              {form.latitude && form.longitude && (
-                <MapMarker position={{ lat: form.latitude, lng: form.longitude }} draggable onDragEnd={(e: any) => {
-                  if (e.latLng) {
-                    set('latitude', e.latLng.lat());
-                    set('longitude', e.latLng.lng());
-                  }
-                }} />
-              )}
-            </Map>
-          )}
-        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-surface-mist-dark">
+          <div className="md:col-span-2">
+            <label className={labelClass}>Dirección exacta *</label>
+            <input className={inputClass} value={form.address} onChange={e => set('address', e.target.value)} placeholder="Ej: Calle 123 #45-67, Apto 101" />
+          </div>
           <div>
             <label className={labelClass}>País *</label>
             <input className={inputClass} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
