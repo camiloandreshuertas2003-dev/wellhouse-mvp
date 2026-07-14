@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     // Check if onboarding bonus already exists
     const { data: existing } = await supabaseAdmin
-      .from('user_points_transactions')
+      .from('wellpoint_transactions')
       .select('id')
       .eq('user_id', userId)
       .eq('type', 'WELCOME_BONUS')
@@ -25,12 +25,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true, message: "Onboarding bonus already granted." })
     }
 
-    // Grant 100 wellpoints in transactions
+    // Get current balance first (single declaration of balRecord)
+    const { data: balRecord } = await supabaseAdmin
+      .from('wellpoint_balances')
+      .select('current_balance, total_earned_lifetime')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    const currentBalance = balRecord?.current_balance || 0
+    const newBalance = currentBalance + 100
+
+    // Log the transaction with correct balance_after
     const { error: insertErr } = await supabaseAdmin
-      .from('user_points_transactions')
+      .from('wellpoint_transactions')
       .insert({
         user_id: userId,
         amount: 100,
+        balance_after: newBalance,
         type: 'WELCOME_BONUS',
         description: 'Bono de bienvenida por registrar tu primera vivienda'
       })
@@ -39,18 +50,12 @@ export async function POST(req: NextRequest) {
       throw insertErr
     }
 
-    // Also update/insert in wellpoint_balances table
-    const { data: balRecord } = await supabaseAdmin
-      .from('wellpoint_balances')
-      .select('current_balance, total_earned_lifetime')
-      .eq('user_id', userId)
-      .maybeSingle()
-
+    // Update or create the balance record
     if (balRecord) {
       await supabaseAdmin
         .from('wellpoint_balances')
         .update({
-          current_balance: (balRecord.current_balance || 0) + 100,
+          current_balance: newBalance,
           total_earned_lifetime: (balRecord.total_earned_lifetime || 0) + 100,
           last_activity_at: new Date().toISOString()
         })
@@ -63,7 +68,7 @@ export async function POST(req: NextRequest) {
           current_balance: 100,
           total_earned_lifetime: 100,
           last_activity_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year
+          expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
         })
     }
 

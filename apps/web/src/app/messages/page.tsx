@@ -1,471 +1,270 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
-import Link from 'next/link'
-import { useSearchParams, useRouter } from 'next/navigation'
+import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { ShieldCheck, Lock, Star } from 'lucide-react'
+import { ArrowLeft, Send, Search, ShieldCheck, Sparkles, User as UserIcon, Calendar as CalIcon } from 'lucide-react'
+import ProposalCard from '@/components/messaging/ProposalCard'
+import ProposalComposer from '@/components/messaging/ProposalComposer'
 
-function MessagesContent() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const activeChatId = searchParams.get('chat')
+export default function MessagesPage() {
+  const [user, setUser] = useState<any>(null)
+  const [conversations, setConversations] = useState<any[]>([])
+  const [activeConv, setActiveConv] = useState<any>(null)
+  const [messages, setMessages] = useState<any[]>([])
+  const [proposals, setProposals] = useState<any[]>([])
+  const [input, setInput] = useState("")
+  const [composingProposal, setComposingProposal] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const [loading, setLoading] = useState(true)
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [conversations, setConversations] = useState<any[]>([])
-  const [messages, setMessages] = useState<any[]>([])
-  const [newMessage, setNewMessage] = useState('')
-  const [sending, setSending] = useState(false)
-  // Mobile: show chat panel vs list panel
-  const [mobileChatOpen, setMobileChatOpen] = useState(false)
-  
-  // Upsell Modal State
-  const [showPaywall, setShowPaywall] = useState(false)
-
   useEffect(() => {
-    const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/login')
-        return
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) {
+        setUser(data.user)
+        fetchConversations(data.user.id)
       }
-      setCurrentUser(user)
+    })
+  }, [])
 
-      // Get user profile for priority plan status
-      const { data: profile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      setUserProfile(profile)
+  const fetchConversations = async (userId: string) => {
+    const { data } = await supabase
+      .from("conversations")
+      .select("*, participant_a(id, name, avatar_url, trust_index), participant_b(id, name, avatar_url, trust_index), properties(id, title, city, wp_price)")
+      .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
+      .order("created_at", { ascending: false })
+    if (data) setConversations(data)
+  }
 
-      try {
-        const { data: convData } = await supabase
-          .from('conversations')
-          .select('*')
-          .or(`user_one_id.eq.${user.id},user_two_id.eq.${user.id}`)
-          .order('updated_at', { ascending: false })
+  const loadConversation = async (conv: any) => {
+    setActiveConv(conv)
+    setComposingProposal(false)
+    const { data: msgs } = await supabase.from("messages").select("*").eq("conversation_id", conv.id).order("created_at", { ascending: true })
+    if (msgs) setMessages(msgs)
+    
+    const { data: props } = await supabase.from("proposals").select("*").eq("conversation_id", conv.id).order("created_at", { ascending: true })
+    if (props) setProposals(props)
 
-        if (convData) {
-          const otherUserIds = [...new Set(convData.map(c => c.user_one_id === user.id ? c.user_two_id : c.user_one_id))]
-          const { data: usersData } = await supabase.from('users').select('id, full_name:name, email').in('id', otherUserIds)
-          const userMap = new Map((usersData || []).map(u => [u.id, u.full_name || u.email || 'Anfitrión']))
-
-          const mapped = convData.map((c) => {
-            const isUserOne = c.user_one_id === user.id
-            const otherUserId = isUserOne ? c.user_two_id : c.user_one_id
-            return {
-              ...c,
-              otherUserId,
-              displayName: userMap.get(otherUserId) || `Usuario #${otherUserId.substring(0, 5)}`,
-            }
-          })
-          setConversations(mapped)
-
-          if (mapped.length > 0 && !activeChatId) {
-            // On desktop auto-open first; on mobile stay on list
-            if (window.innerWidth >= 768) {
-              router.replace(`/messages?chat=${mapped[0].id}`)
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Failed to load conversations:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    init()
-  }, [router, activeChatId])
-
-  const [isHostInExchange, setIsHostInExchange] = useState(false)
-  const [exchangeDetails, setExchangeDetails] = useState<any>(null)
-
-  useEffect(() => {
-    if (!activeChatId || !currentUser) return
-
-    const loadMessagesAndHostStatus = async () => {
-      // Load messages
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', activeChatId)
-        .order('created_at', { ascending: true })
-      setMessages(data || [])
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-
-      // Find the other user in this conversation
-      const { data: convData } = await supabase
-        .from('conversations')
-        .select('user_one_id, user_two_id')
-        .eq('id', activeChatId)
-        .single()
-      
-      if (convData) {
-        const otherUserId = convData.user_one_id === currentUser.id ? convData.user_two_id : convData.user_one_id
-        
-        // Fetch exchange info between these two users
-        const { data: exchangeInfo } = await supabase
-          .from('exchanges')
-          .select(`
-            id, host_id, guest_id, checkin_date, checkout_date, nights, wellrank_snapshot, status,
-            properties (id, title, city, images)
-          `)
-          .or(`and(host_id.eq.${currentUser.id},guest_id.eq.${otherUserId}),and(host_id.eq.${otherUserId},guest_id.eq.${currentUser.id})`)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        
-        if (exchangeInfo) {
-          setExchangeDetails(exchangeInfo)
-          setIsHostInExchange(exchangeInfo.host_id === currentUser.id)
-        } else {
-          setExchangeDetails(null)
-          setIsHostInExchange(false)
-        }
-      }
-    }
-
-    loadMessagesAndHostStatus()
-
-    const channel = supabase
-      .channel(`chat:${activeChatId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${activeChatId}` },
-        (payload) => {
-          setMessages((prev) => [...prev, payload.new])
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [activeChatId, currentUser])
-
-  // Count my messages in active chat
-  const myMessagesCount = messages.filter(m => m.sender_id === currentUser?.id).length
-  // For Fase 2, users without priority plan can only send 1 message per conversation, unless they are the host replying
-  const hasPriorityPlan = userProfile?.has_priority_plan || false
-  const canSendMessage = hasPriorityPlan || isHostInExchange || myMessagesCount < 1
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    }, 100)
+  }
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newMessage.trim() || !activeChatId || !currentUser || sending) return
+    if (!input.trim() || !activeConv || !user) return
+    const txt = input.trim()
+    setInput("")
+    
+    const { data: newMsg } = await supabase.from("messages").insert({
+      conversation_id: activeConv.id,
+      sender_id: user.id,
+      content: txt,
+      message_type: "text"
+    }).select().single()
 
-    if (!canSendMessage) {
-      setShowPaywall(true)
-      return
+    if (newMsg) {
+      setMessages([...messages, newMsg])
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
     }
-
-    setSending(true)
-    const content = newMessage.trim()
-    setNewMessage('')
-
-    const { error } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: activeChatId,
-        sender_id: currentUser.id,
-        content: content,
-        is_priority: hasPriorityPlan
-      })
-
-    if (error) {
-      alert('Error al enviar el mensaje: ' + error.message)
-    } else {
-      await supabase
-        .from('conversations')
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', activeChatId)
-    }
-    setSending(false)
   }
 
-  const activeChat = conversations.find(c => c.id === activeChatId)
+  const handleSendProposal = async (proposalData: any) => {
+    setComposingProposal(false)
+    const { data: newProp } = await supabase.from("proposals").insert({
+      ...proposalData,
+      conversation_id: activeConv.id,
+      created_by: user.id
+    }).select().single()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-base-paper flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-cobalt border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
+    if (newProp) {
+      setProposals([...proposals, newProp])
+      await supabase.from("conversations").update({ status: "proposal_sent" }).eq("id", activeConv.id)
+      setActiveConv({ ...activeConv, status: "proposal_sent" })
+      
+      const { data: newMsg } = await supabase.from("messages").insert({
+        conversation_id: activeConv.id,
+        sender_id: user.id,
+        content: newProp.id,
+        message_type: "proposal"
+      }).select().single()
+      if (newMsg) {
+        setMessages([...messages, newMsg])
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
+      }
+    }
+  }
+
+  const handleAcceptProposal = async (prop: any) => {
+    const { error } = await supabase.rpc("accept_proposal", { p_proposal_id: prop.id })
+    if (!error) {
+      setProposals(proposals.map(p => p.id === prop.id ? { ...p, status: "accepted" } : p))
+      setActiveConv({ ...activeConv, status: "confirmed" })
+      alert("¡Intercambio confirmado! Las fechas han sido bloqueadas y el acuerdo registrado.")
+    } else {
+      alert("Error al aceptar la propuesta: " + error.message)
+    }
+  }
+
+  const handleRejectProposal = async (prop: any) => {
+    const { error } = await supabase.from("proposals").update({ status: "rejected" }).eq("id", prop.id)
+    if (!error) {
+      setProposals(proposals.map(p => p.id === prop.id ? { ...p, status: "rejected" } : p))
+      await supabase.from("conversations").update({ status: "chatting" }).eq("id", activeConv.id)
+      setActiveConv({ ...activeConv, status: "chatting" })
+    }
+  }
+
+  const getOtherParticipant = (conv: any) => {
+    if (!user) return null
+    return conv.participant_a.id === user.id ? conv.participant_b : conv.participant_a
+  }
+
+  const renderStatus = () => {
+    if (!activeConv) return null
+    switch(activeConv.status) {
+      case "proposal_sent": return <div className="text-xs font-bold text-accent-cobalt bg-accent-cobalt/10 px-3 py-1 rounded-full">Propuesta enviada · esperando respuesta</div>
+      case "confirmed": return <div className="text-xs font-bold text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded-full flex items-center gap-1"><ShieldCheck className="w-3 h-3"/> Intercambio confirmado</div>
+      case "countered": return <div className="text-xs font-bold text-wellpoint-gold bg-wellpoint-gold/10 px-3 py-1 rounded-full">Contrapropuesta recibida</div>
+      default: return <div className="text-xs font-medium text-[#6b7280]">Conversando</div>
+    }
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-base-paper flex flex-col overflow-hidden font-inter text-ink-teal-900">
-      {/* Main Grid Layout */}
-      <div className="flex-1 flex overflow-hidden max-w-7xl mx-auto w-full">
-        {conversations.length === 0 ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 m-4 lg:my-8 bg-white rounded-[16px] shadow-sm border border-surface-mist-dark text-center">
-            <div className="w-20 h-20 bg-surface-mist rounded-full flex items-center justify-center mb-6">
-              <span className="text-3xl">💬</span>
-            </div>
-            <h2 className="text-2xl font-fraunces font-bold mb-3">No tienes conversaciones activas</h2>
-            <p className="text-text-muted-custom mb-8 max-w-md text-sm leading-relaxed">
-              Contacta a otros anfitriones desde sus propiedades publicadas para iniciar un chat e intercambiar noches.
-            </p>
-            <Link href="/search" className="btn-primary px-8">
-              Explorar propiedades
-            </Link>
-          </div>
-        ) : (
-          <div className="flex flex-1 m-2 md:m-4 lg:my-8 bg-white rounded-[16px] shadow-sm border border-surface-mist-dark overflow-hidden">
-            {/* Sidebar — hidden on mobile when chat is open */}
-            <div className={`${mobileChatOpen ? 'hidden' : 'flex'} md:flex w-full md:w-80 bg-base-paper border-r border-surface-mist-dark flex-col overflow-y-auto shrink-0`}>
-              <div className="p-4 border-b border-surface-mist-dark shrink-0 bg-white">
-                <p className="text-xs font-bold text-ink-teal-500 uppercase tracking-wider">Tus Conversaciones</p>
-              </div>
-              <div className="flex-1 divide-y divide-surface-mist-dark bg-white">
-                {conversations.map((c) => {
-                  const isActive = c.id === activeChatId
-                  return (
-                    <button
-                      key={c.id}
-                      onClick={() => {
-                        router.push(`/messages?chat=${c.id}`)
-                        setMobileChatOpen(true)
-                      }}
-                      className={`w-full text-left p-4 flex items-center gap-3 transition-colors ${isActive ? 'bg-primary-cobalt/5 border-l-4 border-primary-cobalt' : 'hover:bg-surface-mist'}`}
-                    >
-                      <div className="w-12 h-12 bg-primary-cobalt/10 rounded-full flex items-center justify-center shrink-0">
-                        <span className="text-lg font-bold text-primary-cobalt">
-                          {c.displayName.charAt(0)}
-                        </span>
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-ink-teal-900 truncate">{c.displayName}</p>
-                        <p className="text-xs text-text-muted-custom truncate mt-0.5">Ver conversación</p>
-                      </div>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Chat Room — visible on mobile when mobileChatOpen=true */}
-            <div className={`${mobileChatOpen ? 'flex' : 'hidden'} md:flex flex-1 flex-col bg-white overflow-hidden relative`}>
-              {activeChat ? (
-                <>
-                  <div className="bg-white border-b border-surface-mist-dark px-4 md:px-6 py-4 flex justify-between items-center shrink-0 shadow-sm z-10">
-                    <div className="flex items-center gap-3">
-                      {/* Back button on mobile */}
-                      <button
-                        className="md:hidden text-ink-teal-700 hover:text-ink-teal-900 p-1 -ml-1 transition-colors"
-                        onClick={() => setMobileChatOpen(false)}
-                        aria-label="Volver a conversaciones"
-                      >
-                        ← 
-                      </button>
-                      <div className="w-10 h-10 bg-primary-cobalt/10 rounded-full flex items-center justify-center">
-                        <span className="font-bold text-primary-cobalt">{activeChat.displayName.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-ink-teal-900">{activeChat.displayName}</p>
-                        <p className="text-xs text-signal-green flex items-center gap-1 font-medium mt-0.5">
-                          <ShieldCheck className="w-3 h-3" />
-                          Chat Seguro
-                        </p>
-                      </div>
-                    </div>
+    <div className="flex h-[calc(100vh-72px)] bg-surface-mist pt-[72px]">
+      <div className="w-full md:w-80 bg-white border-r border-surface-mist-dark flex flex-col hidden md:flex">
+        <div className="p-4 border-b border-surface-mist-dark">
+          <h1 className="text-xl font-fraunces font-bold text-ink-teal-900">Mensajes</h1>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {conversations.length === 0 ? (
+            <div className="p-6 text-center text-sm text-[#6b7280]">No tienes conversaciones aún.</div>
+          ) : (
+            conversations.map(c => {
+              const other = getOtherParticipant(c)
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => loadConversation(c)}
+                  className={`w-full p-4 flex items-start gap-3 border-b border-surface-mist hover:bg-surface-mist transition text-left ${activeConv?.id === c.id ? "bg-surface-mist-dark" : ""}`}
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    {other?.avatar_url ? <img src={other.avatar_url} alt="" className="w-full h-full object-cover" /> : <UserIcon className="w-5 h-5 text-gray-400" />}
                   </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-semibold text-sm text-ink-teal-900 truncate">{other?.name || "Usuario"}</h4>
+                    <p className="text-xs text-[#6b7280] truncate">{c.properties?.title || "Sin propiedad"}</p>
+                  </div>
+                </button>
+              )
+            })
+          )}
+        </div>
+      </div>
 
-                  {/* Exchange Context Panel */}
-                  {exchangeDetails && (
-                    <div className="bg-surface-mist border-b border-surface-mist-dark p-4 shrink-0 flex items-center gap-4">
-                      {exchangeDetails.properties?.images?.[0] ? (
-                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                          <img src={exchangeDetails.properties.images[0]} alt="Propiedad" className="w-full h-full object-cover" />
-                        </div>
-                      ) : (
-                        <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center shrink-0 text-2xl">
-                          🏠
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-ink-teal-900 truncate">
-                          {exchangeDetails.properties?.title || 'Vivienda'}
-                        </p>
-                        <p className="text-sm text-text-muted-custom truncate">
-                          Del {exchangeDetails.checkin_date} al {exchangeDetails.checkout_date} ({exchangeDetails.nights} noches)
-                        </p>
-                        <p className="text-xs font-bold text-accent-mango mt-1">
-                          {exchangeDetails.nights * exchangeDetails.wellrank_snapshot} WP comprometidos
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2 shrink-0">
-                        {isHostInExchange && exchangeDetails.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <button className="bg-signal-green text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-signal-green/90">
-                              Aceptar
-                            </button>
-                            <button className="bg-red-50 text-red-600 px-3 py-1.5 rounded text-xs font-bold hover:bg-red-100">
-                              Rechazar
-                            </button>
-                          </div>
-                        )}
-                        <Link href={`/properties/${exchangeDetails.properties?.id}`} className="text-xs font-semibold text-primary-cobalt hover:underline text-center">
-                          Ver vivienda →
-                        </Link>
-                      </div>
-                    </div>
+      <div className="flex-1 flex flex-col bg-surface-mist">
+        {activeConv ? (
+          <>
+            <div className="bg-white px-6 py-4 border-b border-surface-mist-dark flex items-center justify-between shadow-sm z-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
+                  {getOtherParticipant(activeConv)?.avatar_url ? (
+                    <img src={getOtherParticipant(activeConv).avatar_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <UserIcon className="w-6 h-6 text-gray-400" />
                   )}
-
-                  <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#fcfcfc]">
-                    {messages.map((m) => {
-                      const isMe = m.sender_id === currentUser.id
-                      const isPriority = m.is_priority
-                      return (
-                        <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[75%] rounded-[16px] px-5 py-3 text-sm shadow-sm relative ${
-                            isMe ? 'bg-primary-cobalt text-white rounded-br-sm' : 'bg-white text-ink-teal-900 rounded-bl-sm border border-surface-mist-dark'
-                          } ${isPriority ? 'ring-2 ring-wellpoint-gold/50' : ''}`}>
-                            {/* Priority Badge Indicator */}
-                            {isPriority && !isMe && (
-                              <div className="absolute -top-2.5 -left-2 bg-wellpoint-gold text-white text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shadow-sm">
-                                Prioridad
-                              </div>
-                            )}
-                            
-                            <p className="break-words leading-relaxed">{m.content}</p>
-                            <p className={`text-[10px] mt-2 text-right ${isMe ? 'text-white/70' : 'text-text-muted-custom'}`}>
-                              {new Date(m.created_at).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Input Area */}
-                  <div className="p-4 bg-white border-t border-surface-mist-dark shrink-0 relative">
-                    {!canSendMessage && (
-                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-                        <button 
-                          onClick={() => setShowPaywall(true)}
-                          className="bg-wellpoint-gold text-white px-5 py-2 rounded-full font-bold text-sm flex items-center gap-2 shadow-lg hover:bg-wellpoint-gold/90 transition-transform hover:scale-105"
-                        >
-                          <Lock className="w-4 h-4" />
-                          Desbloquear chat
-                        </button>
-                      </div>
-                    )}
-                    
-                    <form onSubmit={handleSend} className="flex gap-3">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder={canSendMessage ? "Escribe tu mensaje..." : "Mensaje bloqueado..."}
-                        disabled={!canSendMessage}
-                        className="flex-1 input-field"
-                      />
-                      <button
-                        type="submit"
-                        disabled={!newMessage.trim() || sending || !canSendMessage}
-                        className="btn-primary shrink-0 px-8"
-                      >
-                        {sending ? 'Enviando...' : 'Enviar'}
-                      </button>
-                    </form>
-                    
-                    {hasPriorityPlan && (
-                      <p className="text-[10px] text-wellpoint-gold font-medium mt-2 flex items-center gap-1">
-                        <Star className="w-3 h-3" /> Enviando como mensaje prioritario
-                      </p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-text-muted-custom p-8 bg-[#fcfcfc]">
-                  <div className="w-16 h-16 bg-surface-mist rounded-full flex items-center justify-center mb-4">
-                    <ShieldCheck className="w-8 h-8 text-ink-teal-300" />
-                  </div>
-                  <p className="font-semibold text-ink-teal-900 mb-1">Selecciona una conversación</p>
-                  <p className="text-sm text-center max-w-sm">Tus mensajes están protegidos por Wellhouse. Recuerda nunca hacer transferencias por fuera de la plataforma.</p>
                 </div>
-              )}
+                <div>
+                  <h2 className="font-fraunces font-bold text-lg text-ink-teal-900">
+                    {getOtherParticipant(activeConv)?.name || "Usuario"}
+                  </h2>
+                  <div className="text-xs text-[#6b7280] flex items-center gap-2">
+                    <span>Índice: {getOtherParticipant(activeConv)?.trust_index || 0}●</span>
+                    <span>·</span>
+                    <span className="truncate max-w-[200px]">{activeConv.properties?.title}</span>
+                  </div>
+                </div>
+              </div>
+              <div>{renderStatus()}</div>
             </div>
+
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+              <div className="text-center text-xs text-[#6b7280] mb-4">
+                🔒 Toda esta conversación está protegida por la Garantía Wellhouse
+              </div>
+              
+              {messages.map((m) => {
+                const isMe = m.sender_id === user?.id
+                if (m.message_type === "proposal") {
+                  const prop = proposals.find(p => p.id === m.content)
+                  if (!prop) return null
+                  return (
+                    <div key={m.id} className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
+                      <ProposalCard
+                        proposal={prop}
+                        isMyProposal={isMe}
+                        onAccept={() => handleAcceptProposal(prop)}
+                        onReject={() => handleRejectProposal(prop)}
+                        onCounter={() => {
+                          setComposingProposal(true)
+                        }}
+                      />
+                    </div>
+                  )
+                }
+
+                return (
+                  <div key={m.id} className={`flex w-full ${isMe ? "justify-end" : "justify-start"}`}>
+                    <div className={`max-w-[70%] px-4 py-2.5 rounded-2xl text-sm ${isMe ? "bg-ink-teal-900 text-white rounded-br-none" : "bg-white border border-surface-mist-dark text-ink-teal-900 rounded-bl-none"}`}>
+                      {m.content}
+                    </div>
+                  </div>
+                )
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="flex flex-col">
+              {composingProposal && (
+                <ProposalComposer
+                  property={activeConv.properties}
+                  onCancel={() => setComposingProposal(false)}
+                  onSubmit={handleSendProposal}
+                />
+              )}
+              <div className="bg-white p-4 border-t border-surface-mist-dark">
+                <form onSubmit={handleSend} className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setComposingProposal(true)}
+                    className="p-3 text-text-muted-custom hover:bg-surface-mist rounded-xl transition"
+                    title="Armar propuesta"
+                  >
+                    <CalIcon className="w-5 h-5" />
+                  </button>
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Escribe un mensaje..."
+                    className="flex-1 px-4 py-3 bg-surface-mist border border-surface-mist-dark rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-ink-teal-900/20 focus:border-ink-teal-900"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!input.trim()}
+                    className="p-3 bg-accent-cobalt text-white rounded-xl hover:bg-opacity-90 transition disabled:opacity-50"
+                  >
+                    <Send className="w-5 h-5" />
+                  </button>
+                </form>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-[#6b7280]">
+            <Sparkles className="w-12 h-12 mb-4 text-surface-mist-dark" />
+            <p className="text-sm">Selecciona una conversación para empezar a hablar.</p>
           </div>
         )}
       </div>
-
-      {/* Paywall Modal */}
-      {showPaywall && (
-        <div className="fixed inset-0 z-[200] bg-ink-teal-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-[24px] shadow-2xl max-w-md w-full overflow-hidden relative animate-in fade-in zoom-in duration-300">
-            <button 
-              onClick={() => setShowPaywall(false)}
-              className="absolute top-4 right-4 text-ink-teal-500 hover:text-ink-teal-900 transition-colors bg-surface-mist p-2 rounded-full"
-            >
-              ✕
-            </button>
-            
-            <div className="bg-gradient-to-br from-ink-teal-900 to-primary-cobalt p-8 text-center text-white">
-              <div className="w-16 h-16 bg-wellpoint-gold rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <Star className="w-8 h-8 text-white" />
-              </div>
-              <h2 className="text-2xl font-fraunces font-bold mb-2">Wellhouse Priority</h2>
-              <p className="text-white/80 text-sm">Destaca entre los demás y cierra intercambios más rápido.</p>
-            </div>
-            
-            <div className="p-8">
-              <ul className="space-y-4 mb-8">
-                <li className="flex items-start gap-3 text-sm text-ink-teal-900">
-                  <div className="bg-signal-green/20 text-signal-green p-1 rounded-full shrink-0">✓</div>
-                  <p><strong>Mensajes ilimitados</strong> para planear todos los detalles de tu estancia.</p>
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink-teal-900">
-                  <div className="bg-signal-green/20 text-signal-green p-1 rounded-full shrink-0">✓</div>
-                  <p><strong>Insignia de Prioridad</strong>. Tus mensajes aparecerán destacados y el anfitrión será penalizado en su WellRank si no te responde.</p>
-                </li>
-                <li className="flex items-start gap-3 text-sm text-ink-teal-900">
-                  <div className="bg-signal-green/20 text-signal-green p-1 rounded-full shrink-0">✓</div>
-                  <p><strong>Soporte 24/7 preferencial</strong> en caso de disputas.</p>
-                </li>
-              </ul>
-              
-              <button 
-                onClick={async () => {
-                  alert("Simulación: Has pagado $4 USD/mes con éxito. ¡Ahora eres Priority!")
-                  
-                  if (currentUser) {
-                    await supabase.from('users').update({ has_priority_plan: true }).eq('id', currentUser.id)
-                    setUserProfile({ ...userProfile, has_priority_plan: true })
-                  }
-                  
-                  setShowPaywall(false)
-                }}
-                className="w-full bg-wellpoint-gold text-white font-bold py-3.5 rounded-radius-sm shadow-md hover:bg-[#d49911] transition-colors"
-              >
-                Suscribirse por $4 USD / mes
-              </button>
-              <p className="text-center text-xs text-text-muted-custom mt-4">
-                Cancela en cualquier momento.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
-  )
-}
-
-export default function MessagesPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-base-paper flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-primary-cobalt border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <MessagesContent />
-    </Suspense>
   )
 }

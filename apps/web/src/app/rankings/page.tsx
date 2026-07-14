@@ -60,10 +60,12 @@ export default function RankingsPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Banner de Presentación */}
-        <div className="rounded-3xl p-8 text-white mb-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a3c34 0%, #404040 100%)' }}>
+        <div className="rounded-3xl p-8 text-white mb-8 relative overflow-hidden bg-gradient-to-br from-ink-teal-900 to-[#2a2a2a]">
           <div className="absolute -top-32 -right-32 w-[350px] h-[350px] rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
           <div className="relative z-10 max-w-xl">
-            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl mb-4">🏆</div>
+            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-4">
+              <Trophy className="w-6 h-6 text-amber-400" />
+            </div>
             <h1 className="font-fraunces font-bold text-3xl md:text-4xl mb-3">Líderes de la Comunidad</h1>
             <p className="text-[#c4ddd4] text-sm leading-relaxed">
               Descubre a los anfitriones y viajeros más activos de Wellhouse. Gana retos, publica tu vivienda y realiza intercambios para subir en el ranking y desbloquear medallas exclusivas de confianza.

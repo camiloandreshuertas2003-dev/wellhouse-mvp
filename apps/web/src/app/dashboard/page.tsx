@@ -8,7 +8,7 @@ import {
   LayoutDashboard, Home, Repeat, MessageCircle, Heart, Star,
   Settings, Coins, LogOut, Trash2, ChevronRight, Sparkles, MoreHorizontal,
   PlusCircle, Eye, Pencil, TrendingUp, CheckCircle2, Clock, XCircle, ArrowUpRight,
-  Video
+  Video, User
 } from 'lucide-react'
 import PropertyCarousel from '@/components/PropertyCarousel'
 import { type PropertyCardData } from '@/components/PropertyCard'
@@ -72,7 +72,7 @@ export default function DashboardPage() {
       .toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
 
     // WellPoints balance
-    let userPoints = 100
+    let userPoints = 0
     try {
       const { data } = await supabase
         .from('wellpoint_balances').select('current_balance')
@@ -104,7 +104,7 @@ export default function DashboardPage() {
     try {
       const { data: userData } = await supabase
         .from('users')
-        .select('name, bio, avatar_url, phone, is_verified')
+        .select('name, bio, avatar_url, phone, is_verified, trust_index')
         .eq('id', authUser.id)
         .maybeSingle()
       
@@ -112,10 +112,10 @@ export default function DashboardPage() {
         const name = authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario'
         const defaultUser = {
           id: authUser.id, email: authUser.email || '',
-          name, role: 'user', plan: 'free', status: 'active',
+          name, role: 'user', plan: 'free', status: 'active', trust_index: 0,
         }
         await supabase.from('users').insert(defaultUser)
-        meta = { name, bio: '', avatar_url: '', phone: '', is_verified: false }
+        meta = { name, bio: '', avatar_url: '', phone: '', is_verified: false, trust_index: 0 }
       } else {
         meta = userData
       }
@@ -168,14 +168,13 @@ export default function DashboardPage() {
     { id: 'my-property', label: 'Mi Vivienda',   Icon: Home },
     { id: 'wellpoints',  label: 'WellPoints',    Icon: Coins },
     { id: 'exchanges',   label: 'Intercambios',  Icon: Repeat },
-    { id: 'messages',    label: 'Mensajes',      Icon: MessageCircle },
   ]
   const MORE_TABS = [
     { id: 'quests',     label: 'Mis Retos',      Icon: Sparkles },
     { id: 'stories',    label: 'Historias',      Icon: Video },
     { id: 'favorites',  label: 'Favoritos',      Icon: Heart },
     { id: 'reviews',    label: 'Reseñas',        Icon: Star },
-    { id: 'settings',   label: 'Configuración',  Icon: Settings },
+    { id: 'settings',   label: 'Perfil',  Icon: User },
   ]
   const ALL_TABS = [...MAIN_TABS, ...MORE_TABS]
 
@@ -206,9 +205,13 @@ export default function DashboardPage() {
             {/* Profile card */}
             <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-lg text-white"
+                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-lg text-white overflow-hidden"
                   style={{ background: levelCfg.color }}>
-                  {profile?.name.charAt(0).toUpperCase()}
+                  {userMetadata?.avatar_url ? (
+                    <img src={userMetadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    profile?.name.charAt(0).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0">
                   <p className="font-semibold text-ink-teal-900 text-sm truncate">{profile?.name}</p>
@@ -248,10 +251,13 @@ export default function DashboardPage() {
               )}
 
               <div className="mt-3 pt-3 border-t border-[#f0ede8] space-y-1.5 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-[#6b7280]">WellPoints</span>
-                  <span className="font-bold text-amber-500">{profile?.wellPoints} WP</span>
-                </div>
+                <button
+                  onClick={() => setActiveTab('wellpoints')}
+                  className="flex justify-between w-full hover:opacity-70 transition-opacity group"
+                >
+                  <span className="text-[#6b7280] group-hover:text-ink-teal-900 transition-colors">WellPoints</span>
+                  <span className="font-bold text-amber-500">{profile?.wellPoints ?? 0} WP</span>
+                </button>
                 <div className="flex justify-between">
                   <span className="text-[#6b7280]">Miembro desde</span>
                   <span className="text-ink-teal-900 capitalize">{profile?.memberSince}</span>
@@ -319,7 +325,6 @@ export default function DashboardPage() {
             {activeTab === 'stories' && (
               <StoriesTab property={property} userId={userId} />
             )}
-            {activeTab === 'messages' && <MessagesTab />}
             {activeTab === 'favorites' && <FavoritesTab />}
             {activeTab === 'reviews' && <ReviewsTab hasProperty={!!property} />}
             {activeTab === 'settings' && (
@@ -417,20 +422,20 @@ function OverviewTab({
 
       {/* Dynamic Welcome Banner */}
       {bannerState === 'no-property' && (
-        <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #1a3c34 0%, #2d6a4f 100%)' }}>
+        <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-ink-teal-900 to-ink-teal-700">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[#9dc4b0] text-xs font-medium mb-1">Bienvenido/a, {profile?.name?.split(' ')[0]}</p>
+              <p className="text-gray-300 text-xs font-medium mb-1">Bienvenido/a, {profile?.name?.split(' ')[0]}</p>
               <h2 className="text-lg font-fraunces font-bold mb-2">Registra tu primera vivienda</h2>
-              <p className="text-[#c4ddd4] text-sm mb-4">
+              <p className="text-gray-200 text-sm mb-4">
                 Para comenzar a intercambiar hogares con la comunidad Wellhouse necesitas registrar la tuya. Es gratis y tarda menos de 5 minutos.
               </p>
               <Link href="/properties/create"
-                className="inline-flex items-center gap-1.5 bg-[#f0a500] text-[#1a1a1a] px-4 py-2 rounded-xl font-semibold text-sm hover:bg-[#d4920a] transition-colors">
+                className="inline-flex items-center gap-1.5 bg-white text-gray-900 px-4 py-2 rounded-xl font-semibold text-sm hover:bg-gray-100 transition-colors">
                 <PlusCircle className="w-4 h-4" /> Registrar mi vivienda
               </Link>
             </div>
-            <Home className="w-16 h-16 text-[#2d6a4f] flex-shrink-0 hidden sm:block" />
+            <Home className="w-16 h-16 text-white/20 flex-shrink-0 hidden sm:block" />
           </div>
         </div>
       )}
@@ -448,18 +453,18 @@ function OverviewTab({
       )}
 
       {bannerState === 'published' && (
-        <div className="rounded-2xl p-5 text-white" style={{ background: 'linear-gradient(135deg, #065f46 0%, #047857 100%)' }}>
+        <div className="rounded-2xl p-5 text-white bg-gradient-to-br from-ink-teal-900 to-ink-teal-700">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-300" />
-                <p className="text-blue-300 text-xs font-medium">Vivienda publicada y visible</p>
+                <CheckCircle2 className="w-3.5 h-3.5 text-gray-300" />
+                <p className="text-gray-300 text-xs font-medium">Vivienda publicada y visible</p>
               </div>
               <h2 className="text-lg font-fraunces font-bold mb-2">{property?.title}</h2>
-              <p className="text-blue-100 text-sm mb-4">{property?.city}, {property?.country}</p>
+              <p className="text-gray-200 text-sm mb-4">{property?.city}, {property?.country}</p>
               <div className="flex items-center gap-2">
                 <Link href={`/properties/${property?.id}`}
-                  className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-white/30 transition-colors">
+                  className="inline-flex items-center gap-1.5 bg-white text-gray-900 px-4 py-2 rounded-xl font-semibold text-sm hover:bg-gray-100 transition-colors">
                   <Eye className="w-4 h-4" /> Ver como huésped
                 </Link>
                 <Link href="/properties/create"
@@ -468,7 +473,7 @@ function OverviewTab({
                 </Link>
               </div>
             </div>
-            <TrendingUp className="w-12 h-12 text-blue-400/60 flex-shrink-0 hidden sm:block" />
+            <TrendingUp className="w-12 h-12 text-white/20 flex-shrink-0 hidden sm:block" />
           </div>
         </div>
       )}
@@ -660,10 +665,13 @@ function DiscoverCarousel() {
 // ─── WELLPOINTS TAB (Módulo 3.2) ─────────────────────────────────────────────
 function WellPointsTab({ profile, transactions }: { profile: UserProfile | null; transactions: any[] }) {
   const TX_ICONS: Record<string, any> = {
-    welcome_bonus: <Sparkles className="w-4 h-4 text-amber-400" />,
-    hosting_earned: <Home className="w-4 h-4 text-blue-500" />,
-    exchange_spent: <Repeat className="w-4 h-4 text-blue-500" />,
+    welcome_bonus:      <Sparkles className="w-4 h-4 text-amber-400" />,
+    WELCOME_BONUS:      <Sparkles className="w-4 h-4 text-amber-400" />,
+    hosting_earned:     <Home className="w-4 h-4 text-blue-500" />,
+    exchange_spent:     <Repeat className="w-4 h-4 text-blue-500" />,
     profile_completion: <CheckCircle2 className="w-4 h-4 text-purple-500" />,
+    quest_completed:    <CheckCircle2 className="w-4 h-4 text-purple-500" />,
+    RETO_COMPLETADO:    <CheckCircle2 className="w-4 h-4 text-purple-500" />,
   }
 
   return (
@@ -675,15 +683,15 @@ function WellPointsTab({ profile, transactions }: { profile: UserProfile | null;
             <Coins className="w-7 h-7 text-amber-500" />
           </div>
           <div>
-            <p className="text-xs text-[#6b7280] font-medium mb-0.5">Saldo disponible</p>
+            <p className="text-xs text-[#6b7280] font-medium mb-0.5">Saldo disponible (Billetera)</p>
             <p className="text-4xl font-bold text-ink-teal-900">{profile?.wellPoints ?? 0}</p>
             <p className="text-xs text-[#6b7280]">WellPoints</p>
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-[#f0ede8] flex gap-2">
-          <Link href="/how-it-works"
-            className="flex-1 text-center py-2 bg-ink-teal-900 text-white rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
-            Comprar WellPoints
+          <Link href="/rankings"
+            className="flex-1 text-center py-2 bg-ink-teal-900 text-white rounded-xl text-sm font-semibold hover:opacity-80 transition-opacity flex items-center justify-center gap-1.5">
+            <TrendingUp className="w-4 h-4" /> Ver Tabla de Líderes
           </Link>
           <Link href="/search"
             className="flex-1 text-center py-2 border border-surface-mist-dark text-ink-teal-900 rounded-xl text-sm font-semibold hover:bg-surface-mist transition-colors">
@@ -964,25 +972,6 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
   )
 }
 
-// ─── MESSAGES TAB ────────────────────────────────────────────────────────────
-function MessagesTab() {
-  return (
-    <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
-      <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Mensajes</h2>
-      <div className="text-center py-12">
-        <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
-          <MessageCircle className="w-8 h-8 text-[#cbd5cc]" />
-        </div>
-        <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin mensajes aún</h3>
-        <p className="text-sm text-[#6b7280] mb-5 max-w-xs mx-auto">Aquí aparecerán tus conversaciones con anfitriones y huéspedes.</p>
-        <Link href="/messages"
-          className="inline-flex items-center gap-2 border border-surface-mist-dark text-ink-teal-900 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-surface-mist transition-colors">
-          Ir a Mensajes <ArrowUpRight className="w-4 h-4" />
-        </Link>
-      </div>
-    </div>
-  )
-}
 
 // ─── FAVORITES TAB (Módulo 3.5) ────────────────────────────────────────────────
 function FavoritesTab() {
@@ -1064,9 +1053,11 @@ function SettingsTab({
 }) {
   const [name, setName] = useState(userMetadata?.name || '')
   const [bio, setBio] = useState(userMetadata?.bio || '')
+  const [languages, setLanguages] = useState<string>((userMetadata?.languages || []).join(', '))
   const [phone, setPhone] = useState(userMetadata?.phone || '')
   const [avatarUrl, setAvatarUrl] = useState(userMetadata?.avatar_url || '')
   const [isVerified, setIsVerified] = useState(userMetadata?.is_verified || false)
+  const [trustIndex, setTrustIndex] = useState(userMetadata?.trust_index || 0) // New trust index
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [showCheckout, setShowCheckout] = useState(false)
@@ -1110,12 +1101,18 @@ function SettingsTab({
     setSaving(true)
     setMessage(null)
     try {
-      const { error } = await supabase
+      const { error: updateErr } = await supabase
         .from('users')
-        .update({ name, bio, phone, avatar_url: avatarUrl })
+        .update({ 
+          name, 
+          bio, 
+          languages: languages.split(',').map(l => l.trim()).filter(Boolean),
+          phone, 
+          avatar_url: avatarUrl 
+        })
         .eq('id', userId)
       
-      if (error) throw error
+      if (updateErr) throw updateErr
       setMessage('Perfil guardado exitosamente.')
       onSave()
     } catch (err: any) {
@@ -1131,11 +1128,20 @@ function SettingsTab({
       // Simular transacción de pago de $15 USD
       const { error } = await supabase
         .from('users')
-        .update({ is_verified: true })
+        .update({ is_verified: true, trust_index: 3 })
         .eq('id', userId)
       
       if (error) throw error
+
+      // Call the RPC to give points
+      await supabase.rpc('complete_quest', {
+        p_user_id: userId,
+        p_quest_key: 'verify_identity',
+        p_reward_points: 150
+      })
+
       setIsVerified(true)
+      setTrustIndex(3)
       setShowCheckout(false)
       setMessage('¡Pago procesado con éxito! Tu cuenta y tu vivienda asociada han sido verificadas oficialmente. Recibiste +150 WP.')
       onSave()
@@ -1149,8 +1155,8 @@ function SettingsTab({
   return (
     <div className="space-y-6">
       {/* Sección Configuración */}
-      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
-        <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Configuración de cuenta</h2>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Perfil de Confianza</h2>
         {message && (
           <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
             {message}
@@ -1175,8 +1181,8 @@ function SettingsTab({
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
-              placeholder="Hola, soy Camilo. Me encanta la música, viajo con mi perro..."
-              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition resize-none"
+              placeholder="Hola, soy Camilo. Trabajo como arquitecto y me apasiona la fotografía. Viajo frecuentemente con mi familia y nuestro perro, buscando siempre conectar con la cultura local. Me emociona ser parte de la comunidad Wellhouse porque creo firmemente en la confianza mutua y en compartir experiencias auténticas. Prometo cuidar tu casa como si fuera la mía, y espero que tú también disfrutes de nuestro hogar."
+              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-ink-teal-900/20 focus:border-ink-teal-900 transition resize-none"
             />
             <div className="flex justify-between items-center mt-1">
               <span className="text-[10px] text-[#6b7280]">
@@ -1186,6 +1192,16 @@ function SettingsTab({
                 {(bio || '').length} caracteres
               </span>
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Idiomas que hablas</label>
+            <input
+              type="text"
+              value={languages}
+              onChange={(e) => setLanguages(e.target.value)}
+              placeholder="Ej: Español, Inglés, Francés"
+              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition"
+            />
           </div>
           <div>
             <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Teléfono de contacto</label>
@@ -1231,26 +1247,61 @@ function SettingsTab({
         </div>
       </div>
 
-      {/* Sección Verificación */}
-      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
-        <h2 className="text-base font-semibold text-ink-teal-900 mb-3">Verificación de Identidad y Vivienda</h2>
+      {/* Sección Verificación e Índice de Confianza */}
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-1">Tu Nivel de Confianza</h2>
         <p className="text-xs text-[#6b7280] mb-5 leading-relaxed">
-          Para garantizar la máxima seguridad en nuestra comunidad, ofrecemos una verificación oficial. Al verificar tu identidad y tu vivienda asociada, obtendrás el sello de verificación oficial y desbloquearás una recompensa masiva de 150 WP.
+          La confianza se construye con evidencia. Aquí puedes ver tu estado actual y cómo te verán otros usuarios.
         </p>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="p-4 bg-surface-mist rounded-xl border border-surface-mist-dark">
+            <h3 className="text-sm font-bold text-ink-teal-900 mb-3">Índice de Confianza</h3>
+            <div className="flex items-center gap-1 mb-2">
+              {[1, 2, 3, 4, 5].map((dot) => (
+                <div key={dot} className={`w-3 h-3 rounded-full ${isVerified && trustIndex > 0 && dot <= trustIndex ? 'bg-ink-teal-700' : (isVerified && trustIndex > 0 ? 'bg-gray-200' : 'bg-gray-200 border border-gray-300')}`} />
+              ))}
+            </div>
+            <p className="text-[11px] text-[#6b7280] font-medium">
+              {isVerified && trustIndex > 0 ? `Nivel ${trustIndex} de 5` : 'Miembro nuevo — aún sin historial de intercambios'}
+            </p>
+          </div>
+
+          <div className="p-4 bg-surface-mist rounded-xl border border-surface-mist-dark">
+            <h3 className="text-sm font-bold text-ink-teal-900 mb-3">Verificaciones Activas</h3>
+            <ul className="space-y-2 text-xs text-ink-teal-900 font-medium">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-ink-teal-700" /> Correo verificado
+              </li>
+              <li className="flex items-center gap-2">
+                {phone ? <CheckCircle2 className="w-4 h-4 text-ink-teal-700" /> : <div className="w-4 h-4 rounded-full border border-gray-400" />} 
+                {phone ? 'Teléfono verificado (no se muestra al público)' : 'Teléfono pendiente'}
+              </li>
+              <li className="flex items-center gap-2">
+                {isVerified ? <CheckCircle2 className="w-4 h-4 text-ink-teal-700" /> : <div className="w-4 h-4 rounded-full border border-gray-400" />} 
+                {isVerified ? 'Identidad verificada' : 'Identidad pendiente'}
+              </li>
+            </ul>
+          </div>
+        </div>
+
         {isVerified ? (
-          <div className="flex items-center gap-2.5 p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-800 text-sm font-semibold">
-            <CheckCircle2 className="w-5 h-5 text-blue-600 inline-block mr-1" /> Cuenta y Vivienda Verificadas Oficialmente
+          <div className="flex items-center gap-2.5 p-4 bg-[#f0ede8] border border-[#d6d3d1] rounded-xl text-ink-teal-900 text-sm font-semibold">
+            <CheckCircle2 className="w-5 h-5 text-ink-teal-700 inline-block shrink-0" /> 
+            <div>
+              <p>Cuenta Verificada Oficialmente</p>
+              <p className="text-[11px] text-[#6b7280] font-normal mt-0.5">Tu perfil destaca como confiable para toda la comunidad.</p>
+            </div>
           </div>
         ) : (
-          <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="border border-amber-200 bg-amber-50/50 rounded-xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="font-semibold text-sm text-ink-teal-900 mb-1">Verificación Total (Pago Único)</p>
-              <p className="text-xs text-[#6b7280]">Incluye verificación de identidad (KYC) y auditoría de tu vivienda.</p>
+              <p className="font-semibold text-sm text-ink-teal-900 mb-1">Verificación Oficial Wellhouse</p>
+              <p className="text-xs text-[#6b7280] max-w-md leading-relaxed">Incluye verificación de identidad (KYC) y auditoría de tu vivienda. Desbloquea tu Índice de Confianza y gana 150 WP al instante.</p>
             </div>
             <button 
               onClick={() => setShowCheckout(true)}
-              className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-[#1a1a1a] font-bold text-xs rounded-xl shadow-sm transition-all shrink-0"
+              className="px-5 py-2.5 bg-ink-teal-900 hover:bg-ink-teal-800 text-white font-bold text-xs rounded-xl shadow-sm transition-all shrink-0"
             >
               Verificar por $15 USD
             </button>
@@ -1546,7 +1597,7 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
               </button>
             </div>
             <p className="text-[10px] text-[#6b7280] mt-1.5 flex items-center gap-1">
-              <span>ℹ️</span> Acepta formatos como `youtube.com/shorts/...`, `youtu.be/...`, o `youtube.com/watch?v=...`. Tu video se reproducirá automáticamente en la máxima resolución HD posible.
+              <span className="w-3.5 h-3.5 text-[#6b7280] inline-block border border-[#6b7280] rounded-full text-center text-[9px] font-bold leading-[12px]">i</span> Acepta formatos como `youtube.com/shorts/...`, `youtu.be/...`, o `youtube.com/watch?v=...`. Tu video se reproducirá automáticamente en la máxima resolución HD posible.
             </p>
           </div>
 

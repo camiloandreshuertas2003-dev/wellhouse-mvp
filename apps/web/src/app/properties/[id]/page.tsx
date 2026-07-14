@@ -10,7 +10,7 @@ import AmenityIcon from '@/components/AmenityIcon'
 import CategoryIcon from '@/components/CategoryIcon'
 import {
   ChevronRight, Users, BedDouble, Bath, ArrowLeft, Share2, Heart,
-  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass
+  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass, ShieldCheck
 } from 'lucide-react'
 import { GoogleMap, useLoadScript, Circle } from '@react-google-maps/api'
 
@@ -213,7 +213,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       
       const { data } = await supabase
         .from('properties')
-        .select('*')
+        .select('*, users!user_id(id, name, avatar_url, is_verified, trust_index, bio, created_at)')
         .eq('id', params.id)
         .maybeSingle()
       setProperty(data)
@@ -646,7 +646,45 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               <DescSection title="La zona" text={desc.area} expanded={areaExpanded} onToggle={() => setAreaExpanded(p => !p)} />
               <DescSection title="Cómo llegar" text={desc.directions} expanded={dirExpanded} onToggle={() => setDirExpanded(p => !p)} />
               
-              {desc.host && (
+              {/* Host Section with Trust Profile integration */}
+              {property.users ? (
+                <div className="mt-8 pt-8 border-t border-surface-mist">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Link href={`/users/${property.users.id}`} className="block flex-shrink-0">
+                      <div className="w-14 h-14 bg-surface-mist-dark rounded-full overflow-hidden border-2 border-surface-mist flex items-center justify-center hover:opacity-90 transition">
+                        {property.users.avatar_url ? (
+                          <img src={property.users.avatar_url} alt={property.users.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xl font-bold text-text-muted-custom">
+                            {(property.users.name || 'U').charAt(0)}
+                          </span>
+                        )}
+                      </div>
+                    </Link>
+                    <div>
+                      <Link href={`/users/${property.users.id}`} className="hover:underline">
+                        <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900">
+                          {property.users.name ? `${property.users.name.split(' ')[0]} ${property.users.name.split(' ').length > 1 ? property.users.name.split(' ')[property.users.name.split(' ').length - 1].charAt(0) + '.' : ''}` : 'Anfitrión'}
+                        </h2>
+                      </Link>
+                      <div className="flex items-center gap-2 mt-1">
+                        {property.users.is_verified && (
+                          <span className="flex items-center gap-1 text-[11px] font-semibold text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded-full">
+                            <ShieldCheck className="w-3 h-3" /> Verificado
+                          </span>
+                        )}
+                        <span className="text-[11px] font-medium text-text-muted-custom">
+                          Índice: {property.users.trust_index || 0}/5
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <DescSection title="Sobre mí" text={property.users.bio || desc.host || 'Aún no ha escrito su biografía.'} expanded={hostExpanded} onToggle={() => setHostExpanded(p => !p)} />
+                  <Link href={`/users/${property.users.id}`} className="inline-block mt-4 text-xs font-semibold text-ink-teal-900 hover:text-accent-mango transition-colors underline">
+                    Ver perfil completo →
+                  </Link>
+                </div>
+              ) : (
                 <div className="mt-8 pt-8 border-t border-surface-mist">
                   <div className="flex items-center gap-4 mb-4">
                     <div className="w-14 h-14 bg-primary-cobalt/10 rounded-full flex items-center justify-center">
