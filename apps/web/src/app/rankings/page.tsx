@@ -44,15 +44,15 @@ export default function RankingsPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] font-inter">
+    <div className="min-h-screen bg-surface-mist font-inter">
       {/* Header Bar */}
-      <header className="border-b border-[#e8e4dc] bg-white sticky top-0 z-30">
+      <header className="border-b border-surface-mist-dark bg-white sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-[#4a6b5e] hover:text-[#1a3c34] transition-colors text-sm font-semibold">
+          <Link href="/dashboard" className="flex items-center gap-2 text-text-muted-custom hover:text-ink-teal-900 transition-colors text-sm font-semibold">
             <ArrowLeft className="w-4 h-4" /> Volver al Panel
           </Link>
           <div className="flex items-center gap-1">
-            <span className="font-fraunces font-semibold text-xl text-[#1a3c34]">Well</span>
+            <span className="font-fraunces font-semibold text-xl text-ink-teal-900">Well</span>
             <span className="font-fraunces font-semibold text-xl text-[#f0a500]">house</span>
           </div>
         </div>
@@ -60,7 +60,7 @@ export default function RankingsPage() {
 
       <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Banner de Presentación */}
-        <div className="rounded-3xl p-8 text-white mb-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a3c34 0%, #2d6a4f 100%)' }}>
+        <div className="rounded-3xl p-8 text-white mb-8 relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #1a3c34 0%, #404040 100%)' }}>
           <div className="absolute -top-32 -right-32 w-[350px] h-[350px] rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
           <div className="relative z-10 max-w-xl">
             <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-2xl mb-4">🏆</div>
@@ -72,14 +72,14 @@ export default function RankingsPage() {
         </div>
 
         {/* Tabla de Rankings */}
-        <div className="bg-white rounded-3xl border border-[#e8e4dc] overflow-hidden shadow-sm">
-          <div className="p-6 border-b border-[#e8e4dc]">
-            <h2 className="text-[#1a3c34] font-semibold text-base">Top 20 Miembros Destacados</h2>
+        <div className="bg-white rounded-3xl border border-surface-mist-dark overflow-hidden shadow-sm">
+          <div className="p-6 border-b border-surface-mist-dark">
+            <h2 className="text-ink-teal-900 font-semibold text-base">Top 20 Miembros Destacados</h2>
           </div>
 
           {loading ? (
             <div className="text-center py-20">
-              <div className="w-8 h-8 border-4 border-[#1a3c34] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+              <div className="w-8 h-8 border-4 border-ink-teal-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
               <p className="text-sm text-[#6b7280]">Cargando tabla de líderes...</p>
             </div>
           ) : leaders.length === 0 ? (
@@ -90,7 +90,7 @@ export default function RankingsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-[#e8e4dc] bg-[#f8f7f4]/50">
+                  <tr className="border-b border-surface-mist-dark bg-surface-mist/50">
                     <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider w-16">Posición</th>
                     <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider">Usuario</th>
                     <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider text-center">Nivel</th>
@@ -107,7 +107,7 @@ export default function RankingsPage() {
                                    : 'bg-gray-100 text-gray-700 border-gray-200'
 
                     return (
-                      <tr key={user.user_id} className="hover:bg-[#f8f7f4]/30 transition-colors">
+                      <tr key={user.user_id} className="hover:bg-surface-mist/30 transition-colors">
                         <td className="py-4 px-6">
                           <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-bold text-sm ${posColor}`}>
                             {idx + 1}
@@ -120,7 +120,7 @@ export default function RankingsPage() {
                               {!user.avatar_url && user.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <p className="font-semibold text-sm text-[#1a3c34] flex items-center gap-1.5">
+                              <p className="font-semibold text-sm text-ink-teal-900 flex items-center gap-1.5">
                                 {user.name}
                                 {user.wellpoints > 500 && (
                                   <Shield className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
@@ -135,7 +135,7 @@ export default function RankingsPage() {
                             {badge.label}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center font-medium text-sm text-[#1a3c34]">
+                        <td className="py-4 px-6 text-center font-medium text-sm text-ink-teal-900">
                           <div className="flex items-center justify-center gap-1">
                             <Repeat className="w-3.5 h-3.5 text-[#6b7280]" />
                             {user.exchanges_completed}

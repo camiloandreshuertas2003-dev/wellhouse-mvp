@@ -27,6 +27,7 @@ interface Property {
   country: string
   status: string
   type: string
+  images?: string[]
 }
 
 // ─── Level config (Módulo 4) ─────────────────────────────────────────────────
@@ -58,6 +59,9 @@ export default function DashboardPage() {
 
   // mobile "Más" sheet
   const [moreOpen, setMoreOpen] = useState(false)
+
+  
+  
 
   const fetchData = async () => {
     const { data: { user: authUser } } = await supabase.auth.getUser()
@@ -140,7 +144,7 @@ export default function DashboardPage() {
     // Property
     const { data: propData } = await supabase
       .from('properties')
-      .select('id, title, city, country, status, type')
+      .select('id, title, city, country, status, type, images')
       .eq('user_id', authUser.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -177,10 +181,10 @@ export default function DashboardPage() {
 
   if (loadingProfile) {
     return (
-      <div className="min-h-screen bg-[#f8f7f4] flex items-center justify-center">
+      <div className="min-h-screen bg-surface-mist flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-[#1a3c34] border-t-transparent rounded-full animate-spin" />
-          <p className="text-[#1a3c34] font-semibold text-sm">Cargando tu panel…</p>
+          <div className="w-10 h-10 border-4 border-ink-teal-900 border-t-transparent rounded-full animate-spin" />
+          <p className="text-ink-teal-900 font-semibold text-sm">Cargando tu panel…</p>
         </div>
       </div>
     )
@@ -192,7 +196,7 @@ export default function DashboardPage() {
   const exchangesDone = exchanges.filter(e => e.status === 'completed').length
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4]">
+    <div className="min-h-screen bg-surface-mist">
       <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8 py-3 pb-24 md:pb-6">
         <div className="flex gap-4 items-start">
 
@@ -200,14 +204,14 @@ export default function DashboardPage() {
           <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[57px] gap-3">
 
             {/* Profile card */}
-            <div className="bg-white rounded-2xl border border-[#e8e4dc] p-4">
+            <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
               <div className="flex items-center gap-3 mb-3">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-lg text-white"
                   style={{ background: levelCfg.color }}>
                   {profile?.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-semibold text-[#1a3c34] text-sm truncate">{profile?.name}</p>
+                  <p className="font-semibold text-ink-teal-900 text-sm truncate">{profile?.name}</p>
                   <p className="text-xs text-[#6b7280] truncate">{profile?.email}</p>
                 </div>
               </div>
@@ -250,10 +254,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6b7280]">Miembro desde</span>
-                  <span className="text-[#1a3c34] capitalize">{profile?.memberSince}</span>
+                  <span className="text-ink-teal-900 capitalize">{profile?.memberSince}</span>
                 </div>
                 <div className="pt-2">
-                  <Link href="/rankings" className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-[#1a3c34] bg-[#f8f7f4] hover:bg-[#e8e4dc] transition-colors">
+                  <Link href="/rankings" className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-ink-teal-900 bg-surface-mist hover:bg-surface-mist-dark transition-colors">
                     Ver Tabla de Líderes 🏆
                   </Link>
                 </div>
@@ -261,7 +265,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Nav (Módulo 2.1 — Panel Admin retirado) */}
-            <nav className="bg-white rounded-2xl border border-[#e8e4dc] p-2">
+            <nav className="bg-white rounded-2xl border border-surface-mist-dark p-2">
               {ALL_TABS.map((tab) => (
                 <button
                   key={tab.id}
@@ -271,8 +275,8 @@ export default function DashboardPage() {
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm transition-colors mb-0.5 last:mb-0 ${
                     activeTab === tab.id
-                      ? 'bg-[#1a3c34] text-white font-semibold'
-                      : 'text-[#4a6b5e] hover:bg-[#f8f7f4] font-medium'
+                      ? 'bg-ink-teal-900 text-white font-semibold'
+                      : 'text-text-muted-custom hover:bg-surface-mist font-medium'
                   }`}
                 >
                   <tab.Icon className="w-4 h-4 flex-shrink-0" />
@@ -326,7 +330,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Mobile Bottom Tab Bar (Módulo 5) ──────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#e8e4dc] z-50 md:hidden">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-mist-dark z-50 md:hidden">
         <div className="flex items-center justify-around px-2 py-1">
           {MAIN_TABS.map((tab) => (
             <button
@@ -337,7 +341,7 @@ export default function DashboardPage() {
               }}
               className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl min-w-[44px] min-h-[44px] transition-colors ${
                 activeTab === tab.id && !moreOpen
-                  ? 'text-[#1a3c34]'
+                  ? 'text-ink-teal-900'
                   : 'text-[#9ca3af]'
               }`}
             >
@@ -353,7 +357,7 @@ export default function DashboardPage() {
           <button
             onClick={() => setMoreOpen(!moreOpen)}
             className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl min-w-[44px] min-h-[44px] transition-colors ${
-              moreOpen ? 'text-[#1a3c34]' : 'text-[#9ca3af]'
+              moreOpen ? 'text-ink-teal-900' : 'text-[#9ca3af]'
             }`}
           >
             <MoreHorizontal className="w-5 h-5" />
@@ -363,15 +367,15 @@ export default function DashboardPage() {
 
         {/* "Más" sheet */}
         {moreOpen && (
-          <div className="bg-white border-t border-[#e8e4dc] px-4 py-3 grid grid-cols-3 gap-2">
+          <div className="bg-white border-t border-surface-mist-dark px-4 py-3 grid grid-cols-3 gap-2">
             {MORE_TABS.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { setActiveTab(tab.id); setMoreOpen(false) }}
                 className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl text-xs font-medium transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#1a3c34] text-white'
-                    : 'bg-[#f8f7f4] text-[#4a6b5e]'
+                    ? 'bg-ink-teal-900 text-white'
+                    : 'bg-surface-mist text-text-muted-custom'
                 }`}
               >
                 <tab.Icon className="w-5 h-5" />
@@ -448,11 +452,11 @@ function OverviewTab({
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-1.5 mb-1">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                <p className="text-emerald-300 text-xs font-medium">Vivienda publicada y visible</p>
+                <CheckCircle2 className="w-3.5 h-3.5 text-blue-300" />
+                <p className="text-blue-300 text-xs font-medium">Vivienda publicada y visible</p>
               </div>
               <h2 className="text-lg font-fraunces font-bold mb-2">{property?.title}</h2>
-              <p className="text-emerald-100 text-sm mb-4">{property?.city}, {property?.country}</p>
+              <p className="text-blue-100 text-sm mb-4">{property?.city}, {property?.country}</p>
               <div className="flex items-center gap-2">
                 <Link href={`/properties/${property?.id}`}
                   className="inline-flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white px-4 py-2 rounded-xl font-semibold text-sm hover:bg-white/30 transition-colors">
@@ -464,7 +468,7 @@ function OverviewTab({
                 </Link>
               </div>
             </div>
-            <TrendingUp className="w-12 h-12 text-emerald-400/60 flex-shrink-0 hidden sm:block" />
+            <TrendingUp className="w-12 h-12 text-blue-400/60 flex-shrink-0 hidden sm:block" />
           </div>
         </div>
       )}
@@ -485,12 +489,12 @@ function OverviewTab({
 
         {/* WellPoints KPI */}
         <button onClick={() => onTabChange('wellpoints')}
-          className="bg-white rounded-2xl border border-[#e8e4dc] p-4 text-left hover:shadow-md hover:border-amber-200 transition-all group">
+          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-amber-200 transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[#6b7280] text-xs font-medium">WellPoints</span>
             <Coins className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-3xl font-bold text-[#1a3c34]">{profile?.wellPoints ?? 0}</p>
+          <p className="text-3xl font-bold text-ink-teal-900">{profile?.wellPoints ?? 0}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className="text-xs text-[#6b7280]">Puntos disponibles</span>
             <ArrowUpRight className="w-3 h-3 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -499,33 +503,33 @@ function OverviewTab({
 
         {/* Intercambios KPI */}
         <button onClick={() => onTabChange('exchanges')}
-          className="bg-white rounded-2xl border border-[#e8e4dc] p-4 text-left hover:shadow-md hover:border-[#1a3c34]/20 transition-all group">
+          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[#6b7280] text-xs font-medium">Intercambios</span>
-            <Repeat className="w-5 h-5 text-[#4a6b5e] group-hover:scale-110 transition-transform" />
+            <Repeat className="w-5 h-5 text-text-muted-custom group-hover:scale-110 transition-transform" />
           </div>
-          <p className="text-3xl font-bold text-[#1a3c34]">{exchangesDone}</p>
+          <p className="text-3xl font-bold text-ink-teal-900">{exchangesDone}</p>
           <div className="flex items-center gap-1 mt-1">
             <span className="text-xs text-[#6b7280]">
               {pendingExchanges > 0 ? `${pendingExchanges} pendiente${pendingExchanges > 1 ? 's' : ''}` : 'Total completados'}
             </span>
-            <ArrowUpRight className="w-3 h-3 text-[#4a6b5e] opacity-0 group-hover:opacity-100 transition-opacity" />
+            <ArrowUpRight className="w-3 h-3 text-text-muted-custom opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         </button>
 
         {/* Mi Vivienda KPI */}
         <button onClick={() => onTabChange('my-property')}
-          className="bg-white rounded-2xl border border-[#e8e4dc] p-4 text-left hover:shadow-md hover:border-[#1a3c34]/20 transition-all group">
+          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all group">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[#6b7280] text-xs font-medium">Mi Vivienda</span>
-            <Home className="w-5 h-5 text-[#4a6b5e] group-hover:scale-110 transition-transform" />
+            <Home className="w-5 h-5 text-text-muted-custom group-hover:scale-110 transition-transform" />
           </div>
           {loadingProperty ? (
             <div className="h-8 bg-[#f0ede8] rounded animate-pulse" />
           ) : property ? (
             <>
               <p className={`text-sm font-bold ${
-                property.status === 'published' ? 'text-emerald-600' :
+                property.status === 'published' ? 'text-blue-600' :
                 property.status === 'pending_review' ? 'text-amber-500' : 'text-[#6b7280]'
               }`}>
                 {property.status === 'published' ? 'Publicada' :
@@ -544,11 +548,11 @@ function OverviewTab({
 
       {/* ── Gamification Progress (Módulo 4) ─────────────────────────── */}
       {nextLevel && (
-        <div className="bg-white rounded-2xl border border-[#e8e4dc] p-4">
+        <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4" style={{ color: levelCfg.color }} />
-              <span className="text-sm font-semibold text-[#1a3c34]">Progreso de nivel</span>
+              <span className="text-sm font-semibold text-ink-teal-900">Progreso de nivel</span>
             </div>
             <span className="text-xs font-medium px-2.5 py-1 rounded-full"
               style={{ color: levelCfg.color, background: levelCfg.color + '15' }}>
@@ -573,11 +577,11 @@ function OverviewTab({
       )}
 
       {/* ── WellPoints mini-ledger ────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-4">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-[#1a3c34]">Historial de WellPoints</h2>
+          <h2 className="text-sm font-semibold text-ink-teal-900">Historial de WellPoints</h2>
           <button onClick={() => onTabChange('wellpoints')}
-            className="text-xs text-[#4a6b5e] hover:text-[#1a3c34] font-medium flex items-center gap-1 transition-colors">
+            className="text-xs text-text-muted-custom hover:text-ink-teal-900 font-medium flex items-center gap-1 transition-colors">
             Ver todo <ChevronRight className="w-3 h-3" />
           </button>
         </div>
@@ -586,12 +590,12 @@ function OverviewTab({
             {transactions.slice(0, 4).map((tx) => (
               <div key={tx.id} className="py-2.5 flex justify-between items-center text-sm">
                 <div>
-                  <p className="text-[#1a3c34] font-medium text-xs">{tx.description || 'Movimiento de puntos'}</p>
+                  <p className="text-ink-teal-900 font-medium text-xs">{tx.description || 'Movimiento de puntos'}</p>
                   <p className="text-[10px] text-[#6b7280] mt-0.5">
                     {new Date(tx.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
                   </p>
                 </div>
-                <span className={`font-bold text-sm ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                <span className={`font-bold text-sm ${tx.amount > 0 ? 'text-blue-600' : 'text-red-500'}`}>
                   {tx.amount > 0 ? `+${tx.amount}` : tx.amount} WP
                 </span>
               </div>
@@ -657,7 +661,7 @@ function DiscoverCarousel() {
 function WellPointsTab({ profile, transactions }: { profile: UserProfile | null; transactions: any[] }) {
   const TX_ICONS: Record<string, any> = {
     welcome_bonus: <Sparkles className="w-4 h-4 text-amber-400" />,
-    hosting_earned: <Home className="w-4 h-4 text-emerald-500" />,
+    hosting_earned: <Home className="w-4 h-4 text-blue-500" />,
     exchange_spent: <Repeat className="w-4 h-4 text-blue-500" />,
     profile_completion: <CheckCircle2 className="w-4 h-4 text-purple-500" />,
   }
@@ -665,56 +669,56 @@ function WellPointsTab({ profile, transactions }: { profile: UserProfile | null;
   return (
     <div className="space-y-4">
       {/* Balance card */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center">
             <Coins className="w-7 h-7 text-amber-500" />
           </div>
           <div>
             <p className="text-xs text-[#6b7280] font-medium mb-0.5">Saldo disponible</p>
-            <p className="text-4xl font-bold text-[#1a3c34]">{profile?.wellPoints ?? 0}</p>
+            <p className="text-4xl font-bold text-ink-teal-900">{profile?.wellPoints ?? 0}</p>
             <p className="text-xs text-[#6b7280]">WellPoints</p>
           </div>
         </div>
         <div className="mt-4 pt-4 border-t border-[#f0ede8] flex gap-2">
           <Link href="/how-it-works"
-            className="flex-1 text-center py-2 bg-[#1a3c34] text-white rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
+            className="flex-1 text-center py-2 bg-ink-teal-900 text-white rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
             Comprar WellPoints
           </Link>
           <Link href="/search"
-            className="flex-1 text-center py-2 border border-[#e8e4dc] text-[#1a3c34] rounded-xl text-sm font-semibold hover:bg-[#f8f7f4] transition-colors">
+            className="flex-1 text-center py-2 border border-surface-mist-dark text-ink-teal-900 rounded-xl text-sm font-semibold hover:bg-surface-mist transition-colors">
             Usar en intercambio
           </Link>
         </div>
       </div>
 
       {/* Ledger */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-        <h2 className="text-sm font-semibold text-[#1a3c34] mb-4">Historial de transacciones</h2>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+        <h2 className="text-sm font-semibold text-ink-teal-900 mb-4">Historial de transacciones</h2>
         {transactions.length > 0 ? (
           <div className="divide-y divide-[#f0ede8]">
             {transactions.map((tx) => (
               <div key={tx.id} className="py-3 flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#f8f7f4] border border-[#e8e4dc] flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-surface-mist border border-surface-mist-dark flex items-center justify-center flex-shrink-0">
                   {TX_ICONS[tx.type] ?? <Coins className="w-4 h-4 text-[#6b7280]" />}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[#1a3c34] truncate">{tx.description || 'Movimiento de puntos'}</p>
+                  <p className="text-sm font-medium text-ink-teal-900 truncate">{tx.description || 'Movimiento de puntos'}</p>
                   <p className="text-xs text-[#6b7280]">
                     {new Date(tx.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
                     {' · '}{tx.type === 'welcome_bonus' ? 'Bonus bienvenida' : tx.type === 'hosting_earned' ? 'Por hospitalidad' : tx.type === 'exchange_spent' ? 'Intercambio' : tx.type}
                   </p>
                 </div>
-                <span className={`font-bold text-sm flex-shrink-0 ${tx.amount > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                <span className={`font-bold text-sm flex-shrink-0 ${tx.amount > 0 ? 'text-blue-600' : 'text-red-500'}`}>
                   {tx.amount > 0 ? '+' : ''}{tx.amount} WP
                 </span>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-10 border-2 border-dashed border-[#e8e4dc] rounded-xl">
+          <div className="text-center py-10 border-2 border-dashed border-surface-mist-dark rounded-xl">
             <Coins className="w-10 h-10 mx-auto mb-3 text-[#cbd5cc]" />
-            <p className="text-sm font-semibold text-[#1a3c34] mb-1">Sin transacciones aún</p>
+            <p className="text-sm font-semibold text-ink-teal-900 mb-1">Sin transacciones aún</p>
             <p className="text-xs text-[#6b7280] max-w-xs mx-auto">
               Completa tu perfil, registra tu vivienda o hospeda a alguien para ganar tus primeros WellPoints.
             </p>
@@ -751,7 +755,7 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
   if (loadingProperty) {
     return (
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6 space-y-3">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-6 space-y-3">
         <div className="h-5 bg-[#f0ede8] rounded w-1/3 animate-pulse" />
         <div className="h-4 bg-[#f0ede8] rounded w-2/3 animate-pulse" />
         <div className="h-4 bg-[#f0ede8] rounded w-1/2 animate-pulse" />
@@ -761,13 +765,13 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
   if (!property) {
     return (
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6">
-        <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Mi Vivienda</h2>
-        <div className="text-center py-12 border-2 border-dashed border-[#e8e4dc] rounded-2xl">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Mi Vivienda</h2>
+        <div className="text-center py-12 border-2 border-dashed border-surface-mist-dark rounded-2xl">
           <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
             <Home className="w-8 h-8 text-[#cbd5cc]" />
           </div>
-          <h3 className="text-base font-bold text-[#1a3c34] mb-2">Registra tu vivienda</h3>
+          <h3 className="text-base font-bold text-ink-teal-900 mb-2">Registra tu vivienda</h3>
           <p className="text-sm text-[#6b7280] mb-1 max-w-sm mx-auto">
             Para participar en la comunidad Wellhouse, primero debes registrar tu vivienda.
           </p>
@@ -775,7 +779,7 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
             Es gratis, tarda unos minutos y te permite intercambiar con miles de hogares.
           </p>
           <Link href="/properties/create"
-            className="inline-flex items-center gap-2 bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
+            className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
             <PlusCircle className="w-4 h-4" /> Comenzar registro
           </Link>
         </div>
@@ -791,17 +795,17 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
   const s = statusMap[property.status] ?? statusMap.draft
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-base font-semibold text-[#1a3c34]">Mi Vivienda</h2>
+        <h2 className="text-base font-semibold text-ink-teal-900">Mi Vivienda</h2>
         <Link href="/properties/create"
-          className="flex items-center gap-1.5 text-xs font-semibold text-[#1a3c34] border border-[#e8e4dc] px-3 py-1.5 rounded-lg hover:bg-[#f8f7f4] transition-colors">
+          className="flex items-center gap-1.5 text-xs font-semibold text-ink-teal-900 border border-surface-mist-dark px-3 py-1.5 rounded-lg hover:bg-surface-mist transition-colors">
           <Pencil className="w-3.5 h-3.5" /> Editar
         </Link>
       </div>
 
-      <div className="bg-[#f8f7f4] rounded-xl p-4 mb-4">
-        <h3 className="font-semibold text-[#1a3c34]">{property.title}</h3>
+      <div className="bg-surface-mist rounded-xl p-4 mb-4">
+        <h3 className="font-semibold text-ink-teal-900">{property.title}</h3>
         <p className="text-sm text-[#6b7280] mt-1">{property.city}, {property.country} · {property.type}</p>
         <div className="flex items-center gap-1.5 mt-3 w-fit px-3 py-1.5 rounded-full text-xs font-semibold"
           style={{ color: s.color, background: s.bg }}>
@@ -817,8 +821,8 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
           { label: 'Intercambios', value: '0' },
           { label: 'Rating', value: '—' },
         ].map((stat) => (
-          <div key={stat.label} className="text-center p-3 bg-[#f8f7f4] rounded-xl">
-            <p className="text-2xl font-bold text-[#1a3c34]">{stat.value}</p>
+          <div key={stat.label} className="text-center p-3 bg-surface-mist rounded-xl">
+            <p className="text-2xl font-bold text-ink-teal-900">{stat.value}</p>
             <p className="text-xs text-[#6b7280] mt-0.5">{stat.label}</p>
           </div>
         ))}
@@ -826,7 +830,7 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
       <div className="mt-4 flex gap-2">
         <Link href={`/properties/${property.id}`}
-          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-[#e8e4dc] rounded-xl text-sm font-semibold text-[#1a3c34] hover:bg-[#f8f7f4] transition-colors">
+          className="flex-1 flex items-center justify-center gap-1.5 py-2.5 border border-surface-mist-dark rounded-xl text-sm font-semibold text-ink-teal-900 hover:bg-surface-mist transition-colors">
           <Eye className="w-4 h-4" /> Ver como huésped
         </Link>
         <button onClick={handleDelete} disabled={isDeleting}
@@ -871,22 +875,22 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
 
   if (list.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6">
-        <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Intercambios</h2>
-        <div className="text-center py-12 border-2 border-dashed border-[#e8e4dc] rounded-2xl">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Intercambios</h2>
+        <div className="text-center py-12 border-2 border-dashed border-surface-mist-dark rounded-2xl">
           <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
             <Repeat className="w-8 h-8 text-[#cbd5cc]" />
           </div>
-          <h3 className="text-base font-bold text-[#1a3c34] mb-2">Sin intercambios aún</h3>
+          <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin intercambios aún</h3>
           <p className="text-sm text-[#6b7280] mb-6 max-w-sm mx-auto">
             {hasProperty ? 'Busca viviendas y solicita tu primer intercambio con WellPoints.' : 'Primero registra tu vivienda para poder intercambiar.'}
           </p>
           {hasProperty ? (
-            <Link href="/search" className="inline-flex items-center gap-2 bg-[#1a3c34] text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
+            <Link href="/search" className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
               Buscar viviendas
             </Link>
           ) : (
-            <Link href="/properties/create" className="inline-flex items-center gap-2 bg-[#1a3c34] text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
+            <Link href="/properties/create" className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#2d6a4f] transition-colors">
               Registrar mi vivienda
             </Link>
           )}
@@ -896,15 +900,15 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-      <h2 className="text-base font-semibold text-[#1a3c34] mb-4">Intercambios</h2>
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+      <h2 className="text-base font-semibold text-ink-teal-900 mb-4">Intercambios</h2>
       <div className="space-y-3">
         {list.map((ex) => {
           const isHost = ex.host_id === userId
           const s = STATUS_CFG[ex.status] ?? { label: ex.status, color: '#374151', bg: '#f9fafb', Icon: Clock }
           const busy = actionLoading?.startsWith(ex.id)
           return (
-            <div key={ex.id} className="border border-[#e8e4dc] rounded-xl p-4">
+            <div key={ex.id} className="border border-surface-mist-dark rounded-xl p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -917,7 +921,7 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
                       {s.label}
                     </span>
                   </div>
-                  <p className="text-sm text-[#1a3c34] font-medium">
+                  <p className="text-sm text-ink-teal-900 font-medium">
                     {new Date(ex.checkin_date).toLocaleDateString('es-ES')} → {new Date(ex.checkout_date).toLocaleDateString('es-ES')}
                     {' · '}<strong>{ex.nights} noches</strong>
                   </p>
@@ -926,7 +930,7 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
                   </p>
                   <div className="mt-2">
                     <Link href={`/users/${isHost ? ex.guest_id : ex.host_id}`}
-                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 underline">
+                      className="text-xs font-semibold text-blue-700 hover:text-blue-800 underline">
                       Ver Perfil del {isHost ? 'Huésped' : 'Anfitrión'}
                     </Link>
                   </div>
@@ -934,13 +938,13 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
                 <div className="flex flex-col gap-1.5 shrink-0">
                   {isHost && ex.status === 'pending' && (
                     <button onClick={() => callAction(ex.id, 'confirm')} disabled={!!busy}
-                      className="px-3 py-1.5 bg-[#1a3c34] text-white text-xs rounded-lg font-semibold hover:bg-[#2d6a4f] disabled:opacity-50">
+                      className="px-3 py-1.5 bg-ink-teal-900 text-white text-xs rounded-lg font-semibold hover:bg-[#2d6a4f] disabled:opacity-50">
                       {busy ? '…' : 'Confirmar'}
                     </button>
                   )}
                   {isHost && ex.status === 'confirmed' && (
                     <button onClick={() => callAction(ex.id, 'finalize')} disabled={!!busy}
-                      className="px-3 py-1.5 bg-emerald-600 text-white text-xs rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50">
+                      className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">
                       {busy ? '…' : 'Finalizar y acreditar WP'}
                     </button>
                   )}
@@ -963,16 +967,16 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
 // ─── MESSAGES TAB ────────────────────────────────────────────────────────────
 function MessagesTab() {
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6">
-      <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Mensajes</h2>
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+      <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Mensajes</h2>
       <div className="text-center py-12">
         <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
           <MessageCircle className="w-8 h-8 text-[#cbd5cc]" />
         </div>
-        <h3 className="text-base font-bold text-[#1a3c34] mb-2">Sin mensajes aún</h3>
+        <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin mensajes aún</h3>
         <p className="text-sm text-[#6b7280] mb-5 max-w-xs mx-auto">Aquí aparecerán tus conversaciones con anfitriones y huéspedes.</p>
         <Link href="/messages"
-          className="inline-flex items-center gap-2 border border-[#e8e4dc] text-[#1a3c34] px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#f8f7f4] transition-colors">
+          className="inline-flex items-center gap-2 border border-surface-mist-dark text-ink-teal-900 px-4 py-2 rounded-xl text-sm font-semibold hover:bg-surface-mist transition-colors">
           Ir a Mensajes <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
@@ -983,18 +987,18 @@ function MessagesTab() {
 // ─── FAVORITES TAB (Módulo 3.5) ────────────────────────────────────────────────
 function FavoritesTab() {
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-6">
-      <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Favoritos</h2>
-      <div className="text-center py-12 border-2 border-dashed border-[#e8e4dc] rounded-2xl">
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
+      <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Favoritos</h2>
+      <div className="text-center py-12 border-2 border-dashed border-surface-mist-dark rounded-2xl">
         <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
           <Heart className="w-8 h-8 text-[#cbd5cc]" />
         </div>
-        <h3 className="text-base font-bold text-[#1a3c34] mb-2">Sin viviendas guardadas</h3>
+        <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin viviendas guardadas</h3>
         <p className="text-sm text-[#6b7280] mb-6 max-w-xs mx-auto">
           Cuando guardes una vivienda tocando el corazón en el explorador, aparecerá aquí.
         </p>
         <Link href="/search"
-          className="inline-flex items-center gap-2 bg-[#1a3c34] text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
+          className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
           Explorar viviendas <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
@@ -1007,37 +1011,37 @@ function ReviewsTab({ hasProperty }: { hasProperty: boolean }) {
   const [tab, setTab] = useState<'written' | 'received'>('written')
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-      <h2 className="text-base font-semibold text-[#1a3c34] mb-4">Reseñas</h2>
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+      <h2 className="text-base font-semibold text-ink-teal-900 mb-4">Reseñas</h2>
 
       {/* Two-tab switcher */}
-      <div className="flex bg-[#f8f7f4] rounded-xl p-1 mb-5">
+      <div className="flex bg-surface-mist rounded-xl p-1 mb-5">
         <button onClick={() => setTab('written')}
-          className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${tab === 'written' ? 'bg-white text-[#1a3c34] shadow-sm' : 'text-[#6b7280]'}`}>
+          className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${tab === 'written' ? 'bg-white text-ink-teal-900 shadow-sm' : 'text-[#6b7280]'}`}>
           Reseñas que escribí
         </button>
         {hasProperty && (
           <button onClick={() => setTab('received')}
-            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${tab === 'received' ? 'bg-white text-[#1a3c34] shadow-sm' : 'text-[#6b7280]'}`}>
+            className={`flex-1 text-xs font-semibold py-2 rounded-lg transition-colors ${tab === 'received' ? 'bg-white text-ink-teal-900 shadow-sm' : 'text-[#6b7280]'}`}>
             Sobre mi vivienda
           </button>
         )}
       </div>
 
-      <div className="text-center py-10 border-2 border-dashed border-[#e8e4dc] rounded-2xl">
+      <div className="text-center py-10 border-2 border-dashed border-surface-mist-dark rounded-2xl">
         <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
           <Star className="w-8 h-8 text-[#cbd5cc]" />
         </div>
         {tab === 'written' ? (
           <>
-            <h3 className="text-base font-bold text-[#1a3c34] mb-2">Sin reseñas escritas</h3>
+            <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin reseñas escritas</h3>
             <p className="text-sm text-[#6b7280] max-w-xs mx-auto">
               Podrás dejar una reseña después de completar tu primer intercambio como huésped.
             </p>
           </>
         ) : (
           <>
-            <h3 className="text-base font-bold text-[#1a3c34] mb-2">Sin reseñas recibidas</h3>
+            <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin reseñas recibidas</h3>
             <p className="text-sm text-[#6b7280] max-w-xs mx-auto">
               Las reseñas de tus huéspedes aparecerán aquí después de que completen un intercambio.
             </p>
@@ -1067,6 +1071,37 @@ function SettingsTab({
   const [message, setMessage] = useState<string | null>(null)
   const [showCheckout, setShowCheckout] = useState(false)
   const [paymentLoading, setPaymentLoading] = useState(false)
+
+    const [uploadingAvatar, setUploadingAvatar] = useState(false)
+    const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (!e.target.files || e.target.files.length === 0) return
+      const file = e.target.files[0]
+      setUploadingAvatar(true)
+      setMessage(null)
+      try {
+        const fileExt = file.name.split('.').pop()
+        const fileName = `${userId}-${Math.random()}.${fileExt}`
+        const filePath = `avatars/${fileName}`
+  
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(filePath, file)
+  
+        if (uploadError) throw uploadError
+  
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath)
+  
+        setAvatarUrl(publicUrl)
+        setMessage('Foto cargada, recuerda hacer clic en Guardar cambios.')
+      } catch (err: any) {
+        setMessage('Error al subir foto: ' + err.message)
+      } finally {
+        setUploadingAvatar(false)
+      }
+    }
+
 
   const handleSave = async () => {
     setSaving(true)
@@ -1111,57 +1146,70 @@ function SettingsTab({
   return (
     <div className="space-y-6">
       {/* Sección Configuración */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-        <h2 className="text-base font-semibold text-[#1a3c34] mb-5">Configuración de cuenta</h2>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Configuración de cuenta</h2>
         {message && (
-          <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+          <div className={`mb-4 p-3 rounded-xl text-xs font-medium ${message.includes('Error') ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}`}>
             {message}
           </div>
         )}
         <div className="space-y-4 max-w-md">
           <div>
-            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Nombre</label>
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Nombre</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Biografía / Descripción corta</label>
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Biografía / Descripción corta</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={3}
               placeholder="Cuéntanos un poco sobre ti y tus preferencias de viaje..."
-              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition resize-none"
+              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition resize-none"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Teléfono de contacto</label>
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Teléfono de contacto</label>
             <input
               type="text"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder="+57 300 123 4567"
-              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
+              className="w-full px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm text-ink-teal-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-ink-teal-900 transition"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-[#4a6b5e] mb-1.5">Foto de perfil (URL)</label>
-            <input
-              type="text"
-              value={avatarUrl}
-              onChange={(e) => setAvatarUrl(e.target.value)}
-              placeholder="https://ejemplo.com/foto.jpg"
-              className="w-full px-4 py-2.5 border border-[#e8e4dc] rounded-xl text-sm text-[#1a3c34] bg-white focus:outline-none focus:ring-2 focus:ring-[#1a3c34]/20 focus:border-[#1a3c34] transition"
-            />
+            <label className="block text-xs font-medium text-text-muted-custom mb-1.5">Foto de perfil</label>
+              <div className="flex items-center gap-4">
+                <div className="relative w-16 h-16 rounded-full overflow-hidden bg-surface-mist-dark flex-shrink-0 group border border-surface-mist-dark">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-text-muted-custom bg-surface-mist-dark font-bold text-xl">
+                      {name ? name.charAt(0).toUpperCase() : '?'}
+                    </div>
+                  )}
+                  <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity">
+                    <span className="text-[9px] font-bold text-white uppercase text-center leading-tight">
+                      {uploadingAvatar ? '...' : <>Subir<br/>Foto</>}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} disabled={uploadingAvatar} />
+                  </label>
+                </div>
+                <div className="text-xs text-text-muted-custom">
+                  Haz clic en la imagen para subir una nueva foto desde tu dispositivo.
+                </div>
+              </div>
           </div>
           <button 
             onClick={handleSave}
             disabled={saving}
-            className="bg-[#1a3c34] text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors disabled:opacity-50"
+            className="bg-ink-teal-900 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors disabled:opacity-50"
           >
             {saving ? 'Guardando...' : 'Guardar cambios'}
           </button>
@@ -1169,20 +1217,20 @@ function SettingsTab({
       </div>
 
       {/* Sección Verificación */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-        <h2 className="text-base font-semibold text-[#1a3c34] mb-3">Verificación de Identidad y Vivienda</h2>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+        <h2 className="text-base font-semibold text-ink-teal-900 mb-3">Verificación de Identidad y Vivienda</h2>
         <p className="text-xs text-[#6b7280] mb-5 leading-relaxed">
           Para garantizar la máxima seguridad en nuestra comunidad, ofrecemos una verificación oficial. Al verificar tu identidad y tu vivienda asociada, obtendrás el sello de verificación oficial y desbloquearás una recompensa masiva de 150 WP.
         </p>
 
         {isVerified ? (
-          <div className="flex items-center gap-2.5 p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-800 text-sm font-semibold">
+          <div className="flex items-center gap-2.5 p-4 bg-blue-50 border border-blue-200 rounded-2xl text-blue-800 text-sm font-semibold">
             <span className="text-lg">🛡️</span> Cuenta y Vivienda Verificadas Oficialmente
           </div>
         ) : (
           <div className="border border-amber-200 bg-amber-50/50 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="font-semibold text-sm text-[#1a3c34] mb-1">Verificación Total (Pago Único)</p>
+              <p className="font-semibold text-sm text-ink-teal-900 mb-1">Verificación Total (Pago Único)</p>
               <p className="text-xs text-[#6b7280]">Incluye verificación de identidad (KYC) y auditoría de tu vivienda.</p>
             </div>
             <button 
@@ -1197,24 +1245,24 @@ function SettingsTab({
 
       {/* Modal de Checkout / Pago Simulado */}
       {showCheckout && (
-        <div className="fixed inset-0 bg-[#1a3c34]/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl border border-[#e8e4dc] max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-ink-teal-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl border border-surface-mist-dark max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-fraunces font-bold text-lg text-[#1a3c34]">Verificación Wellhouse</h3>
-              <button onClick={() => setShowCheckout(false)} className="text-[#6b7280] hover:text-[#1a3c34] text-sm">✕</button>
+              <h3 className="font-fraunces font-bold text-lg text-ink-teal-900">Verificación Wellhouse</h3>
+              <button onClick={() => setShowCheckout(false)} className="text-[#6b7280] hover:text-ink-teal-900 text-sm">✕</button>
             </div>
 
-            <div className="bg-[#f8f7f4] rounded-2xl p-4 mb-6 border border-[#e8e4dc] space-y-3">
-              <div className="flex justify-between text-sm text-[#1a3c34]">
+            <div className="bg-surface-mist rounded-2xl p-4 mb-6 border border-surface-mist-dark space-y-3">
+              <div className="flex justify-between text-sm text-ink-teal-900">
                 <span>Verificación de Identidad (KYC)</span>
                 <span className="font-semibold">$10.00 USD</span>
               </div>
-              <div className="flex justify-between text-sm text-[#1a3c34]">
+              <div className="flex justify-between text-sm text-ink-teal-900">
                 <span>Verificación de Propiedad / Casa</span>
                 <span className="font-semibold">$5.00 USD</span>
               </div>
-              <div className="h-px bg-[#e8e4dc]" />
-              <div className="flex justify-between text-base font-bold text-[#1a3c34]">
+              <div className="h-px bg-surface-mist-dark" />
+              <div className="flex justify-between text-base font-bold text-ink-teal-900">
                 <span>Total a Pagar</span>
                 <span className="text-amber-600">$15.00 USD</span>
               </div>
@@ -1227,14 +1275,14 @@ function SettingsTab({
             <div className="flex gap-3">
               <button 
                 onClick={() => setShowCheckout(false)}
-                className="flex-1 py-3 border border-[#e8e4dc] text-[#6b7280] rounded-xl text-xs font-bold hover:bg-[#f8f7f4] transition"
+                className="flex-1 py-3 border border-surface-mist-dark text-[#6b7280] rounded-xl text-xs font-bold hover:bg-surface-mist transition"
                 disabled={paymentLoading}
               >
                 Cancelar
               </button>
               <button 
                 onClick={handlePaymentSuccess}
-                className="flex-1 py-3 bg-[#1a3c34] hover:bg-[#2d6a4f] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
+                className="flex-1 py-3 bg-ink-teal-900 hover:bg-[#2d6a4f] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2"
                 disabled={paymentLoading}
               >
                 {paymentLoading ? 'Procesando...' : 'Confirmar Pago'}
@@ -1304,26 +1352,26 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
   if (loading) return <div className="text-center py-10">Cargando retos...</div>
 
   return (
-    <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-      <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-1">Mis Retos de Bienvenida</h2>
+    <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+      <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-1">Mis Retos de Bienvenida</h2>
       <p className="text-sm text-[#6b7280] mb-6">Completa estas tareas para recibir WellPoints extras y comenzar a intercambiar hogares.</p>
       
       <div className="space-y-4">
         {quests.map(quest => (
-          <div key={quest.key} className={`border border-[#e8e4dc] rounded-2xl p-5 flex items-start gap-4 transition-all ${quest.status === 'completed' ? 'bg-emerald-50/50 border-emerald-200' : 'bg-white'}`}>
+          <div key={quest.key} className={`border border-surface-mist-dark rounded-2xl p-5 flex items-start gap-4 transition-all ${quest.status === 'completed' ? 'bg-blue-50/50 border-blue-200' : 'bg-white'}`}>
             <div className="shrink-0 mt-0.5">
               {quest.status === 'completed' ? (
-                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">✓</div>
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-sm">✓</div>
               ) : (
                 <div className="w-8 h-8 rounded-full bg-[#f0ede8] flex items-center justify-center text-[#cbd5cc] font-bold text-sm">⏳</div>
               )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-start gap-2 flex-wrap mb-1">
-                <h3 className={`font-semibold text-sm ${quest.status === 'completed' ? 'text-emerald-900' : 'text-[#1a3c34]'}`}>
+                <h3 className={`font-semibold text-sm ${quest.status === 'completed' ? 'text-blue-900' : 'text-ink-teal-900'}`}>
                   {quest.title}
                 </h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${quest.status === 'completed' ? 'bg-emerald-200 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${quest.status === 'completed' ? 'bg-blue-200 text-blue-800' : 'bg-amber-100 text-amber-800'}`}>
                   +{quest.reward} WP
                 </span>
               </div>
@@ -1430,17 +1478,17 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
 
   if (!property) {
     return (
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-8 text-center">
-        <div className="w-16 h-16 bg-[#f8f7f4] rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-8 text-center">
+        <div className="w-16 h-16 bg-surface-mist rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
           🏡
         </div>
-        <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-2">Publica tu vivienda primero</h2>
+        <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-2">Publica tu vivienda primero</h2>
         <p className="text-sm text-[#6b7280] max-w-sm mx-auto mb-6">
           Necesitas tener una vivienda registrada y publicada en la plataforma para poder subir historias de video y mostrárselas a los huéspedes.
         </p>
         <button
           onClick={() => window.location.href = '/properties/create'}
-          className="px-5 py-2.5 bg-[#1a3c34] text-white font-semibold rounded-xl text-sm hover:bg-[#122b25] transition-colors"
+          className="px-5 py-2.5 bg-ink-teal-900 text-white font-semibold rounded-xl text-sm hover:bg-[#122b25] transition-colors"
         >
           Publicar mi Vivienda
         </button>
@@ -1451,8 +1499,8 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
   return (
     <div className="space-y-6">
       {/* Explicación */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-        <h2 className="text-lg font-fraunces font-bold text-[#1a3c34] mb-1">Historias de Anfitriones 🎥</h2>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+        <h2 className="text-lg font-fraunces font-bold text-ink-teal-900 mb-1">Historias de Anfitriones 🎥</h2>
         <p className="text-sm text-[#6b7280] mb-4">
           Muestra tu casa y las actividades de tu zona con videos cortos tipo Instagram. Solo necesitas subir tu video a YouTube (puede ser oculto si quieres privacidad) y pegar el enlace aquí. <strong>Nota importante: El video debe tener una duración máxima de 1 minuto</strong>.
         </p>
@@ -1460,7 +1508,7 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
         {/* Formulario */}
         <form onSubmit={handleAddStory} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-[#1a3c34] mb-1">
+            <label className="block text-xs font-semibold text-ink-teal-900 mb-1">
               Enlace de YouTube Short o Video (Máx. 1 minuto)
             </label>
             <div className="flex gap-2">
@@ -1469,13 +1517,13 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
                 value={youtubeUrl}
                 onChange={(e) => setYoutubeUrl(e.target.value)}
                 placeholder="Ej: https://www.youtube.com/shorts/ABC123xyz"
-                className="flex-1 px-4 py-2.5 border border-[#cbd5cc] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3c34] bg-[#f8f7f4]"
+                className="flex-1 px-4 py-2.5 border border-surface-mist-dark rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#1a3c34] bg-surface-mist"
                 required
               />
               <button
                 type="submit"
                 disabled={adding || !youtubeUrl}
-                className="px-5 py-2.5 bg-[#1a3c34] hover:bg-[#122b25] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
+                className="px-5 py-2.5 bg-ink-teal-900 hover:bg-[#122b25] disabled:opacity-50 text-white font-semibold rounded-xl text-sm transition-colors"
               >
                 {adding ? 'Guardando...' : 'Publicar'}
               </button>
@@ -1486,13 +1534,13 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
           </div>
 
           {error && <p className="text-xs text-red-600 font-semibold">{error}</p>}
-          {success && <p className="text-xs text-emerald-600 font-semibold">{success}</p>}
+          {success && <p className="text-xs text-blue-600 font-semibold">{success}</p>}
         </form>
       </div>
 
       {/* Grid de Historias Existentes */}
-      <div className="bg-white rounded-2xl border border-[#e8e4dc] p-5">
-        <h3 className="font-fraunces font-bold text-sm text-[#1a3c34] mb-4">Tus Historias Publicadas</h3>
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-5">
+        <h3 className="font-fraunces font-bold text-sm text-ink-teal-900 mb-4">Tus Historias Publicadas</h3>
         
         {loading ? (
           <p className="text-xs text-[#6b7280]">Cargando tus historias...</p>
@@ -1504,7 +1552,7 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {stories.map((story) => (
-              <div key={story.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-[#e8e4dc] shadow-sm">
+              <div key={story.id} className="group relative aspect-[9/16] rounded-xl overflow-hidden bg-black border border-surface-mist-dark shadow-sm">
                 <img
                   src={story.thumbnail_url}
                   alt="YouTube Thumbnail"

@@ -299,23 +299,23 @@ export default function CreatePropertyPage() {
   const progressPct = Math.min(((step - 1) / (STEPS.length - 1)) * 100, 100)
 
   return (
-    <div className="min-h-screen bg-[#f8f7f4] font-inter text-ink-teal-900 pb-20">
+    <div className="min-h-screen bg-surface-mist font-inter text-ink-teal-900 pb-20">
       {/* Top bar */}
-      <div className="bg-white border-b border-[#e8e4dc] sticky top-0 z-40">
+      <div className="bg-white border-b border-surface-mist-dark sticky top-0 z-40">
         <div className="max-w-[1440px] mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="text-sm font-medium text-[#6b7280] hover:text-[#1a3c34] transition-colors">
+          <Link href="/dashboard" className="text-sm font-medium text-[#6b7280] hover:text-ink-teal-900 transition-colors">
             ← Cancelar
           </Link>
-          <div className="font-fraunces font-bold text-xl text-[#1a3c34]">
+          <div className="font-fraunces font-bold text-xl text-ink-teal-900">
             Registro de Vivienda
           </div>
-          <div className="text-sm font-medium text-[#10b981] bg-[#10b981]/10 px-3 py-1 rounded-full border border-[#10b981]/20">
+          <div className="text-sm font-medium text-accent-mango bg-accent-mango/10 px-3 py-1 rounded-full border border-accent-mango/20">
             Paso {step} de 6
           </div>
         </div>
         {/* Progress bar */}
-        <div className="h-1 bg-[#e8e4dc] w-full">
-          <div className="h-full bg-[#10b981] transition-all duration-500 ease-in-out" style={{ width: `${progressPct}%` }} />
+        <div className="h-1 bg-surface-mist-dark w-full">
+          <div className="h-full bg-accent-mango transition-all duration-500 ease-in-out" style={{ width: `${progressPct}%` }} />
         </div>
       </div>
 
@@ -327,10 +327,10 @@ export default function CreatePropertyPage() {
             const isCurrent = step === s.n;
             return (
               <div key={s.n} className={`flex flex-col items-center gap-2 min-w-[60px] ${!isCurrent && !isCompleted ? 'opacity-40' : ''}`}>
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isCompleted ? 'bg-[#10b981]/10 border-[#10b981] text-[#10b981]' : isCurrent ? 'bg-[#1a3c34] border-[#1a3c34] text-white' : 'bg-white border-[#cbd5cc] text-[#6b7280]'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isCompleted ? 'bg-accent-mango/10 border-accent-mango text-accent-mango' : isCurrent ? 'bg-ink-teal-900 border-ink-teal-900 text-white' : 'bg-white border-surface-mist-dark text-[#6b7280]'}`}>
                   <s.Icon className="w-4 h-4" />
                 </div>
-                <span className={`text-[11px] font-semibold uppercase tracking-wider ${isCurrent ? 'text-[#1a3c34]' : 'text-[#6b7280]'}`}>{s.label}</span>
+                <span className={`text-[11px] font-semibold uppercase tracking-wider ${isCurrent ? 'text-ink-teal-900' : 'text-[#6b7280]'}`}>{s.label}</span>
               </div>
             )
           })}
@@ -343,7 +343,7 @@ export default function CreatePropertyPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-[#e8e4dc] p-6 md:p-10 mb-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-surface-mist-dark p-6 md:p-10 mb-8">
           {step === 1 && <Step1Type form={form} set={set} />}
           {step === 2 && isLoaded && <Step2Location form={form} set={set} isLoaded={isLoaded} loadError={loadError} />}
           {step === 2 && !isLoaded && !loadError && <div className="text-center py-10 text-gray-500">Cargando buscador y mapa...</div>}
@@ -356,7 +356,7 @@ export default function CreatePropertyPage() {
 
         <div className="flex justify-between items-center mt-8">
           <button 
-            className="px-6 py-3 rounded-xl font-medium text-[#4a6b5e] hover:bg-[#e8e4dc] transition-colors disabled:opacity-30 border border-[#cbd5cc] bg-white" 
+            className="px-6 py-3 rounded-xl font-medium text-text-muted-custom hover:bg-surface-mist-dark transition-colors disabled:opacity-30 border border-surface-mist-dark bg-white" 
             onClick={() => setStep(s => Math.max(1, s - 1))} 
             disabled={step === 1}
           >
@@ -364,14 +364,14 @@ export default function CreatePropertyPage() {
           </button>
           {step < 6 ? (
             <button 
-              className="px-8 py-3 rounded-xl font-bold text-white bg-[#1a3c34] hover:bg-[#122a24] transition-all shadow-md shadow-[#1a3c34]/20" 
+              className="px-8 py-3 rounded-xl font-bold text-white bg-ink-teal-900 hover:bg-[#122a24] transition-all shadow-md shadow-[#1a3c34]/20" 
               onClick={() => setStep(s => Math.min(6, s + 1))}
             >
               Siguiente →
             </button>
           ) : (
             <button 
-              className="px-8 py-3 rounded-xl font-bold text-white bg-[#10b981] hover:bg-[#059669] transition-all shadow-md shadow-[#10b981]/20 disabled:opacity-50" 
+              className="px-8 py-3 rounded-xl font-bold text-white bg-accent-mango hover:bg-[#059669] transition-all shadow-md shadow-[#10b981]/20 disabled:opacity-50" 
               onClick={handlePublish} 
               disabled={saving}
             >
@@ -387,43 +387,43 @@ export default function CreatePropertyPage() {
 function Step1Type({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">¿Qué tipo de vivienda es?</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">¿Qué tipo de vivienda es?</h2>
       <p className="text-[#6b7280] mb-8">El tipo y categoría determinan dónde aparece tu vivienda en el explorador.</p>
 
-      <div className="mb-3 text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Tipo de vivienda *</div>
+      <div className="mb-3 text-sm font-bold text-text-muted-custom uppercase tracking-wide">Tipo de vivienda *</div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
         {PROPERTY_TYPES.map(t => (
           <div 
             key={t.id} 
-            className={`p-5 rounded-2xl border-2 cursor-pointer transition-all text-center ${form.type === t.id ? 'border-[#10b981] bg-[#10b981]/5 shadow-sm' : 'border-[#e8e4dc] bg-white hover:border-[#cbd5cc]'}`} 
+            className={`p-5 rounded-2xl border-2 cursor-pointer transition-all text-center ${form.type === t.id ? 'border-accent-mango bg-accent-mango/5 shadow-sm' : 'border-surface-mist-dark bg-white hover:border-surface-mist-dark'}`} 
             onClick={() => set('type', t.id)}
           >
-            <div className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-3 ${form.type === t.id ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-[#f8f7f4] text-[#1a3c34]'}`}>
+            <div className={`mx-auto w-12 h-12 flex items-center justify-center rounded-full mb-3 ${form.type === t.id ? 'bg-accent-mango/10 text-accent-mango' : 'bg-surface-mist text-ink-teal-900'}`}>
               <t.Icon className="w-6 h-6" />
             </div>
-            <div className="font-bold text-[#1a3c34] text-sm">{t.label}</div>
+            <div className="font-bold text-ink-teal-900 text-sm">{t.label}</div>
             <div className="text-[#6b7280] text-xs mt-1">{t.desc}</div>
           </div>
         ))}
       </div>
 
-      <div className="mb-3 text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Categoría principal *</div>
+      <div className="mb-3 text-sm font-bold text-text-muted-custom uppercase tracking-wide">Categoría principal *</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {PROPERTY_CATEGORIES.map(cat => (
           <div
             key={cat.id}
-            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${form.category === cat.id ? 'border-[#10b981] bg-[#10b981]/5' : 'border-[#e8e4dc] bg-white hover:border-[#cbd5cc]'}`}
+            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex items-center gap-4 ${form.category === cat.id ? 'border-accent-mango bg-accent-mango/5' : 'border-surface-mist-dark bg-white hover:border-surface-mist-dark'}`}
             onClick={() => set('category', cat.id)}
           >
-            <div className={`p-2 rounded-lg ${form.category === cat.id ? 'bg-[#10b981]/10 text-[#10b981]' : 'bg-[#f8f7f4] text-[#4a6b5e]'}`}>
+            <div className={`p-2 rounded-lg ${form.category === cat.id ? 'bg-accent-mango/10 text-accent-mango' : 'bg-surface-mist text-text-muted-custom'}`}>
               <cat.Icon className="w-5 h-5" />
             </div>
             <div className="flex-1">
-              <div className="font-bold text-[#1a3c34] text-sm">{cat.label}</div>
+              <div className="font-bold text-ink-teal-900 text-sm">{cat.label}</div>
               <div className="text-[#6b7280] text-xs">{cat.desc}</div>
             </div>
             {form.category === cat.id && (
-              <div className="text-[#10b981]">
+              <div className="text-accent-mango">
                 <Sparkles className="w-5 h-5" />
               </div>
             )}
@@ -435,8 +435,8 @@ function Step1Type({ form, set }: { form: FormData; set: (f: keyof FormData, v: 
 }
 
 function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set: (f: keyof FormData, v: string | number | null) => void; isLoaded: boolean; loadError: Error | undefined }) {
-  const inputClass = "w-full p-4 bg-white border border-[#cbd5cc] rounded-xl font-inter text-[#1a3c34] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
-  const labelClass = "block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-2"
+  const inputClass = "w-full p-4 bg-white border border-surface-mist-dark rounded-xl font-inter text-ink-teal-900 placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-accent-mango transition-all"
+  const labelClass = "block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-2"
 
   const {
     ready,
@@ -495,7 +495,7 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">¿Dónde está ubicada?</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">¿Dónde está ubicada?</h2>
       <p className="text-[#6b7280] mb-8">Busca tu dirección. La ubicación exacta se revelará a tus huéspedes solo cuando el intercambio esté confirmado.</p>
       
       <div className="space-y-6">
@@ -512,12 +512,12 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
             />
           </div>
           {status === "OK" && (
-            <ul className="absolute z-10 w-full bg-white border border-[#cbd5cc] rounded-xl mt-1 shadow-lg max-h-60 overflow-y-auto">
+            <ul className="absolute z-10 w-full bg-white border border-surface-mist-dark rounded-xl mt-1 shadow-lg max-h-60 overflow-y-auto">
               {data.map(({ place_id, description }) => (
                 <li
                   key={place_id}
                   onClick={() => handleSelect(description)}
-                  className="p-3 hover:bg-[#f8f7f4] cursor-pointer text-[#1a3c34] border-b border-[#f3f4f6] last:border-0"
+                  className="p-3 hover:bg-surface-mist cursor-pointer text-ink-teal-900 border-b border-surface-mist last:border-0"
                 >
                   {description}
                 </li>
@@ -527,7 +527,7 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
         </div>
 
         {/* The map */}
-        <div className="h-[300px] w-full rounded-xl overflow-hidden border border-[#cbd5cc] bg-gray-100">
+        <div className="h-[300px] w-full rounded-xl overflow-hidden border border-surface-mist-dark bg-gray-100">
           {loadError ? (
             <div className="w-full h-full flex items-center justify-center text-red-500">Error cargando mapa</div>
           ) : !isLoaded ? (
@@ -557,7 +557,7 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#e8e4dc]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-surface-mist-dark">
           <div>
             <label className={labelClass}>País *</label>
             <input className={inputClass} value={form.country} onChange={e => set('country', e.target.value)} placeholder="Ej: Colombia" />
@@ -577,21 +577,21 @@ function Step3Details({ form, set, amenities, toggleAmenity }: {
   amenities: string[]; toggleAmenity: (id: string) => void
 }) {
   const Counter = ({ field, label }: { field: keyof FormData; label: string }) => (
-    <div className="text-center p-4 border border-[#e8e4dc] rounded-2xl bg-[#f8f7f4]">
-      <label className="block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-3">{label}</label>
+    <div className="text-center p-4 border border-surface-mist-dark rounded-2xl bg-surface-mist">
+      <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-3">{label}</label>
       <div className="flex items-center justify-center gap-4">
         <button onClick={() => set(field, String(Math.max(0, (Number(form[field]) || 0) - 1)))}
-          className="w-10 h-10 rounded-full border border-[#cbd5cc] bg-white text-[#1a3c34] font-bold text-lg hover:border-[#10b981] hover:text-[#10b981] transition-all flex items-center justify-center">−</button>
-        <span className="font-bold text-2xl text-[#1a3c34] min-w-[2rem] text-center">{form[field] || '0'}</span>
+          className="w-10 h-10 rounded-full border border-surface-mist-dark bg-white text-ink-teal-900 font-bold text-lg hover:border-accent-mango hover:text-accent-mango transition-all flex items-center justify-center">−</button>
+        <span className="font-bold text-2xl text-ink-teal-900 min-w-[2rem] text-center">{form[field] || '0'}</span>
         <button onClick={() => set(field, String((Number(form[field]) || 0) + 1))}
-          className="w-10 h-10 rounded-full border border-[#cbd5cc] bg-white text-[#1a3c34] font-bold text-lg hover:border-[#10b981] hover:text-[#10b981] transition-all flex items-center justify-center">+</button>
+          className="w-10 h-10 rounded-full border border-surface-mist-dark bg-white text-ink-teal-900 font-bold text-lg hover:border-accent-mango hover:text-accent-mango transition-all flex items-center justify-center">+</button>
       </div>
     </div>
   )
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Capacidad y comodidades</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">Capacidad y comodidades</h2>
       <p className="text-[#6b7280] mb-8">Cuéntanos sobre los espacios de tu vivienda.</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -602,7 +602,7 @@ function Step3Details({ form, set, amenities, toggleAmenity }: {
       </div>
 
       <div className="mb-4 flex items-center justify-between">
-        <span className="text-sm font-bold text-[#4a6b5e] uppercase tracking-wide">Amenidades incluidas</span>
+        <span className="text-sm font-bold text-text-muted-custom uppercase tracking-wide">Amenidades incluidas</span>
         <span className="text-xs font-medium text-[#6b7280]">{amenities.length} seleccionadas</span>
       </div>
       
@@ -612,7 +612,7 @@ function Step3Details({ form, set, amenities, toggleAmenity }: {
           return (
             <div
               key={a.id}
-              className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-2 text-center ${selected ? 'border-[#10b981] bg-[#10b981]/5 text-[#10b981]' : 'border-[#e8e4dc] bg-white text-[#6b7280] hover:border-[#cbd5cc]'}`}
+              className={`p-3 rounded-xl border-2 cursor-pointer transition-all flex flex-col items-center gap-2 text-center ${selected ? 'border-accent-mango bg-accent-mango/5 text-accent-mango' : 'border-surface-mist-dark bg-white text-[#6b7280] hover:border-surface-mist-dark'}`}
               onClick={() => toggleAmenity(a.id)}
             >
               <a.Icon className="w-6 h-6" strokeWidth={selected ? 2 : 1.5} />
@@ -632,12 +632,12 @@ function Step4Photos({ photos, onUpload, uploading, onRemove, onMove }: {
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Fotos de tu vivienda</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">Fotos de tu vivienda</h2>
       <p className="text-[#6b7280] mb-6">Añade al menos 3 fotos de buena calidad. La primera foto será la portada de tu anuncio.</p>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {photos.map((url, i) => (
-          <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-[#e8e4dc] group">
+          <div key={i} className="relative aspect-[4/3] rounded-xl overflow-hidden border border-surface-mist-dark group">
             <img src={url} alt={`Foto ${i + 1}`} className="w-full h-full object-cover" />
             <button onClick={() => onRemove(url)} className="absolute top-2 right-2 bg-white/90 rounded-full w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 hover:text-red-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity">
               &times;
@@ -652,7 +652,7 @@ function Step4Photos({ photos, onUpload, uploading, onRemove, onMove }: {
           </div>
         ))}
         {photos.length < 8 && (
-          <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-[#cbd5cc] bg-[#f8f7f4] flex flex-col items-center justify-center cursor-pointer hover:border-[#10b981] hover:bg-[#10b981]/5 transition-all text-[#6b7280] hover:text-[#10b981]">
+          <label className="aspect-[4/3] rounded-xl border-2 border-dashed border-surface-mist-dark bg-surface-mist flex flex-col items-center justify-center cursor-pointer hover:border-accent-mango hover:bg-accent-mango/5 transition-all text-[#6b7280] hover:text-accent-mango">
             <input type="file" accept="image/*" multiple hidden onChange={e => handleFiles(e.target.files)} disabled={uploading} />
             {uploading ? (
               <div className="w-8 h-8 border-4 border-current border-t-transparent rounded-full animate-spin mb-2" />
@@ -668,12 +668,12 @@ function Step4Photos({ photos, onUpload, uploading, onRemove, onMove }: {
 }
 
 function Step5Description({ form, set }: { form: FormData; set: (f: keyof FormData, v: string) => void }) {
-  const inputClass = "w-full p-4 bg-white border border-[#cbd5cc] rounded-xl font-inter text-[#1a3c34] placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981] transition-all"
-  const labelClass = "block text-xs font-bold text-[#4a6b5e] uppercase tracking-wide mb-2"
+  const inputClass = "w-full p-4 bg-white border border-surface-mist-dark rounded-xl font-inter text-ink-teal-900 placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-accent-mango transition-all"
+  const labelClass = "block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-2"
   
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Describe tu espacio</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">Describe tu espacio</h2>
       <p className="text-[#6b7280] mb-8">Escribe un título atractivo y destaca lo mejor de la vivienda.</p>
 
       <div className="space-y-6">
@@ -736,15 +736,15 @@ function Step6Review({ form, photos, set }: {
   form: FormData; photos: string[]; set?: (f: keyof FormData, v: string) => void
 }) {
   const setFn = set || (() => {})
-  const inputClass = "w-full px-3 py-2 bg-white border border-[#cbd5cc] rounded-lg font-inter text-sm text-[#1a3c34] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-[#10b981]"
+  const inputClass = "w-full px-3 py-2 bg-white border border-surface-mist-dark rounded-lg font-inter text-sm text-ink-teal-900 focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-accent-mango"
 
   return (
     <div>
-      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-[#1a3c34] mb-2">Paso final: Disponibilidad</h2>
+      <h2 className="text-2xl md:text-3xl font-fraunces font-bold text-ink-teal-900 mb-2">Paso final: Disponibilidad</h2>
       <p className="text-[#6b7280] mb-8">Define cuándo estás dispuesto a intercambiar y revisa tu solicitud.</p>
 
-      <div className="bg-[#f8f7f4] border border-[#e8e4dc] rounded-2xl p-6 mb-8">
-        <h3 className="text-sm font-bold text-[#4a6b5e] uppercase tracking-wide mb-4">Fechas Disponibles</h3>
+      <div className="bg-surface-mist border border-surface-mist-dark rounded-2xl p-6 mb-8">
+        <h3 className="text-sm font-bold text-text-muted-custom uppercase tracking-wide mb-4">Fechas Disponibles</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label className="block text-xs font-semibold text-[#6b7280] mb-1">Desde</label>
