@@ -87,7 +87,7 @@ export default function RankingsPage() {
             </div>
           ) : (
             <div className="overflow-x-auto pb-4">
-              <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
+              <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="border-b border-surface-mist-dark bg-surface-mist/50">
                     <th className="py-3 px-2 md:px-4 w-12 md:w-16">

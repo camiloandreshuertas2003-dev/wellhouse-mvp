@@ -14,12 +14,12 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): nu
 }
 
 const CATEGORY_TABS = [
-  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-[13px] h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
 ]
 
 export default function SearchPage() {
@@ -307,22 +307,22 @@ export default function SearchPage() {
           </div>
         </div>
       )}
-      {/* ── CATEGORY BADGES (Scroll Horizontal) ─────────────────────────── */}
+      {/* ── CATEGORY BADGES ─────────────────────────── */}
       <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-5">
-        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+        <div className="grid grid-cols-3 sm:flex sm:flex-row gap-2 sm:gap-2 sm:overflow-x-auto sm:no-scrollbar pb-2">
           {CATEGORY_TABS.map(tab => {
             const isActive = category === tab.id
             return (
               <button
                 key={tab.id}
                 onClick={() => { setCategory(tab.id); setQuery('') }}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full border text-xs sm:text-sm font-bold transition-all flex-shrink-0 h-[42px] ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[11px] sm:text-sm font-bold transition-all sm:flex-shrink-0 sm:h-[42px] ${
                   isActive 
                     ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
                     : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
                 }`}
               >
-                <span>{tab.icon(isActive)}</span>
+                {tab.icon(isActive)}
                 <span>{tab.label}</span>
               </button>
             )
