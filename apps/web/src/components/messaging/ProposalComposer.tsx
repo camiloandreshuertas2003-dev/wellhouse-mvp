@@ -14,7 +14,7 @@ export default function ProposalComposer({
 }) {
   const [startDate, setStartDate] = useState(defaultValues?.start_date || '');
   const [endDate, setEndDate] = useState(defaultValues?.end_date || '');
-  const [wpPerNight, setWpPerNight] = useState(defaultValues?.wp_per_night || property?.wp_price || 150);
+  const [wpPerNight, setWpPerNight] = useState(defaultValues?.wp_per_night || property?.wellrank || 150);
   const [exchangeType, setExchangeType] = useState(defaultValues?.exchange_type || 'reciprocal');
 
   const handleSubmit = (e: any) => {

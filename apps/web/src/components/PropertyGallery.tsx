@@ -62,7 +62,7 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
     <>
       {/* ── Mobile: Rounded card carousel ──────────────────────────────── */}
       <div className="md:hidden relative">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-surface-mist shadow-sm">
+        <div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-surface-mist shadow-sm">
           <img
             src={safeImages[mobileIndex]}
             alt={`${title} — foto ${mobileIndex + 1}`}
@@ -70,49 +70,38 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
             loading={mobileIndex === 0 ? 'eager' : 'lazy'}
             onClick={() => openModal(mobileIndex)}
           />
-          {/* Nav arrows */}
-          {safeImages.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMobileIndex(i => (i - 1 + safeImages.length) % safeImages.length) }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow-md"
-                aria-label="Foto anterior"
-              >
-                <ChevronLeft className="w-5 h-5 text-ink-teal-900" />
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setMobileIndex(i => (i + 1) % safeImages.length) }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 rounded-full flex items-center justify-center shadow-md"
-                aria-label="Siguiente foto"
-              >
-                <ChevronRight className="w-5 h-5 text-ink-teal-900" />
-              </button>
-            </>
-          )}
-          {/* Dot indicators */}
-          {safeImages.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {safeImages.slice(0, 8).map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setMobileIndex(i)}
-                  className={`w-1.5 h-1.5 rounded-full transition-all ${i === mobileIndex ? 'bg-white w-3' : 'bg-white/50'}`}
-                  aria-label={`Ir a foto ${i + 1}`}
-                />
-              ))}
-            </div>
-          )}
           {/* Photo counter overlay */}
-          <div className="absolute top-3 right-3 bg-black/50 text-white text-xs font-inter px-2 py-1 rounded-full">
+          <div className="absolute top-3 right-3 bg-black/75 text-white text-[11px] font-semibold font-inter px-2.5 py-1 rounded-full">
             {mobileIndex + 1} / {safeImages.length}
           </div>
         </div>
-        {/* Low photo nudge for owner */}
-        {isOwner && safeImages.length < 5 && (
-          <div className="bg-wellpoint-gold/10 border border-wellpoint-gold/30 mx-4 mt-3 px-4 py-2 rounded-radius-sm text-xs font-inter text-wellpoint-gold">
-            💡 Añadir al menos 5 fotos aumenta tu WellRank™ y tus posibilidades de intercambio.
-          </div>
-        )}
+
+        {/* Thumbnail Row on Mobile */}
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1 scrollbar-none">
+          {safeImages.slice(0, 5).map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setMobileIndex(idx)}
+              className={`w-16 h-12 rounded-xl overflow-hidden flex-shrink-0 border-2 transition-all ${
+                idx === mobileIndex ? 'border-[#0f766e] scale-95 shadow-sm' : 'border-transparent opacity-70'
+              }`}
+            >
+              <img src={img} className="w-full h-full object-cover" alt={`Thumb ${idx + 1}`} />
+            </button>
+          ))}
+        </div>
+
+        {/* "Ver las X fotos" Button */}
+        <button
+          onClick={() => openModal(0)}
+          className="mt-3 flex items-center gap-1.5 px-4 py-2 border border-neutral-200 bg-white rounded-xl font-inter font-medium text-xs text-ink-teal-900 hover:bg-surface-mist transition-colors shadow-sm"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="text-[#6b7280]">
+            <rect x="3" y="3" width="18" height="18" rx="3"/>
+            <path d="M3 9h18M9 21V9"/>
+          </svg>
+          Ver las {safeImages.length} fotos
+        </button>
       </div>
 
       {/* ── Desktop: Mosaico WellHouse ───────────────────────────────── */}

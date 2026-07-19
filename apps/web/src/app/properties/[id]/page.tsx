@@ -10,7 +10,8 @@ import AmenityIcon from '@/components/AmenityIcon'
 import CategoryIcon from '@/components/CategoryIcon'
 import {
   ChevronRight, Users, BedDouble, Bath, ArrowLeft, Share2, Heart,
-  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass, ShieldCheck
+  MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass, ShieldCheck,
+  ChevronLeft, MoreHorizontal, Home
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 
@@ -171,7 +172,9 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const [initialMessage, setInitialMessage] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [createdConversationId, setCreatedConversationId] = useState<string | null>(null)
   const [bookError, setBookError] = useState('')
+  const [hasPendingRequest, setHasPendingRequest] = useState(false)
 
   // Mobile booking modal
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
@@ -208,10 +211,28 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       
       const { data } = await supabase
         .from('properties')
-        .select('*, users!user_id(id, name, avatar_url, is_verified, trust_index, bio, created_at)')
+        .select('*, users!user_id(id, name, avatar_url, is_verified, trust_index, bio, created_at, email)')
         .eq('id', params.id)
         .maybeSingle()
       setProperty(data)
+
+      // Increment views count if visitor is not the owner
+      if (data && user && data.user_id !== user.id) {
+        supabase.from('properties')
+          .update({ views: (data.views || 0) + 1 })
+          .eq('id', data.id)
+          .then(() => {})
+
+        // Insert a notification for the host
+        supabase.from('notifications').insert({
+          user_id: data.user_id,
+          actor_id: user.id,
+          type: 'view',
+          title: '¡Nueva visita a tu vivienda! 👀',
+          content: `Alguien acaba de ver tu propiedad "${data.title}" en ${data.city}.`,
+          link: `/properties/${data.id}`
+        }).then(() => {})
+      }
       
       // Load questions
       if (data) {
@@ -221,6 +242,17 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           .eq('property_id', data.id)
           .order('created_at', { ascending: true })
         if (qData) setQuestions(qData)
+
+        if (user) {
+          const { data: existingEx } = await supabase
+            .from('exchanges')
+            .select('id')
+            .eq('guest_id', user.id)
+            .eq('host_property_id', data.id)
+            .in('status', ['pending', 'approved', 'confirmed'])
+            .maybeSingle()
+          if (existingEx) setHasPendingRequest(true)
+        }
       }
       
       setLoading(false)
@@ -258,6 +290,17 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     if (!error && data) {
       setQuestions(prev => [...prev, data])
       setNewQuestion('')
+      
+      if (property.user_id) {
+        supabase.from('notifications').insert({
+          user_id: property.user_id,
+          actor_id: currentUser.id,
+          type: 'qa_question',
+          title: 'Nueva pregunta en tu vivienda ❓',
+          content: `${currentUser.user_metadata?.full_name || 'Alguien'} ha preguntado: "${newQuestion.trim()}"`,
+          link: `/properties/${property.id}`
+        }).then(() => {})
+      }
     }
     setAsking(false)
   }
@@ -284,6 +327,19 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     if (!error) {
       setQuestions(prev => prev.map(q => q.id === qId ? { ...q, answer: answerText.trim(), answered_at: new Date().toISOString() } : q))
       setAnsweringId(null)
+      
+      const questionData = questions.find(q => q.id === qId)
+      if (questionData && questionData.user_id) {
+        supabase.from('notifications').insert({
+          user_id: questionData.user_id,
+          actor_id: currentUser.id,
+          type: 'qa_answer',
+          title: 'Respondieron a tu pregunta 💡',
+          content: `El anfitrión respondió: "${answerText.trim()}"`,
+          link: `/properties/${property.id}`
+        }).then(() => {})
+      }
+
       setAnswerText('')
     }
   }
@@ -346,16 +402,27 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       wellrank_snapshot: wellRank,
       status: 'pending',
     })
+
+    if (!insertError && property.user_id) {
+      supabase.from('notifications').insert({
+        user_id: property.user_id,
+        actor_id: user.id,
+        type: 'exchange_request',
+        title: '¡Nueva solicitud de intercambio! 🏡',
+        content: `Tienes una nueva solicitud para tu vivienda de parte de ${user.user_metadata?.full_name || user.email?.split('@')[0]}`,
+        link: '/dashboard?tab=exchanges'
+      }).then(() => {})
+    }
     
     // Create conversation if it doesn't exist
     let conversationId = null;
     if (!insertError && property.user_id) {
       const [u1, u2] = [user.id, property.user_id].sort()
       const { data: conv } = await supabase.from('conversations')
-        .select('id').eq('user_one_id', u1).eq('user_two_id', u2).maybeSingle()
+        .select('id').eq('participant_a', u1).eq('participant_b', u2).maybeSingle()
       
       if (!conv) {
-        const { data: newConv } = await supabase.from('conversations').insert({ user_one_id: u1, user_two_id: u2 }).select().single()
+        const { data: newConv } = await supabase.from('conversations').insert({ participant_a: u1, participant_b: u2, property_id: params.id }).select().single()
         conversationId = newConv?.id
       } else {
         conversationId = conv.id
@@ -367,10 +434,43 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           conversation_id: conversationId,
           sender_id: user.id,
           content: initialMessage.trim(),
-          is_priority: false // The first message is free and not priority unless they are priority, but we'll default to false for simplicity or we can check.
+          is_priority: false
         })
         
         await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
+      }
+      
+      if (conversationId) {
+        setCreatedConversationId(conversationId)
+      }
+
+      // Send email to host
+      if (property.users?.email) {
+        fetch('/api/send-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: property.users.email,
+            subject: '¡Tienes una nueva solicitud de intercambio! 🏡',
+            html: `
+              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0ede8; border-radius: 16px; background: white;">
+                <h2 style="color: #0f766e; font-family: serif;">¡Hola, ${property.users.name || 'Anfitrión'}!</h2>
+                <p>Tienes una nueva solicitud de intercambio en Wellhouse para tu propiedad: <strong>${property.title}</strong>.</p>
+                <p><strong>Fechas del viaje:</strong> del ${new Date(checkin).toLocaleDateString('es-ES')} al ${new Date(checkout).toLocaleDateString('es-ES')} (${nights} noches)</p>
+                <p><strong>Mensaje del huésped:</strong></p>
+                <blockquote style="background: #f5f8f7; padding: 15px; border-left: 4px solid #0f766e; font-style: italic; margin: 15px 0;">
+                  "${initialMessage}"
+                </blockquote>
+                <div style="margin-top: 30px; text-align: center;">
+                  <a href="https://wellhouse-mvp.vercel.app/dashboard?tab=exchanges" style="background: #0f766e; color: white; padding: 12px 24px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block;">
+                    Ver solicitud en mi panel
+                  </a>
+                </div>
+                <p style="margin-top: 40px; font-size: 11px; color: #6b7280; text-align: center;">Este es un correo automático enviado por Wellhouse.</p>
+              </div>
+            `
+          })
+        }).catch(err => console.error("Error triggering request email:", err))
       }
     }
 
@@ -447,14 +547,34 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
         </span>
       </div>
 
-      {submitted ? (
-        <div className="text-center py-6">
-          <CheckCircle2 className="w-12 h-12 text-signal-green mx-auto mb-3" />
-          <p className="font-fraunces font-semibold text-lg text-ink-teal-900 mb-1">¡Solicitud enviada!</p>
-          <p className="font-inter text-sm text-text-muted-custom mb-4">El anfitrión la confirmará desde su dashboard.</p>
-          <Link href="/dashboard" className="font-inter text-sm font-semibold text-accent-mango hover:underline">
-            Ver en mi dashboard →
+      {hasPendingRequest ? (
+        <div className="text-center py-6 bg-surface-mist/50 border border-[#0f766e]/10 rounded-2xl p-4">
+          <CheckCircle2 className="w-10 h-10 text-[#0f766e] mx-auto mb-3" />
+          <p className="font-fraunces font-semibold text-base text-ink-teal-900 mb-1">Solicitud en curso</p>
+          <p className="font-inter text-xs text-text-muted-custom mb-4">Ya has enviado una solicitud de intercambio para esta vivienda. Haz clic abajo para coordinar con el anfitrión.</p>
+          <Link
+            href="/messages"
+            className="w-full bg-[#0f766e] text-white py-2.5 rounded-xl font-inter font-semibold hover:bg-[#0f766e]/95 transition-all text-center inline-block text-xs"
+          >
+            Ver mensajes y chat
           </Link>
+        </div>
+      ) : submitted ? (
+        <div className="text-center py-6">
+          <CheckCircle2 className="w-12 h-12 text-[#0f766e] mx-auto mb-3" />
+          <p className="font-fraunces font-semibold text-lg text-ink-teal-900 mb-1">¡Solicitud enviada!</p>
+          <p className="font-inter text-sm text-text-muted-custom mb-4">Se ha enviado la solicitud y tu mensaje al anfitrión.</p>
+          <div className="flex flex-col gap-2">
+            <Link
+              href={createdConversationId ? `/messages?conversation_id=${createdConversationId}` : "/messages"}
+              className="w-full bg-[#0f766e] text-white py-3 rounded-xl font-inter font-semibold hover:bg-[#0f766e]/95 transition-all text-center inline-block"
+            >
+              Ir al chat con el anfitrión
+            </Link>
+            <Link href="/dashboard" className="font-inter text-xs text-text-muted-custom hover:underline mt-2">
+              Ver mi dashboard
+            </Link>
+          </div>
         </div>
       ) : (
         <>
@@ -493,13 +613,16 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           </div>
 
           <div className="mt-4">
-            <label className="block font-inter text-xs font-semibold text-ink-teal-900 mb-1">Mensaje para el anfitrión (Gratis)</label>
+            <label className="block font-inter text-xs font-semibold text-ink-teal-900 mb-1">
+              Mensaje para el anfitrión (Obligatorio) <span className="text-red-500">*</span>
+            </label>
             <textarea
               value={initialMessage}
               onChange={e => setInitialMessage(e.target.value)}
-              placeholder="¡Hola! Me encantaría hospedarme en tu casa..."
+              placeholder="¡Hola! Me encantaría hospedarme en tu casa. Cuéntale por qué te gustaría intercambiar..."
               rows={3}
               className="w-full px-3 py-2.5 border border-neutral-200 rounded-radius-sm font-inter text-sm text-ink-teal-900 focus:ring-2 focus:ring-accent-mango focus:border-transparent outline-none transition-all resize-none"
+              required
             />
           </div>
 
@@ -517,13 +640,13 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
 
           <button
             onClick={handleRequest}
-            disabled={submitting || nights < 1}
-            className="w-full bg-accent-mango text-white py-3 rounded-radius-sm font-inter font-semibold hover:bg-accent-mango/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={submitting || nights < 1 || !initialMessage.trim()}
+            className="w-full bg-[#0f766e] text-white py-3 rounded-xl font-inter font-semibold hover:bg-[#0f766e]/95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Enviando…' : 'Solicitar intercambio'}
           </button>
 
-          <p className="font-inter text-center text-xs text-text-muted-custom">
+          <p className="font-inter text-center text-xs text-text-muted-custom mt-2">
             Los WP se descuentan solo cuando el anfitrión confirma y se finaliza el hospedaje.
           </p>
 
@@ -559,22 +682,33 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Mobile-only header navbar */}
+      <div className="md:hidden sticky top-0 z-40 bg-white border-b border-surface-mist px-4 py-3 flex items-center justify-between shadow-sm">
+        <button onClick={() => router.back()} className="flex items-center gap-1.5 text-ink-teal-900 focus:outline-none">
+          <ChevronLeft className="w-6 h-6 text-ink-teal-900" />
+          <span className="font-fraunces font-bold text-xl tracking-tight text-ink-teal-900">Wellhouse</span>
+        </button>
+        <div className="flex items-center gap-4">
+          <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Share2 className="w-5 h-5" /></button>
+          <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Heart className="w-5 h-5" /></button>
+          <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><MoreHorizontal className="w-5 h-5" /></button>
+        </div>
+      </div>
+
       {/* ── Page content ── */}
-      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-8 pt-20 sm:pt-10 pb-24 lg:pb-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-8 lg:px-8 pt-4 sm:pt-10 pb-24 lg:pb-8">
 
         {/* ── Breadcrumb ── */}
-        <nav className="flex items-center gap-1.5 mb-4 font-inter text-sm text-text-muted-custom">
+        <nav className="flex items-center gap-1.5 mb-4 font-inter text-xs text-text-muted-custom">
           <Link href="/search" className="flex items-center gap-1 hover:text-ink-teal-900 transition-colors">
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Explorar
+            <Home className="w-3.5 h-3.5" />
           </Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="flex items-center gap-1.5">
-            <CategoryIcon category={property.category || 'urbano'} className="w-3.5 h-3.5" />
+          <ChevronRight className="w-3 h-3" />
+          <span className="flex items-center gap-1.5 capitalize">
             {catLabel}
           </span>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-ink-teal-900 font-medium truncate max-w-[200px]">{property.city}</span>
+          <ChevronRight className="w-3 h-3" />
+          <span className="text-ink-teal-900 font-medium truncate max-w-[200px]">{property.city}, {property.country}</span>
         </nav>
 
         {/* ── Title row ── */}
@@ -582,7 +716,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           <h1 className="font-fraunces font-semibold text-2xl sm:text-3xl text-ink-teal-900 leading-tight max-w-2xl">
             {property.title}
           </h1>
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
             <button className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">Compartir</span>
@@ -595,7 +729,8 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
         </div>
 
         {/* ── Meta line ── */}
-        <div className="flex flex-wrap items-center gap-2 mb-6 font-inter text-sm text-text-muted-custom">
+        <div className="flex flex-wrap items-center gap-2 mb-6 font-inter text-xs text-text-muted-custom">
+          <MapPin className="w-3.5 h-3.5 text-text-muted-custom" />
           <span>{property.city}, {property.country}</span>
         </div>
 
@@ -615,22 +750,34 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           <div className="space-y-8">
 
             {/* Quick stats */}
-            <div className="flex flex-wrap items-center gap-6 pb-6 border-b border-surface-mist">
-              <div className="flex items-center gap-2 font-inter text-sm text-ink-teal-900">
-                <Users className="w-5 h-5 text-text-muted-custom" />
-                <span><strong>{property.capacity || '—'}</strong> huéspedes</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 pb-6 border-b border-surface-mist">
+              <div className="flex items-center gap-3 p-3 bg-white border border-surface-mist-dark rounded-2xl">
+                <Users className="w-5 h-5 text-ink-teal-900 flex-shrink-0" strokeWidth={1.5} />
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-ink-teal-900">{property.capacity || '—'}</p>
+                  <p className="text-[10px] text-text-muted-custom">huéspedes</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 font-inter text-sm text-ink-teal-900">
-                <BedDouble className="w-5 h-5 text-text-muted-custom" />
-                <span><strong>{property.bedrooms || '—'}</strong> habitaciones</span>
+              <div className="flex items-center gap-3 p-3 bg-white border border-surface-mist-dark rounded-2xl">
+                <BedDouble className="w-5 h-5 text-ink-teal-900 flex-shrink-0" strokeWidth={1.5} />
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-ink-teal-900">{property.bedrooms || '—'}</p>
+                  <p className="text-[10px] text-text-muted-custom">habitación</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 font-inter text-sm text-ink-teal-900">
-                <Bath className="w-5 h-5 text-text-muted-custom" />
-                <span><strong>{property.bathrooms || '—'}</strong> baños</span>
+              <div className="flex items-center gap-3 p-3 bg-white border border-surface-mist-dark rounded-2xl">
+                <Bath className="w-5 h-5 text-ink-teal-900 flex-shrink-0" strokeWidth={1.5} />
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-ink-teal-900">{property.bathrooms || '—'}</p>
+                  <p className="text-[10px] text-text-muted-custom">baños</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <CategoryIcon category={property.category || 'urbano'} className="w-5 h-5 text-text-muted-custom" />
-                <span className="font-inter text-sm text-ink-teal-900">{catLabel}</span>
+              <div className="flex items-center gap-3 p-3 bg-white border border-surface-mist-dark rounded-2xl">
+                <CategoryIcon category={property.category || 'urbano'} className="w-5 h-5 text-ink-teal-900 flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-bold text-xs text-ink-teal-900 truncate">{catLabel}</p>
+                  <p className="text-[10px] text-text-muted-custom">Tipo de vivienda</p>
+                </div>
               </div>
             </div>
 
@@ -695,6 +842,8 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               )}
             </div>
 
+
+
             {/* Amenities grid */}
             {amenitiesList.length > 0 && (
               <div className="border-t border-surface-mist pt-8">
@@ -753,7 +902,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               </div>
               
               {/* AI Local Guide Section */}
-              <div className="bg-gradient-to-br from-[#F5F8F7] to-white border border-[#E0EBE8] rounded-2xl p-6 relative overflow-hidden">
+              <div className="hidden md:block bg-gradient-to-br from-[#F5F8F7] to-white border border-[#E0EBE8] rounded-2xl p-6 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
                   <Sparkles size={120} />
                 </div>
@@ -933,14 +1082,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       </div>
 
       {/* ── Mobile: Fixed bottom booking bar ── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-neutral-200 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
         <div>
           <p className="font-plex font-bold text-lg text-ink-teal-900">{wellRank} WP<span className="font-inter text-sm font-normal text-text-muted-custom">/noche</span></p>
-          {submitted && <p className="font-inter text-xs text-signal-green font-semibold">✓ Solicitud enviada</p>}
+          {submitted && <p className="font-inter text-xs text-[#0f766e] font-semibold">✓ Solicitud enviada</p>}
         </div>
         <button
           onClick={() => setBookingModalOpen(true)}
-          className="bg-accent-mango text-white px-6 py-2.5 rounded-radius-sm font-inter font-semibold hover:bg-accent-mango/90 transition-colors"
+          className="bg-accent-mango text-white px-6 py-2.5 rounded-xl font-inter font-semibold hover:bg-accent-mango/90 transition-colors"
         >
           Solicitar
         </button>
@@ -950,7 +1099,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       {bookingModalOpen && (
         <div className="lg:hidden fixed inset-0 z-[100] flex flex-col">
           <div className="absolute inset-0 bg-black/50" onClick={() => setBookingModalOpen(false)} />
-          <div className="relative mt-auto bg-white rounded-t-[24px] p-6 max-h-[90vh] overflow-y-auto">
+          <div className="relative mt-auto bg-white rounded-t-[24px] p-6 max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="font-fraunces font-semibold text-lg text-ink-teal-900">Solicitar intercambio</h2>
               <button onClick={() => setBookingModalOpen(false)} className="w-9 h-9 flex items-center justify-center rounded-full bg-surface-mist">
@@ -961,6 +1110,8 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           </div>
         </div>
       )}
+
+
     </div>
   )
 }

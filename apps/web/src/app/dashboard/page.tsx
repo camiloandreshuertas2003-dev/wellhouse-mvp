@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import {
   LayoutDashboard, Home, Repeat, MessageCircle, Heart, Star,
   Settings, Coins, LogOut, Trash2, ChevronRight, Sparkles, MoreHorizontal,
   PlusCircle, Eye, Pencil, TrendingUp, CheckCircle2, Clock, XCircle, ArrowUpRight,
-  Video, User
+  Video, User, ShieldAlert, Trophy
 } from 'lucide-react'
 import PropertyCarousel from '@/components/PropertyCarousel'
 import { type PropertyCardData } from '@/components/PropertyCard'
@@ -28,6 +28,7 @@ interface Property {
   status: string
   type: string
   images?: string[]
+  views?: number
 }
 
 // ─── Level config (Módulo 4) ─────────────────────────────────────────────────
@@ -44,7 +45,7 @@ function getLevelConfig(levelId: string) {
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState('overview')
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -67,6 +68,26 @@ export default function DashboardPage() {
     const { data: { user: authUser } } = await supabase.auth.getUser()
     if (!authUser) { router.push('/login'); return }
     setUserId(authUser.id)
+
+    // Auto-complete login quest if not done
+    try {
+      const { data: questDone } = await supabase
+        .from('user_quests')
+        .select('quest_key')
+        .eq('user_id', authUser.id)
+        .eq('quest_key', 'login')
+        .maybeSingle()
+      
+      if (!questDone) {
+        await supabase.rpc('complete_quest', {
+          p_user_id: authUser.id,
+          p_quest_key: 'login',
+          p_reward_points: 50
+        })
+      }
+    } catch (err) {
+      console.error("Error auto-completing login quest:", err)
+    }
 
     const memberSince = new Date(authUser.created_at)
       .toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
@@ -104,7 +125,7 @@ export default function DashboardPage() {
     try {
       const { data: userData } = await supabase
         .from('users')
-        .select('name, bio, avatar_url, phone, is_verified, trust_index')
+        .select('name, bio, avatar_url, phone, is_verified, trust_index, role')
         .eq('id', authUser.id)
         .maybeSingle()
       
@@ -144,7 +165,7 @@ export default function DashboardPage() {
     // Property
     const { data: propData } = await supabase
       .from('properties')
-      .select('id, title, city, country, status, type, images')
+      .select('id, title, city, country, status, type, images, views')
       .eq('user_id', authUser.id)
       .order('created_at', { ascending: false })
       .limit(1)
@@ -153,9 +174,20 @@ export default function DashboardPage() {
     setLoadingProperty(false)
   }
 
+  const searchParams = useSearchParams()
+
   useEffect(() => {
     fetchData()
   }, [router])
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam) {
+      setActiveTab(tabParam)
+    } else {
+      setActiveTab('overview')
+    }
+  }, [searchParams])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -202,75 +234,7 @@ export default function DashboardPage() {
           {/* ── Desktop Sidebar ───────────────────────────────────────────── */}
           <aside className="hidden md:flex flex-col w-56 shrink-0 sticky top-[57px] gap-3">
 
-            {/* Profile card */}
-            <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 font-bold text-lg text-white overflow-hidden"
-                  style={{ background: levelCfg.color }}>
-                  {userMetadata?.avatar_url ? (
-                    <img src={userMetadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    profile?.name.charAt(0).toUpperCase()
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink-teal-900 text-sm truncate">{profile?.name}</p>
-                  <p className="text-xs text-[#6b7280] truncate">{profile?.email}</p>
-                </div>
-              </div>
-
-              {/* Level badge — no emoji, Lucide Sparkles (Módulo 1) */}
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold w-fit"
-                style={{ borderColor: levelCfg.color + '40', color: levelCfg.color, background: levelCfg.color + '12' }}>
-                <Sparkles className="w-3 h-3" />
-                {levelCfg.label}
-              </div>
-
-              {/* Level progress (Módulo 4) */}
-              {nextLevel && (
-                <div className="mt-3 pt-3 border-t border-[#f0ede8]">
-                  <div className="flex justify-between text-[10px] text-[#6b7280] mb-1">
-                    <span>{levelCfg.label}</span>
-                    <span>{nextLevel.label}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-[#f0ede8] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all duration-700"
-                      style={{
-                        width: `${Math.min(100, (exchangesDone / nextLevel.minExchanges) * 100)}%`,
-                        background: levelCfg.color,
-                      }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-[#6b7280] mt-1.5">
-                    {nextLevel.minExchanges - exchangesDone > 0
-                      ? `Te faltan ${nextLevel.minExchanges - exchangesDone} intercambios para ${nextLevel.label}`
-                      : '¡Ya puedes subir de nivel!'}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-3 pt-3 border-t border-[#f0ede8] space-y-1.5 text-xs">
-                <button
-                  onClick={() => setActiveTab('wellpoints')}
-                  className="flex justify-between w-full hover:opacity-70 transition-opacity group"
-                >
-                  <span className="text-[#6b7280] group-hover:text-ink-teal-900 transition-colors">WellPoints</span>
-                  <span className="font-bold text-amber-500">{profile?.wellPoints ?? 0} WP</span>
-                </button>
-                <div className="flex justify-between">
-                  <span className="text-[#6b7280]">Miembro desde</span>
-                  <span className="text-ink-teal-900 capitalize">{profile?.memberSince}</span>
-                </div>
-                <div className="pt-2">
-                  <Link href="/rankings" className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-ink-teal-900 bg-surface-mist hover:bg-surface-mist-dark transition-colors">
-                    Ver Tabla de Líderes
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* Nav (Módulo 2.1 — Panel Admin retirado) */}
+            {/* Nav (Módulo 2.1) */}
             <nav className="bg-white rounded-2xl border border-surface-mist-dark p-2">
               {ALL_TABS.map((tab) => (
                 <button
@@ -292,6 +256,15 @@ export default function DashboardPage() {
                   )}
                 </button>
               ))}
+              {userMetadata?.role === 'ADMIN' && (
+                <Link
+                  href="/admin"
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm transition-colors text-rose-600 hover:bg-rose-50 font-bold border border-dashed border-rose-200 mt-2"
+                >
+                  <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+                  <span>Panel Administrador</span>
+                </Link>
+              )}
             </nav>
           </aside>
 
@@ -333,64 +306,19 @@ export default function DashboardPage() {
           </main>
         </div>
       </div>
-
-      {/* ── Mobile Bottom Tab Bar (Módulo 5) ──────────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-mist-dark z-50 md:hidden">
-        <div className="flex items-center justify-around px-2 py-1">
-          {MAIN_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                if (tab.id === 'messages') router.push('/messages')
-                else { setActiveTab(tab.id); setMoreOpen(false) }
-              }}
-              className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl min-w-[44px] min-h-[44px] transition-colors ${
-                activeTab === tab.id && !moreOpen
-                  ? 'text-ink-teal-900'
-                  : 'text-[#9ca3af]'
-              }`}
-            >
-              <tab.Icon className="w-5 h-5" />
-              <span className="text-[9px] font-medium leading-none">{tab.label}</span>
-              {tab.id === 'my-property' && !property && (
-                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
-              )}
-            </button>
-          ))}
-
-          {/* Más button */}
-          <button
-            onClick={() => setMoreOpen(!moreOpen)}
-            className={`flex flex-col items-center gap-0.5 px-2 py-2 rounded-xl min-w-[44px] min-h-[44px] transition-colors ${
-              moreOpen ? 'text-ink-teal-900' : 'text-[#9ca3af]'
-            }`}
-          >
-            <MoreHorizontal className="w-5 h-5" />
-            <span className="text-[9px] font-medium leading-none">Más</span>
-          </button>
-        </div>
-
-        {/* "Más" sheet */}
-        {moreOpen && (
-          <div className="bg-white border-t border-surface-mist-dark px-4 py-3 grid grid-cols-3 gap-2">
-            {MORE_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setMoreOpen(false) }}
-                className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl text-xs font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-ink-teal-900 text-white'
-                    : 'bg-surface-mist text-text-muted-custom'
-                }`}
-              >
-                <tab.Icon className="w-5 h-5" />
-                {tab.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-[#fafafa]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0f766e]" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 }
 
@@ -435,7 +363,7 @@ function OverviewTab({
                 <PlusCircle className="w-4 h-4" /> Registrar mi vivienda
               </Link>
             </div>
-            <Home className="w-16 h-16 text-white/20 flex-shrink-0 hidden sm:block" />
+            <Home className="w-16 h-16 text-white/20 flex-shrink-0" />
           </div>
         </div>
       )}
@@ -490,64 +418,70 @@ function OverviewTab({
       )}
 
       {/* ── KPI Cards — cada una clickable (Módulo 3.1) ──────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 md:gap-4">
 
         {/* WellPoints KPI */}
         <button onClick={() => onTabChange('wellpoints')}
-          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-amber-200 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[#6b7280] text-xs font-medium">WellPoints</span>
-            <Coins className="w-5 h-5 text-amber-400 group-hover:scale-110 transition-transform" />
+          className="bg-white rounded-2xl border border-surface-mist-dark p-3 md:p-4 text-left hover:shadow-md hover:border-amber-200 transition-all flex flex-col justify-between group">
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[#6b7280] text-[10px] md:text-xs font-semibold">WellPoints</span>
+              <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 font-bold text-[10px] flex-shrink-0">W</div>
+            </div>
+            <p className="text-xl md:text-3xl font-bold text-ink-teal-900 leading-none">{profile?.wellPoints ?? 0}</p>
+            <p className="text-[9px] md:text-xs text-[#6b7280] mt-1 leading-tight">Puntos disponibles</p>
           </div>
-          <p className="text-3xl font-bold text-ink-teal-900">{profile?.wellPoints ?? 0}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-xs text-[#6b7280]">Puntos disponibles</span>
-            <ArrowUpRight className="w-3 h-3 text-amber-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-full mt-3 pt-2 border-t border-surface-mist flex items-center justify-between text-[8px] md:text-xs font-bold text-[#0f766e] bg-gray-50/50 p-1 rounded-lg">
+            <span>Ver movimientos</span>
+            <ChevronRight className="w-2.5 h-2.5 md:w-3.5 h-3.5" />
           </div>
         </button>
 
         {/* Intercambios KPI */}
         <button onClick={() => onTabChange('exchanges')}
-          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[#6b7280] text-xs font-medium">Intercambios</span>
-            <Repeat className="w-5 h-5 text-text-muted-custom group-hover:scale-110 transition-transform" />
+          className="bg-white rounded-2xl border border-surface-mist-dark p-3 md:p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all flex flex-col justify-between group">
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[#6b7280] text-[10px] md:text-xs font-semibold">Intercambios</span>
+              <Repeat className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            </div>
+            <p className="text-xl md:text-3xl font-bold text-ink-teal-900 leading-none">{exchangesDone}</p>
+            <p className="text-[9px] md:text-xs text-[#6b7280] mt-1 leading-tight">Total completados</p>
           </div>
-          <p className="text-3xl font-bold text-ink-teal-900">{exchangesDone}</p>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-xs text-[#6b7280]">
-              {pendingExchanges > 0 ? `${pendingExchanges} pendiente${pendingExchanges > 1 ? 's' : ''}` : 'Total completados'}
-            </span>
-            <ArrowUpRight className="w-3 h-3 text-text-muted-custom opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-full mt-3 pt-2 border-t border-surface-mist flex items-center justify-between text-[8px] md:text-xs font-bold text-[#0f766e] bg-gray-50/50 p-1 rounded-lg">
+            <span>Ver mis intercambios</span>
+            <ChevronRight className="w-2.5 h-2.5 md:w-3.5 h-3.5" />
           </div>
         </button>
 
         {/* Mi Vivienda KPI */}
         <button onClick={() => onTabChange('my-property')}
-          className="bg-white rounded-2xl border border-surface-mist-dark p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all group">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[#6b7280] text-xs font-medium">Mi Vivienda</span>
-            <Home className="w-5 h-5 text-text-muted-custom group-hover:scale-110 transition-transform" />
+          className="bg-white rounded-2xl border border-surface-mist-dark p-3 md:p-4 text-left hover:shadow-md hover:border-ink-teal-900/20 transition-all flex flex-col justify-between group">
+          <div className="w-full">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[#6b7280] text-[10px] md:text-xs font-semibold">Mi Vivienda</span>
+              <Home className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            </div>
+            {loadingProperty ? (
+              <div className="h-6 bg-[#f0ede8] rounded animate-pulse" />
+            ) : property ? (
+              <>
+                <p className={`text-xs md:text-base font-bold truncate leading-none ${
+                  property.status === 'published' ? 'text-blue-600' :
+                  property.status === 'pending_review' ? 'text-amber-500' : 'text-[#6b7280]'
+                }`}>
+                  {property.status === 'published' ? 'Publicada' :
+                   property.status === 'pending_review' ? 'En revisión' : 'Borrador'}
+                </p>
+                <p className="text-[9px] md:text-xs text-[#6b7280] mt-1 leading-tight truncate">{property.city}</p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs md:text-base font-bold text-amber-500 leading-none">Sin registrar</p>
+                <p className="text-[9px] md:text-xs text-[#6b7280] mt-1 leading-tight">Toca para registrar →</p>
+              </>
+            )}
           </div>
-          {loadingProperty ? (
-            <div className="h-8 bg-[#f0ede8] rounded animate-pulse" />
-          ) : property ? (
-            <>
-              <p className={`text-sm font-bold ${
-                property.status === 'published' ? 'text-blue-600' :
-                property.status === 'pending_review' ? 'text-amber-500' : 'text-[#6b7280]'
-              }`}>
-                {property.status === 'published' ? 'Publicada' :
-                 property.status === 'pending_review' ? 'En revisión' : 'Borrador'}
-              </p>
-              <p className="text-xs text-[#6b7280] mt-0.5 truncate">{property.city}</p>
-            </>
-          ) : (
-            <>
-              <p className="text-sm font-bold text-amber-500">Sin registrar</p>
-              <p className="text-xs text-[#6b7280] mt-0.5">Toca para registrar →</p>
-            </>
-          )}
         </button>
       </div>
 
@@ -581,37 +515,99 @@ function OverviewTab({
         </div>
       )}
 
-      {/* ── WellPoints mini-ledger ────────────────────────────────────── */}
-      <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold text-ink-teal-900">Historial de WellPoints</h2>
-          <button onClick={() => onTabChange('wellpoints')}
-            className="text-xs text-text-muted-custom hover:text-ink-teal-900 font-medium flex items-center gap-1 transition-colors">
-            Ver todo <ChevronRight className="w-3 h-3" />
+      {/* ── Accesos rápidos ────────────────────────────────────────────── */}
+      <div>
+        <h3 className="text-sm font-bold text-ink-teal-900 mb-3 font-fraunces">Accesos rápidos</h3>
+        <div className="grid grid-cols-5 gap-2">
+          {/* Tabla de líderes */}
+          <Link href="/rankings" className="bg-white rounded-2xl border border-surface-mist-dark p-3 flex flex-col items-center justify-center gap-1.5 hover:shadow-md transition-shadow text-center">
+            <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+              <Trophy className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-semibold text-ink-teal-900 leading-tight">Tabla de líderes</span>
+          </Link>
+          {/* Mis retos */}
+          <button onClick={() => onTabChange('quests')} className="bg-white rounded-2xl border border-surface-mist-dark p-3 flex flex-col items-center justify-center gap-1.5 hover:shadow-md transition-shadow text-center">
+            <div className="w-8 h-8 rounded-full bg-[#0f766e]/10 text-[#0f766e] flex items-center justify-center flex-shrink-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-semibold text-ink-teal-900 leading-tight">Mis retos</span>
+          </button>
+          {/* Favoritos */}
+          <button onClick={() => onTabChange('favorites')} className="bg-white rounded-2xl border border-surface-mist-dark p-3 flex flex-col items-center justify-center gap-1.5 hover:shadow-md transition-shadow text-center">
+            <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center flex-shrink-0">
+              <Heart className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-semibold text-ink-teal-900 leading-tight">Favoritos</span>
+          </button>
+          {/* Reseñas */}
+          <button onClick={() => onTabChange('reviews')} className="bg-white rounded-2xl border border-surface-mist-dark p-3 flex flex-col items-center justify-center gap-1.5 hover:shadow-md transition-shadow text-center">
+            <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center flex-shrink-0">
+              <Star className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-semibold text-ink-teal-900 leading-tight">Reseñas</span>
+          </button>
+          {/* Historias */}
+          <button onClick={() => onTabChange('stories')} className="bg-white rounded-2xl border border-surface-mist-dark p-3 flex flex-col items-center justify-center gap-1.5 hover:shadow-md transition-shadow text-center">
+            <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center flex-shrink-0">
+              <Video className="w-4 h-4" />
+            </div>
+            <span className="text-[9px] md:text-[10px] font-semibold text-ink-teal-900 leading-tight">Historias</span>
           </button>
         </div>
-        {transactions.length > 0 ? (
-          <div className="divide-y divide-[#f0ede8]">
-            {transactions.slice(0, 4).map((tx) => (
-              <div key={tx.id} className="py-2.5 flex justify-between items-center text-sm">
-                <div>
-                  <p className="text-ink-teal-900 font-medium text-xs">{tx.description || 'Movimiento de puntos'}</p>
-                  <p className="text-[10px] text-[#6b7280] mt-0.5">
-                    {new Date(tx.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit', year: 'numeric' })}
-                  </p>
-                </div>
-                <span className={`font-bold text-sm ${tx.amount > 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                  {tx.amount > 0 ? `+${tx.amount}` : tx.amount} WP
-                </span>
+      </div>
+
+      {/* ── WellPoints Historial & Comprar ────────────────────────────────── */}
+      {/* ── WellPoints Historial & Comprar ────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border border-surface-mist-dark p-4">
+        <div className="flex items-center justify-between mb-4 border-b border-surface-mist pb-2">
+          <h3 className="text-sm font-bold text-ink-teal-900 font-fraunces">Historial de WellPoints & Compra</h3>
+          <button onClick={() => onTabChange('wellpoints')} className="text-xs text-[#0f766e] hover:underline font-bold">
+            Ver todo →
+          </button>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4 items-stretch justify-between">
+          {/* Left Side: Transaction List */}
+          <div className="flex-1 w-full flex flex-col justify-center min-h-[90px]">
+            {transactions.length > 0 ? (
+              <div className="divide-y divide-[#f0ede8] w-full">
+                {transactions.slice(0, 3).map((tx) => (
+                  <div key={tx.id} className="py-1.5 flex justify-between items-center text-xs">
+                    <div>
+                      <p className="text-ink-teal-900 font-medium text-[11px] leading-tight">{tx.description || 'Movimiento de puntos'}</p>
+                      <p className="text-[9px] text-[#6b7280] mt-0.5">
+                        {new Date(tx.created_at).toLocaleDateString('es-ES')}
+                      </p>
+                    </div>
+                    <span className={`font-bold text-xs ${tx.amount > 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                      {tx.amount > 0 ? `+${tx.amount}` : tx.amount} WP
+                    </span>
+                  </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-2 flex flex-col items-center">
+                <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-1.5">
+                  <Coins className="w-4 h-4" />
+                </div>
+                <p className="text-[11px] text-[#6b7280]">Tus movimientos de WellPoints aparecerán aquí</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-6">
-            <Coins className="w-8 h-8 mx-auto mb-2 text-[#cbd5cc]" />
-            <p className="text-xs text-[#6b7280]">Tus movimientos de WellPoints aparecerán aquí</p>
+
+          {/* Right Side: Comprar WellPoints (Divided by border on desktop) */}
+          <div className="w-full md:w-64 border-t md:border-t-0 md:border-l border-[#f0ede8] pt-4 md:pt-0 md:pl-4 flex flex-col justify-between self-stretch">
+            <div>
+              <h4 className="text-xs font-bold text-ink-teal-900 mb-1">Comprar WellPoints</h4>
+              <p className="text-[11px] text-[#6b7280] leading-snug">
+                Obtén más WellPoints para acceder a increíbles intercambios.
+              </p>
+            </div>
+            <button onClick={() => onTabChange('wellpoints')} className="mt-3 inline-flex items-center gap-1 bg-[#f0fdfa] border border-[#2dd4bf]/20 hover:bg-[#0f766e]/10 text-[#0f766e] px-3 py-1.5 rounded-xl font-bold text-[10px] w-fit transition-colors">
+              Comprar ahora <div className="w-3.5 h-3.5 rounded-full bg-[#0f766e] text-white flex items-center justify-center font-bold text-[7px] tracking-tighter shadow-sm flex-shrink-0">WP</div>
+            </button>
           </div>
-        )}
+        </div>
       </div>
 
       {/* ── Discover Carousel ──── */}
@@ -741,6 +737,49 @@ function WellPointsTab({ profile, transactions }: { profile: UserProfile | null;
 function MyPropertyTab({ property, loadingProperty }: { property: Property | null; loadingProperty: boolean }) {
   const [isDeleting, setIsDeleting] = useState(false)
   const router = useRouter()
+  const [stats, setStats] = useState({
+    views: property?.views || 0,
+    consultas: 0,
+    exchanges: 0,
+    rating: '—'
+  })
+
+  useEffect(() => {
+    if (!property) return
+    const fetchStats = async () => {
+      // 1. Fetch consultations (property_questions)
+      const { count: qCount } = await supabase
+        .from('property_questions')
+        .select('*', { count: 'exact', head: true })
+        .eq('property_id', property.id)
+
+      // 2. Fetch exchanges
+      const { count: eCount } = await supabase
+        .from('exchanges')
+        .select('*', { count: 'exact', head: true })
+        .eq('host_property_id', property.id)
+
+      // 3. Fetch reviews
+      const { data: revs } = await supabase
+        .from('reviews')
+        .select('rating')
+        .eq('property_id', property.id)
+
+      let ratingStr = '—'
+      if (revs && revs.length > 0) {
+        const avg = revs.reduce((acc, curr) => acc + (curr.rating || 0), 0) / revs.length
+        ratingStr = avg.toFixed(1)
+      }
+
+      setStats({
+        views: property.views || 0,
+        consultas: qCount || 0,
+        exchanges: eCount || 0,
+        rating: ratingStr
+      })
+    }
+    fetchStats()
+  }, [property])
 
   const handleDelete = async () => {
     if (!property) return
@@ -824,10 +863,10 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Vistas', value: '0' },
-          { label: 'Consultas', value: '0' },
-          { label: 'Intercambios', value: '0' },
-          { label: 'Rating', value: '—' },
+          { label: 'Vistas', value: stats.views },
+          { label: 'Consultas', value: stats.consultas },
+          { label: 'Intercambios', value: stats.exchanges },
+          { label: 'Rating', value: stats.rating },
         ].map((stat) => (
           <div key={stat.label} className="text-center p-3 bg-surface-mist rounded-xl">
             <p className="text-2xl font-bold text-ink-teal-900">{stat.value}</p>
@@ -1386,6 +1425,13 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
         .map(q => q.quest_key)
 
       const defaultQuests: Quest[] = [
+        {
+          key: 'login',
+          title: 'Inicia Sesión en Wellhouse',
+          description: 'Crea tu cuenta e inicia sesión por primera vez para dar inicio a tu aventura en la comunidad.',
+          reward: 50,
+          status: completedKeys.includes('login') ? 'completed' : 'in_progress'
+        },
         {
           key: 'complete_profile',
           title: 'Completa tu Perfil',

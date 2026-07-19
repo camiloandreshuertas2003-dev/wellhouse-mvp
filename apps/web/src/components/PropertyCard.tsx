@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import WellRankRing from './WellRankRing'
-import CategoryIcon from './CategoryIcon'
+import { MapPin, Users, BedDouble, Bath, Heart } from 'lucide-react'
 
 export interface PropertyCardData {
   id: string
@@ -20,114 +19,112 @@ export interface PropertyCardData {
   verified: boolean
   isMock?: boolean
   wellRank: number
+  host_avatar?: string
 }
 
 interface PropertyCardProps {
   property: PropertyCardData
-  /** 'grid' = search results grid view, 'carousel' = sliding category row card */
   variant?: 'grid' | 'carousel'
 }
 
-/**
- * PropertyCard — single reusable card component for grids, carousels, and search results.
- * Matches the requested screenshot: square images with highly rounded corners (rounded-[16px]),
- * transparent container background (no card shadow/border), heart button overlay,
- * and a "Favorito entre huéspedes" pill badge.
- */
 export default function PropertyCard({ property, variant = 'grid' }: PropertyCardProps) {
   const [imgError, setImgError] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
-  
-  // High-density responsive width supporting ~7 visible cards on large displays
+
   const widthClass = variant === 'carousel'
-    ? 'w-[40vw] max-w-[240px] sm:w-[210px] md:w-[195px] lg:w-[185px] xl:w-[180px]'
+    ? 'w-[220px] md:w-[280px] flex-shrink-0'
     : 'w-full'
 
   return (
-    <div className={`relative group flex flex-col bg-transparent flex-shrink-0 ${widthClass}`}>
-      {/* Clickable Image Link wrapper */}
-      <Link href={`/properties/${property.id}`} className="focus:outline-none">
-        {/* Image Container with rounded-[16px] matching reference screenshot */}
-        <div className="relative aspect-square bg-surface-mist overflow-hidden flex-shrink-0 rounded-[16px] shadow-sm">
-          {imgError ? (
-            <div className="w-full h-full flex items-center justify-center relative bg-surface-mist text-ink-teal-500/15 overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <CategoryIcon category={property.category || property.type} className="w-24 h-24 stroke-[1.2]" />
-              </div>
-              <div className="relative z-10 flex flex-col items-center gap-1 text-ink-teal-700">
-                <CategoryIcon category={property.category || property.type} className="w-6 h-6 stroke-[1.8]" />
-                <span className="text-[10px] font-inter font-semibold uppercase tracking-wider">Sin fotos</span>
-              </div>
-            </div>
-          ) : (
-            <img
-              src={property.image}
-              alt={property.title}
-              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-              onError={() => setImgError(true)}
-              loading="lazy"
-            />
-          )}
+    <div className={`relative flex flex-col bg-white rounded-2xl border border-surface-mist-dark overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${widthClass}`}>
+      {/* Clickable Image wrapper */}
+      <Link href={`/properties/${property.id}`} className="relative aspect-[4/3] w-full block overflow-hidden bg-surface-mist group">
+        {imgError ? (
+          <div className="w-full h-full flex items-center justify-center bg-surface-mist text-text-muted-custom">
+            <span className="text-xs font-semibold">Sin imagen</span>
+          </div>
+        ) : (
+          <img
+            src={property.image}
+            alt={property.title}
+            className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
+            onError={() => setImgError(true)}
+            loading="lazy"
+          />
+        )}
 
-          {/* "Favorito entre huéspedes" badge overlay at top-left — matches reference screenshot */}
-          {property.verified && (
-            <div className="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-radius-full text-[10px] font-inter font-bold text-neutral-800 shadow-sm border border-neutral-100/50">
-              Favorito entre huéspedes
-            </div>
-          )}
+        {/* Heart overlay button top-right */}
+        <button
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            setIsLiked(!isLiked)
+          }}
+          className="absolute top-3 right-3 z-20 p-2 bg-black/35 backdrop-blur-md hover:bg-black/50 transition-colors rounded-full text-white"
+          aria-label={isLiked ? "Quitar de favoritos" : "Guardar en favoritos"}
+        >
+          <Heart
+            className={`w-4 h-4 transition-colors ${isLiked ? 'fill-rose-500 stroke-rose-500' : 'stroke-white'}`}
+            strokeWidth={2.5}
+          />
+        </button>
 
-
-        </div>
+        {/* Host Avatar overlapping the bottom-left of the image */}
+        {property.host_avatar && (
+          <div className="absolute bottom-3 left-3 z-10 w-8 h-8 rounded-full border-2 border-white shadow-md overflow-hidden bg-gray-200">
+            <img src={property.host_avatar} alt="" className="w-full h-full object-cover" />
+          </div>
+        )}
       </Link>
 
-      {/* Heart overlay button in top-right */}
-      <button
-        onClick={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          setIsLiked(!isLiked)
-        }}
-        className="absolute top-2 right-2 sm:top-2.5 sm:right-2.5 z-10 p-1 text-white hover:scale-110 transition-transform focus:outline-none"
-        aria-label={isLiked ? "Quitar de favoritos" : "Guardar en favoritos"}
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 32 32"
-          fill={isLiked ? "#E11D48" : "rgba(0, 0, 0, 0.45)"}
-          stroke="white"
-          strokeWidth="2"
-          className="transition-colors drop-shadow-md sm:w-6 sm:h-6"
-        >
-          <path d="M16 28.268c-.412 0-.816-.164-1.116-.456l-10.4-10.1C2.08 15.355 1 12.247 1 9.07 1 4.62 4.62 1 9.07 1c2.518 0 4.887 1.182 6.4 3.197C16.983 2.182 19.352 1 21.87 1c4.45 0 8.07 3.62 8.07 8.07 0 3.177-1.08 6.285-3.484 8.643l-10.4 10.1c-.3.292-.704.456-1.116.456z" />
-        </svg>
-      </button>
+      {/* Card Content */}
+      <div className="p-3 md:p-4 flex flex-col flex-1">
+        {/* Location tag with map-pin */}
+        <div className="flex items-center gap-1 text-[#0f766e] text-[10px] md:text-xs font-semibold mb-1">
+          <MapPin className="w-3 h-3 flex-shrink-0" />
+          <span className="truncate">{property.location}</span>
+        </div>
 
-      {/* Card Body */}
-      <Link href={`/properties/${property.id}`} className="mt-2 flex flex-col gap-0.5 min-w-0 focus:outline-none">
-        {/* Line 1: Title */}
-        <h3 className="font-inter font-semibold text-neutral-900 text-xs sm:text-sm leading-snug line-clamp-1 group-hover:text-accent-mango transition-colors">
-          {property.title}
-        </h3>
+        {/* Property Title */}
+        <Link href={`/properties/${property.id}`} className="focus:outline-none">
+          <h3 className="font-fraunces font-bold text-ink-teal-900 text-xs md:text-base leading-snug line-clamp-2 hover:text-[#0f766e] transition-colors mb-1.5">
+            {property.title}
+          </h3>
+        </Link>
 
-        {/* Line 2: Details */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mt-0.5">
-          <span className="text-text-muted-custom font-inter text-[10px] sm:text-xs leading-normal line-clamp-1">
-            {property.location.split(',')[0]}
+        {/* Features row */}
+        <div className="flex items-center gap-2 text-text-muted-custom text-[10px] md:text-xs font-inter mb-3">
+          <span className="flex items-center gap-1">
+            <Users className="w-3 h-3" />
+            {property.capacity} {property.capacity === 1 ? 'huésped' : 'huéspedes'}
           </span>
-          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
-            <span className="font-bold text-ink-teal-900 bg-surface-mist px-2 py-0.5 rounded-md text-[10px] sm:text-xs">
-              {property.wellRank} WP
+          <span className="text-gray-300">·</span>
+          <span className="flex items-center gap-1">
+            <BedDouble className="w-3 h-3" />
+            {property.bedrooms} {property.bedrooms === 1 ? 'hab' : 'habs'}
+          </span>
+          <span className="text-gray-300">·</span>
+          <span className="flex items-center gap-1">
+            <Bath className="w-3 h-3" />
+            {property.bathrooms} {property.bathrooms === 1 ? 'baño' : 'baños'}
+          </span>
+        </div>
+
+        {/* Price tag using WellPoint design */}
+        <div className="mt-auto pt-2 border-t border-surface-mist flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <span className="text-xs md:text-sm font-bold text-ink-teal-900 font-inter">
+              {property.wellRank}
             </span>
-            <span className="flex items-center gap-0.5 font-semibold text-neutral-800 shrink-0">
-              <svg width="8" height="8" viewBox="0 0 14 14" fill="none" className="text-wellpoint-gold flex-shrink-0 sm:w-[9px] sm:h-[9px]">
-                <path d="M7 1.5l1.545 3.13L12 5.13l-2.5 2.435.59 3.44L7 9.27l-3.09 1.735.59-3.44L2 5.13l3.455-.5L7 1.5z" fill="currentColor"/>
-              </svg>
-              {property.reviews > 0 ? property.rating.toFixed(1) : '5.0'}
+            <div className="w-4.5 h-4.5 rounded-full bg-[#0f766e] text-white flex items-center justify-center font-bold text-[8px] tracking-tighter shadow-sm flex-shrink-0">
+              WP
+            </div>
+            <span className="text-text-muted-custom font-normal text-[10px] md:text-xs">
+              / noche
             </span>
           </div>
         </div>
-      </Link>
+      </div>
     </div>
   )
 }

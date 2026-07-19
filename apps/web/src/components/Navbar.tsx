@@ -1,188 +1,518 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect, memo } from 'react'
+import { useState, useEffect, memo, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { 
+  Bell, Compass, Home, Plus, MessageCircle, User, MoreHorizontal,
+  Trophy, Sparkles, Heart, Star, Video, Settings, ShieldAlert, X, HelpCircle, Bot
+} from 'lucide-react'
+import NotificationsDropdown from './notifications/NotificationsDropdown'
+import { useNotifications } from './notifications/NotificationsProvider'
 
-// ── Bottom tab bar nav items (Módulo 7 mobile navigation) ─────────────────────
-const BOTTOM_NAV = [
-  {
-    href: '/search',
-    label: 'Explorar',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} strokeLinecap="round">
-        <circle cx="10" cy="10" r="7"/>
-        <path d="M19 19l-4-4"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/messages',
-    label: 'Mensajes',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} strokeLinecap="round" strokeLinejoin="round">
-        <path d="M20 2H2v15l4-4h14V2z"/>
-      </svg>
-    ),
-  },
-  {
-    href: '/dashboard',
-    label: 'Perfil',
-    icon: (active: boolean) => (
-      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth={active ? 2 : 1.5} strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="11" cy="7" r="4"/>
-        <path d="M2 20c0-4.4 4-8 9-8s9 3.6 9 8"/>
-      </svg>
-    ),
-  },
-]
-
-const Navbar = memo(function Navbar() {
+const NavbarContent = memo(function NavbarContent() {
   const router = useRouter()
   const pathname = usePathname()
-  const [isOpen, setIsOpen] = useState(false)
+  const searchParams = useSearchParams()
   const [session, setSession] = useState<any>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [role, setRole] = useState<string | null>(null)
   const [hasMounted, setHasMounted] = useState(false)
+
+  // Modals state
+  const [moreOpen, setMoreOpen] = useState(false)
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [checkingPublish, setCheckingPublish] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showWellBot, setShowWellBot] = useState(false)
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
   useEffect(() => {
     setHasMounted(true)
-    supabase.auth.getSession().then(({ data: { session: s } }) => setSession(s))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s))
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      setSession(s)
+      if (s?.user?.id) fetchUserData(s.user.id)
+    })
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s)
+      if (s?.user?.id) {
+        fetchUserData(s.user.id)
+      } else {
+        setAvatarUrl(null)
+        setRole(null)
+      }
+    })
+    
     return () => subscription.unsubscribe()
   }, [])
 
+
+  const fetchUserData = async (userId: string) => {
+    const { data } = await supabase.from('users').select('avatar_url, role').eq('id', userId).single()
+    if (data) {
+      if (data.avatar_url) setAvatarUrl(data.avatar_url)
+      if (data.role) setRole(data.role)
+    }
+  }
+
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    setIsOpen(false)
     router.push('/search')
+  }
+
+  const handlePublishClick = async () => {
+    if (!session) {
+      router.push('/login')
+      return
+    }
+    setCheckingPublish(true)
+    try {
+      // Check if user already has a property
+      const { data: prop, error } = await supabase
+        .from('properties')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+
+      if (prop) {
+        // User already has a property, redirect to stories tab
+        router.push('/dashboard?tab=stories')
+      } else {
+        // Offer choice
+        setShowPublishModal(true)
+      }
+    } catch (err) {
+      console.error(err)
+      router.push('/properties/create')
+    } finally {
+      setCheckingPublish(false)
+    }
   }
 
   const navLinkClass = (href: string) =>
     `font-inter font-medium text-sm transition-colors ${
       pathname === href
-        ? 'text-ink-teal-900'
-        : 'text-text-muted-custom hover:text-ink-teal-900'
+        ? 'text-[#0f766e]'
+        : 'text-[#6b7280] hover:text-[#0f766e]'
     }`
+
+
+  if (!hasMounted) return null
 
   return (
     <>
       {/* ── Desktop Navbar ─────────────────────────────────────────────── */}
-      <nav className="bg-white border-b border-surface-mist-dark sticky top-0 z-50" role="navigation" aria-label="Navegación principal">
-        <div className="max-w-[1440px] mx-auto px-6 md:px-6 lg:px-8">
+      <nav className="hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Navegación principal">
+        <div className="max-w-[1380px] mx-auto px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
 
             {/* Logo */}
-            <Link href="/search" className="flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-teal-500 rounded">
-              <span className="font-fraunces font-semibold text-2xl text-ink-teal-900 tracking-tight">Well</span>
-              <span className="font-fraunces font-semibold text-2xl text-accent-mango tracking-tight">house</span>
+            <Link href="/search" className="focus:outline-none rounded">
+              <span className="font-fraunces font-bold text-2xl text-ink-teal-900 tracking-tight">Wellhouse</span>
             </Link>
 
             {/* Desktop Links */}
-            <div className="hidden md:flex items-center gap-7">
+            <div className="flex items-center gap-7">
               <Link href="/search" className={navLinkClass('/search')}>Explorar</Link>
               <Link href="/how-it-works" className={navLinkClass('/how-it-works')}>Cómo funciona</Link>
 
-              {hasMounted && (
+              {session ? (
                 <>
-                  {session ? (
-                    <>
-                      <Link href="/dashboard" className={navLinkClass('/dashboard')}>Dashboard</Link>
-                      <Link href="/messages" className={navLinkClass('/messages')}>Mensajes</Link>
-                      <button
-                        onClick={handleLogout}
-                        className="font-inter font-medium text-sm text-signal-red hover:opacity-80 transition-opacity"
-                      >
-                        Salir
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/login" className={navLinkClass('/login')}>Iniciar sesión</Link>
-                      <Link
-                        href="/register"
-                        className="bg-accent-mango text-white px-5 py-2.5 rounded-radius-sm font-inter font-medium text-sm hover:bg-accent-mango-hover transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-mango"
-                      >
-                        Registrarse
-                      </Link>
-                    </>
+                  <Link href="/dashboard" className={navLinkClass('/dashboard')}>Mi espacio</Link>
+                  <Link href="/messages" className={navLinkClass('/messages')}>Mensajes</Link>
+                  {role === 'ADMIN' && (
+                    <Link href="/admin" className="font-inter font-bold text-sm text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200">
+                      Admin
+                    </Link>
                   )}
+                  <button
+                    onClick={handleLogout}
+                    className="font-inter font-medium text-sm text-signal-red hover:opacity-80 transition-opacity"
+                  >
+                    Salir
+                  </button>
+                  {/* WellBot button — Desktop */}
+                  <button
+                    onClick={() => setShowWellBot(!showWellBot)}
+                    className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                    title="WellBot — Asistente IA"
+                  >
+                    <Bot className="w-5 h-5" />
+                  </button>
+
+                  {/* Desktop Notification Bell */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowNotifications(!showNotifications)}
+                      className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                      title="Notificaciones"
+                    >
+                      <Bell className="w-5 h-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </button>
+                    {showNotifications && (
+                      <div className="absolute right-0 top-full mt-2">
+                        <NotificationsDropdown onClose={() => setShowNotifications(false)} />
+                      </div>
+                    )}
+                  </div>
+
+                  <Link href="/dashboard?tab=settings" className="w-8 h-8 rounded-full overflow-hidden border border-surface-mist-dark bg-gray-100 flex items-center justify-center transition-transform hover:scale-105" title="Modificar perfil">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Perfil" className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4 text-gray-400" />
+                    )}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className={navLinkClass('/login')}>Iniciar sesión</Link>
+                  <Link
+                    href="/register"
+                    className="bg-[#0f766e] text-white px-5 py-2.5 rounded-xl font-inter font-medium text-sm hover:bg-[#0d635c] transition-colors"
+                  >
+                    Registrarse
+                  </Link>
                 </>
               )}
             </div>
-
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-radius-sm text-ink-teal-700 hover:bg-surface-mist transition-colors"
-              aria-label={isOpen ? 'Cerrar menú' : 'Abrir menú'}
-              aria-expanded={isOpen}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                {isOpen
-                  ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12"/>
-                  : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 12h16M4 18h16"/>
-                }
-              </svg>
-            </button>
           </div>
-
-          {/* Mobile menu dropdown */}
-          {isOpen && (
-            <div className="md:hidden py-4 space-y-3 border-t border-surface-mist" role="navigation" aria-label="Menú móvil">
-              <Link href="/search" className="block font-inter text-sm font-medium text-ink-teal-700 hover:text-ink-teal-900 py-2" onClick={() => setIsOpen(false)}>Explorar viviendas</Link>
-              <Link href="/how-it-works" className="block font-inter text-sm font-medium text-[#4a6b5e] hover:text-ink-teal-900 py-2" onClick={() => setIsOpen(false)}>Cómo funciona</Link>
-              {hasMounted && (
-                <>
-                  {session ? (
-                    <>
-                      <Link href="/dashboard" className="block font-inter text-sm font-semibold text-ink-teal-900 py-2" onClick={() => setIsOpen(false)}>Dashboard</Link>
-                      <button onClick={handleLogout} className="block w-full text-left font-inter text-sm font-medium text-signal-red py-2">Cerrar sesión</button>
-                    </>
-                  ) : (
-                    <>
-                      <Link href="/login" className="block font-inter text-sm font-medium text-[#4a6b5e] py-2" onClick={() => setIsOpen(false)}>Iniciar sesión</Link>
-                      <Link href="/register" className="block bg-accent-mango text-white px-4 py-3 rounded-radius-sm font-inter font-medium text-sm text-center hover:bg-accent-mango-hover transition-colors" onClick={() => setIsOpen(false)}>Registrarse</Link>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          )}
         </div>
       </nav>
 
-      {/* ── Mobile Bottom Tab Bar (Módulo 7) ──────────────────────────── */}
-      {hasMounted && session && pathname !== '/dashboard' && (
-        <nav
-          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-surface-mist-dark safe-area-inset-bottom"
-          role="navigation"
-          aria-label="Navegación móvil"
-        >
-          <div className="flex">
-            {BOTTOM_NAV.map(({ href, label, icon }) => {
-              const isActive = pathname === href || pathname.startsWith(href + '/')
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`flex-1 flex flex-col items-center justify-center gap-1 py-3 min-h-[56px] transition-colors ${
-                    isActive ? 'text-ink-teal-900' : 'text-text-muted-custom'
-                  }`}
-                  aria-current={isActive ? 'page' : undefined}
-                >
-                  {icon(isActive)}
-                  <span className={`font-inter text-[10px] font-medium ${isActive ? 'text-ink-teal-900' : 'text-text-muted-custom'}`}>
-                    {label}
+      {/* ── Mobile Header Navbar (Mockup style) ──────────────────────────── */}
+      <nav className="md:hidden bg-white border-b border-surface-mist-dark sticky top-0 z-50 px-4 py-3 flex items-center justify-between shadow-sm">
+        <div className="flex flex-col">
+          <Link href="/search" className="focus:outline-none">
+            <span className="font-fraunces font-bold text-xl text-ink-teal-900 tracking-tight">Wellhouse</span>
+          </Link>
+          <span className="text-[10px] text-text-muted-custom font-inter leading-none mt-0.5">Intercambia hogares, vive experiencias</span>
+        </div>
+
+          <div className="flex items-center gap-2">
+            {/* WellBot — Mobile */}
+            <button
+              onClick={() => setShowWellBot(!showWellBot)}
+              className="p-2 text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+              aria-label="WellBot"
+            >
+              <Bot className="w-5 h-5" />
+            </button>
+
+            {/* Bell — Mobile */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                aria-label="Notificaciones"
+              >
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                    {unreadCount > 9 ? '9+' : unreadCount}
                   </span>
-                </Link>
-              )
-            })}
+                )}
+              </button>
+              {showNotifications && (
+                <div className="absolute right-[-48px] top-full mt-2 z-50">
+                  <NotificationsDropdown onClose={() => setShowNotifications(false)} />
+                </div>
+              )}
+            </div>
+
+            <Link href={session ? "/dashboard?tab=settings" : "/login"} className="w-9 h-9 rounded-full overflow-hidden border border-surface-mist-dark bg-gray-100 flex items-center justify-center">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User className="w-5 h-5 text-gray-400" />
+              )}
+            </Link>
           </div>
-        </nav>
+      </nav>
+
+      {/* ── Mobile Bottom Tab Bar (Mockup style) ──────────────────────────── */}
+      <nav
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-surface-mist-dark safe-area-inset-bottom shadow-lg ${
+          pathname === '/messages' && searchParams.has('conversation_id') ? 'hidden' : ''
+        }`}
+        role="navigation"
+        aria-label="Navegación móvil"
+      >
+        <div className="flex items-end justify-between px-2 py-1">
+          {/* Explorar */}
+          <Link
+            href="/search"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
+              pathname === '/search' ? 'text-[#0f766e]' : 'text-[#6b7280]'
+            }`}
+          >
+            <Compass className="w-[18px] h-[18px]" strokeWidth={pathname === '/search' ? 2.5 : 1.5} />
+            <span className={`font-inter text-[9px] font-medium ${pathname === '/search' ? 'text-[#0f766e] font-semibold' : 'text-[#6b7280]'}`}>
+              Explorar
+            </span>
+          </Link>
+
+          {/* Mi espacio */}
+          <Link
+            href="/dashboard"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
+              pathname === '/dashboard' && !moreOpen ? 'text-[#0f766e]' : 'text-[#6b7280]'
+            }`}
+          >
+            <Home className="w-[18px] h-[18px]" strokeWidth={pathname === '/dashboard' && !moreOpen ? 2.5 : 1.5} />
+            <span className={`font-inter text-[9px] font-medium ${pathname === '/dashboard' && !moreOpen ? 'text-[#0f766e] font-semibold' : 'text-[#6b7280]'}`}>
+              Mi espacio
+            </span>
+          </Link>
+
+          {/* Publicar (Action) */}
+          <button
+            onClick={handlePublishClick}
+            disabled={checkingPublish}
+            className="flex-1 flex flex-col items-center justify-center text-[#6b7280] focus:outline-none"
+            aria-label="Publicar"
+          >
+            <div className="w-10 h-10 rounded-full bg-[#0f766e] flex items-center justify-center text-white shadow-md hover:bg-[#0d635c] transition-colors -translate-y-1.5 border-4 border-white">
+              {checkingPublish ? (
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Plus className="w-5 h-5" strokeWidth={3} />
+              )}
+            </div>
+            <span className="font-inter text-[9px] font-medium text-[#6b7280] -mt-1">
+              Publicar
+            </span>
+          </button>
+
+          {/* Mensajes */}
+          <Link
+            href="/messages"
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
+              pathname === '/messages' ? 'text-[#0f766e]' : 'text-[#6b7280]'
+            }`}
+          >
+            <MessageCircle className="w-[18px] h-[18px]" strokeWidth={pathname === '/messages' ? 2.5 : 1.5} />
+            <span className={`font-inter text-[9px] font-medium ${pathname === '/messages' ? 'text-[#0f766e] font-semibold' : 'text-[#6b7280]'}`}>
+              Mensajes
+            </span>
+          </Link>
+
+          {/* Más */}
+          <button
+            onClick={() => setMoreOpen(!moreOpen)}
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
+              moreOpen ? 'text-[#0f766e]' : 'text-[#6b7280]'
+            }`}
+          >
+            <MoreHorizontal className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 1.5} />
+            <span className={`font-inter text-[9px] font-medium ${moreOpen ? 'text-[#0f766e] font-semibold' : 'text-[#6b7280]'}`}>
+              Más
+            </span>
+          </button>
+        </div>
+      </nav>
+
+      {/* ── Global "Más" Bottom Sheet ────────────────────────────────────── */}
+      {moreOpen && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/40 flex items-end">
+          <div className="absolute inset-0" onClick={() => setMoreOpen(false)} />
+          <div className="bg-white rounded-t-3xl w-full max-h-[85vh] overflow-y-auto p-5 relative z-10 border-t border-surface-mist-dark safe-area-inset-bottom">
+            <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-4" />
+            
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="font-fraunces font-bold text-lg text-ink-teal-900">Menú de Wellhouse</h3>
+              <button onClick={() => setMoreOpen(false)} className="p-1 hover:bg-gray-100 rounded-full">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3 mb-6">
+              <Link 
+                href="/rankings" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Trophy className="w-5 h-5 text-emerald-600" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Tabla líderes</span>
+              </Link>
+
+              <Link 
+                href="/dashboard?tab=quests" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Sparkles className="w-5 h-5 text-[#0f766e]" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Mis retos</span>
+              </Link>
+
+              <Link 
+                href="/dashboard?tab=favorites" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Heart className="w-5 h-5 text-rose-500" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Favoritos</span>
+              </Link>
+
+              <Link 
+                href="/dashboard?tab=reviews" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Star className="w-5 h-5 text-amber-500" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Reseñas</span>
+              </Link>
+
+              <Link 
+                href="/dashboard?tab=stories" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Video className="w-5 h-5 text-blue-500" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Historias</span>
+              </Link>
+
+              <Link 
+                href="/dashboard?tab=settings" 
+                onClick={() => setMoreOpen(false)}
+                className="flex flex-col items-center gap-1.5 p-3 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-gray-100 text-center transition-colors"
+              >
+                <Settings className="w-5 h-5 text-gray-500" />
+                <span className="text-xs font-semibold text-ink-teal-900 leading-tight">Ajustes</span>
+              </Link>
+            </div>
+
+            <div className="border-t border-[#f0ede8] pt-4 flex flex-col gap-3">
+              <Link 
+                href="/how-it-works"
+                onClick={() => setMoreOpen(false)}
+                className="flex items-center gap-3 px-3 py-2 text-sm font-semibold text-ink-teal-900 hover:bg-gray-50 rounded-xl"
+              >
+                <HelpCircle className="w-5 h-5 text-[#0f766e]" />
+                ¿Cómo funciona?
+              </Link>
+
+              {role === 'ADMIN' && (
+                <Link 
+                  href="/admin"
+                  onClick={() => setMoreOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 text-sm font-bold text-rose-600 bg-rose-50 border border-dashed border-rose-200 rounded-xl"
+                >
+                  <ShieldAlert className="w-5 h-5" />
+                  Panel de Administrador
+                </Link>
+              )}
+
+              {session && (
+                <button
+                  onClick={() => { setMoreOpen(false); handleLogout() }}
+                  className="w-full mt-2 py-3 bg-red-50 text-red-600 font-bold text-sm rounded-xl hover:bg-red-100 transition-colors"
+                >
+                  Cerrar sesión
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Publish Chooser Modal ────────────────────────────────────────── */}
+      {showPublishModal && (
+        <div className="fixed inset-0 z-[100] bg-black/55 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowPublishModal(false)}
+              className="absolute top-4 right-4 p-1 hover:bg-gray-100 rounded-full"
+            >
+              <X className="w-5 h-5 text-gray-400" />
+            </button>
+            
+            <h3 className="font-fraunces font-bold text-lg text-ink-teal-900 mb-2">¿Qué deseas publicar?</h3>
+            <p className="text-xs text-text-muted-custom mb-5 leading-normal">
+              Las cuentas Wellhouse pueden registrar una vivienda principal y múltiples historias de video sobre sus intercambios.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setShowPublishModal(false)
+                  router.push('/properties/create')
+                }}
+                className="w-full py-3 bg-[#0f766e] hover:bg-[#0d635c] text-white font-bold text-sm rounded-2xl transition-colors shadow-sm"
+              >
+                Registrar mi vivienda
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowPublishModal(false)
+                  router.push('/dashboard?tab=stories')
+                }}
+                className="w-full py-3 bg-white border border-[#cbd5cc] text-ink-teal-900 font-bold text-sm rounded-2xl hover:bg-gray-50 transition-colors"
+              >
+                Publicar una Historia (Video YouTube)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── WellBot Panel ─────────────────────────────────────────────────── */}
+      {showWellBot && (
+        <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[200] w-[340px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-surface-mist-dark overflow-hidden flex flex-col" style={{ maxHeight: '480px' }}>
+          {/* Header */}
+          <div className="bg-ink-teal-900 px-4 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-semibold text-sm leading-tight">WellBot</p>
+                <p className="text-white/60 text-[10px] leading-tight">Asistente IA de Wellhouse</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowWellBot(false)}
+              className="p-1 text-white/60 hover:text-white transition"
+              aria-label="Cerrar WellBot"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+          {/* Chat iframe / redirect */}
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 p-5 text-center bg-surface-mist">
+            <div className="w-14 h-14 rounded-2xl bg-ink-teal-900/10 flex items-center justify-center">
+              <Bot className="w-7 h-7 text-ink-teal-900" />
+            </div>
+            <div>
+              <p className="font-semibold text-ink-teal-900 text-sm">Hola, soy WellBot</p>
+              <p className="text-[12px] text-text-muted-custom mt-1 leading-relaxed">
+                Tu asistente IA para intercambios de vivienda. Puedo ayudarte a encontrar propiedades, responder preguntas y orientarte en cada paso.
+              </p>
+            </div>
+            <button
+              onClick={() => { setShowWellBot(false); router.push('/admin/wellbot') }}
+              className="w-full py-2.5 bg-ink-teal-900 text-white text-sm font-semibold rounded-xl hover:bg-[#0d635c] transition-colors"
+            >
+              Abrir WellBot completo
+            </button>
+          </div>
+        </div>
       )}
     </>
   )
 })
-
-export default Navbar
+export default function Navbar() {
+  return (
+    <Suspense fallback={null}>
+      <NavbarContent />
+    </Suspense>
+  )
+}

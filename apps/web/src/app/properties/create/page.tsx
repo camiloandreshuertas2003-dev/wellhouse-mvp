@@ -432,6 +432,8 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
   const inputClass = "w-full p-4 bg-white border border-surface-mist-dark rounded-xl font-inter text-ink-teal-900 placeholder-[#9ca3af] focus:outline-none focus:ring-2 focus:ring-[#10b981]/50 focus:border-accent-mango transition-all"
   const labelClass = "block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-2"
 
+  const [localAddress, setLocalAddress] = useState(form.address);
+
   const {
     ready,
     value,
@@ -446,7 +448,16 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
     defaultValue: form.address,
   });
 
+  // Sync default value when loaded
+  useEffect(() => {
+    if (form.address && !localAddress) {
+      setLocalAddress(form.address);
+      setValue(form.address, false);
+    }
+  }, [form.address]);
+
   const handleSelect = async (address: string) => {
+    setLocalAddress(address);
     setValue(address, false);
     clearSuggestions();
     try {
@@ -499,9 +510,13 @@ function Step2Location({ form, set, isLoaded, loadError }: { form: FormData; set
             <Search className="absolute left-4 top-4 text-[#9ca3af] w-5 h-5" />
             <input 
               className={`${inputClass} pl-12`} 
-              value={value} 
-              onChange={e => setValue(e.target.value)} 
-              disabled={!ready}
+              value={localAddress} 
+              onChange={e => {
+                const val = e.target.value;
+                setLocalAddress(val);
+                set('address', val);
+                if (ready) setValue(val);
+              }} 
               placeholder="Empieza a escribir tu dirección..." 
             />
           </div>

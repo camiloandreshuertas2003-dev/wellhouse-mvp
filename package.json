@@ -2,7 +2,7 @@
   "name": "wellhouse-mvp",
   "version": "1.0.0",
   "private": true,
-  "packageManager": "pnpm@9.15.9",
+  "packageManager": "pnpm@10.0.0",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -13,7 +13,7 @@
     "turbo": "^1.13.3"
   },
   "engines": {
-    "node": "20.x",
+    "node": "24.x",
     "pnpm": ">=9.0.0"
   }
 }
