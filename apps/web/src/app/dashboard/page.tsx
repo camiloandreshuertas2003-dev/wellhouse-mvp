@@ -1014,22 +1014,85 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
 
 // ─── FAVORITES TAB (Módulo 3.5) ────────────────────────────────────────────────
 function FavoritesTab() {
+  const [favorites, setFavorites] = useState<PropertyCardData[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadFavs() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+        
+        const { data, error } = await supabase
+          .from('favorites')
+          .select('property_id, properties(id, title, city, country, type, bedrooms, bathrooms, capacity, images, wellrank, users(avatar_url))')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+
+        if (error) throw error
+
+        if (data) {
+          const formatted = data.map((fav: any) => {
+            const p = fav.properties
+            return {
+              id: p.id,
+              title: p.title,
+              location: `${p.city || '—'}, ${p.country || '—'}`,
+              type: p.type || 'Vivienda',
+              bedrooms: p.bedrooms || 1,
+              bathrooms: p.bathrooms || 1,
+              capacity: p.capacity || 2,
+              rating: 0,
+              reviews: 0,
+              image: p.images?.[0] || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+              verified: false,
+              isMock: false,
+              wellRank: p.wellrank || 30,
+              host_avatar: p.users?.avatar_url,
+              isFavorite: true
+            }
+          })
+          // Filter out any null properties in case of broken relations
+          setFavorites(formatted.filter(p => p.id))
+        }
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadFavs()
+  }, [])
+
   return (
     <div className="bg-white rounded-2xl border border-surface-mist-dark p-6">
       <h2 className="text-base font-semibold text-ink-teal-900 mb-5">Favoritos</h2>
-      <div className="text-center py-12 border-2 border-dashed border-surface-mist-dark rounded-2xl">
-        <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
-          <Heart className="w-8 h-8 text-[#cbd5cc]" />
+      
+      {loading ? (
+        <div className="text-center py-12">
+          <p className="text-sm text-text-muted-custom">Cargando tus favoritos...</p>
         </div>
-        <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin viviendas guardadas</h3>
-        <p className="text-sm text-[#6b7280] mb-6 max-w-xs mx-auto">
-          Cuando guardes una vivienda tocando el corazón en el explorador, aparecerá aquí.
-        </p>
-        <Link href="/search"
-          className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
-          Explorar viviendas <ArrowUpRight className="w-4 h-4" />
-        </Link>
-      </div>
+      ) : favorites.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-surface-mist-dark rounded-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-[#f0ede8] flex items-center justify-center mx-auto mb-4">
+            <Heart className="w-8 h-8 text-[#cbd5cc]" />
+          </div>
+          <h3 className="text-base font-bold text-ink-teal-900 mb-2">Sin viviendas guardadas</h3>
+          <p className="text-sm text-[#6b7280] mb-6 max-w-xs mx-auto">
+            Cuando guardes una vivienda tocando el corazón en el explorador, aparecerá aquí.
+          </p>
+          <Link href="/search"
+            className="inline-flex items-center gap-2 bg-ink-teal-900 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#2d6a4f] transition-colors">
+            Explorar viviendas <ArrowUpRight className="w-4 h-4" />
+          </Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {favorites.map(prop => (
+            <PropertyCard key={prop.id} property={prop} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

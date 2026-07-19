@@ -91,6 +91,18 @@ export default function SearchPage() {
         const { data, error } = await queryBuilder
         if (error) throw error
 
+        let favSet = new Set<string>()
+        if (user) {
+          try {
+            const { data: favs } = await supabase.from('favorites').select('property_id').eq('user_id', user.id)
+            if (favs) {
+              favs.forEach((f: any) => favSet.add(f.property_id))
+            }
+          } catch (err) {
+            console.error('Error fetching favorites', err)
+          }
+        }
+
         if (data?.length) {
           const dbProps = data.map((p: any) => ({
             id: p.id,
@@ -107,7 +119,8 @@ export default function SearchPage() {
             verified: false,
             isMock: false,
             wellRank: p.wellrank || calcWellRank(p.capacity || 2, p.bedrooms || 1, p.bathrooms || 1),
-            host_avatar: p.users?.avatar_url
+            host_avatar: p.users?.avatar_url,
+            isFavorite: favSet.has(p.id)
           }))
           setRealProps(dbProps)
         } else {

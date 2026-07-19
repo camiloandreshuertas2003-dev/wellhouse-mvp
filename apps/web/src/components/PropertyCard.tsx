@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { MapPin, Users, BedDouble, Bath, Heart } from 'lucide-react'
+import { supabase } from '@/lib/supabase'
 
 export interface PropertyCardData {
   id: string
@@ -20,6 +21,7 @@ export interface PropertyCardData {
   isMock?: boolean
   wellRank: number
   host_avatar?: string
+  isFavorite?: boolean
 }
 
 interface PropertyCardProps {
@@ -29,7 +31,34 @@ interface PropertyCardProps {
 
 export default function PropertyCard({ property, variant = 'grid' }: PropertyCardProps) {
   const [imgError, setImgError] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
+  const [isLiked, setIsLiked] = useState(property.isFavorite || false)
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const nextState = !isLiked
+    setIsLiked(nextState)
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      if (nextState) {
+        await supabase.from('favorites').insert({
+          user_id: user.id,
+          property_id: property.id
+        })
+      } else {
+        await supabase.from('favorites')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('property_id', property.id)
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error)
+      setIsLiked(!nextState) // revert on error
+    }
+  }
 
   const widthClass = variant === 'carousel'
     ? 'w-[220px] md:w-[280px] flex-shrink-0'
@@ -55,11 +84,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
 
         {/* Heart overlay button top-right */}
         <button
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setIsLiked(!isLiked)
-          }}
+          onClick={toggleFavorite}
           className="absolute top-3 right-3 z-20 p-2 bg-black/35 backdrop-blur-md hover:bg-black/50 transition-colors rounded-full text-white"
           aria-label={isLiked ? "Quitar de favoritos" : "Guardar en favoritos"}
         >
