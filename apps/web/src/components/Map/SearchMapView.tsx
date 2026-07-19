@@ -1,8 +1,9 @@
 'use client'
 
 import { useRef, useState, useCallback, useEffect } from 'react'
-import Map, { NavigationControl } from 'react-map-gl/mapbox'
+import MapGL, { NavigationControl } from 'react-map-gl/mapbox'
 import 'mapbox-gl/dist/mapbox-gl.css'
+import { Map, Search } from 'lucide-react'
 
 import MapPin, { type MapPinData } from './MapPin'
 import PropertyPreviewCard from './PropertyPreviewCard'
@@ -112,7 +113,7 @@ export default function SearchMapView({
   if (!MAPBOX_TOKEN || MAPBOX_TOKEN === 'your_mapbox_public_token') {
     return (
       <div className={`flex flex-col items-center justify-center bg-surface-mist border border-dashed border-surface-mist-dark rounded-2xl gap-3 ${className}`}>
-        <div className="text-3xl">🗺️</div>
+        <Map className="w-10 h-10 text-ink-teal-900 opacity-50" />
         <p className="text-sm font-bold text-ink-teal-900">Vista de Mapa</p>
         <p className="text-xs text-text-muted-custom text-center max-w-[200px]">
           Configura tu token de Mapbox en <code className="text-[10px] bg-gray-100 px-1 rounded">.env.local</code> para activar el mapa
@@ -126,7 +127,7 @@ export default function SearchMapView({
 
   return (
     <div className={`relative rounded-2xl overflow-hidden ${className}`}>
-      <Map
+      <MapGL
         ref={mapRef}
         {...viewport}
         onMove={handleMove}
@@ -173,7 +174,7 @@ export default function SearchMapView({
             />
           )
         })}
-      </Map>
+      </MapGL>
 
       {/* "Buscar en esta zona" button */}
       {showSearchHere && (
@@ -182,7 +183,7 @@ export default function SearchMapView({
             onClick={handleSearchHere}
             className="flex items-center gap-2 bg-white border border-surface-mist-dark shadow-lg px-4 py-2 rounded-full text-sm font-bold text-ink-teal-900 hover:bg-surface-mist transition-all active:scale-95"
           >
-            🔍 Buscar en esta zona
+            <Search className="w-4 h-4" /> Buscar en esta zona
           </button>
         </div>
       )}

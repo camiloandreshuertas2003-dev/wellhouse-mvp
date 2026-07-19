@@ -635,7 +635,7 @@ function MessagesContent() {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     placeholder="Escribe un mensaje..."
-                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e]"
+                    className="flex-1 px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-full text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e]"
                   />
                   <button
                     type="submit"
@@ -675,20 +675,20 @@ function MessagesContent() {
             <form onSubmit={handlePurchasePass} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-ink-teal-900 mb-1">Nombre en la tarjeta</label>
-                <input type="text" required placeholder="Ej: Camilo Gómez" className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white" />
+                <input type="text" required placeholder="Ej: Camilo Gómez" className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-base md:text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-ink-teal-900 mb-1">Número de tarjeta</label>
-                <input type="text" required maxLength={19} placeholder="4000 1234 5678 9010" value={cardNumber} onChange={e => setCardNumber(e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim())} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white" />
+                <input type="text" required maxLength={19} placeholder="4000 1234 5678 9010" value={cardNumber} onChange={e => setCardNumber(e.target.value.replace(/\s?/g, '').replace(/(\d{4})/g, '$1 ').trim())} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-base md:text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-ink-teal-900 mb-1">Expiración</label>
-                  <input type="text" required maxLength={5} placeholder="MM/AA" value={cardExpiry} onChange={e => setCardExpiry(e.target.value)} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white text-center" />
+                  <input type="text" required maxLength={5} placeholder="MM/AA" value={cardExpiry} onChange={e => setCardExpiry(e.target.value)} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-base md:text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white text-center" />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-ink-teal-900 mb-1">CVV</label>
-                  <input type="password" required maxLength={4} placeholder="123" value={cardCvv} onChange={e => setCardCvv(e.target.value)} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white text-center" />
+                  <input type="password" required maxLength={4} placeholder="123" value={cardCvv} onChange={e => setCardCvv(e.target.value)} className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-base md:text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e] bg-white text-center" />
                 </div>
               </div>
               <div className="pt-2">

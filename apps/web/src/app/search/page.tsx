@@ -270,7 +270,7 @@ export default function SearchPage() {
             placeholder="¿A dónde quieres ir?" 
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full text-xs text-ink-teal-900 bg-transparent focus:outline-none"
+            className="w-full text-base md:text-sm text-ink-teal-900 bg-transparent focus:outline-none"
           />
         </div>
         <button 
@@ -307,26 +307,6 @@ export default function SearchPage() {
               </p>
             )}
 
-            {/* Search Pill Bar */}
-            <div className="mt-4 hidden md:flex items-center gap-3 bg-white p-1.5 rounded-full shadow-lg max-w-lg w-full">
-              <div className="flex-1 flex items-center gap-2 pl-2">
-                <Search className="w-3.5 h-3.5 text-gray-400" />
-                <input 
-                  type="text" 
-                  placeholder="¿A dónde quieres ir?" 
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  className="w-full font-inter text-[11px] sm:text-xs text-ink-teal-900 placeholder-gray-400 bg-transparent focus:outline-none"
-                />
-              </div>
-              <button 
-                onClick={() => { setDraftFilters(filters); setShowFilters(!showFilters); }}
-                className="p-2 bg-[#0f766e] text-white rounded-full hover:bg-[#0d635c] transition-colors"
-                aria-label="Filtros"
-              >
-                <SlidersHorizontal className="w-3 h-3" />
-              </button>
-            </div>
           </div>
 
           {/* Dot indicators */}
@@ -351,7 +331,7 @@ export default function SearchPage() {
             <div>
               <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Tipo de vivienda</label>
               <select
-                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
+                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
                 value={draftFilters.propertyType}
                 onChange={(e) => setDraftFilters({ ...draftFilters, propertyType: e.target.value })}
               >
@@ -366,7 +346,7 @@ export default function SearchPage() {
             <div>
               <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Habitaciones mínimas</label>
               <select
-                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
+                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
                 value={draftFilters.bedrooms}
                 onChange={(e) => setDraftFilters({ ...draftFilters, bedrooms: e.target.value })}
               >
@@ -379,7 +359,7 @@ export default function SearchPage() {
               <input
                 type="text"
                 placeholder="Ej: Medellín, Cali..."
-                className="w-full p-2 border border-surface-mist-dark rounded-xl font-inter text-sm text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e] bg-white h-[42px]"
+                className="w-full p-2 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e] bg-white h-[42px]"
                 value={draftFilters.city}
                 onChange={(e) => setDraftFilters({ ...draftFilters, city: e.target.value })}
               />
@@ -412,16 +392,35 @@ export default function SearchPage() {
         </div>
       )}
       {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
-      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-end gap-2">
-        {visiblePinIds && (
-          <button
-            onClick={() => setVisiblePinIds(null)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0f766e]/10 text-[#0f766e] text-xs font-bold hover:bg-[#0f766e]/20 transition-colors"
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2">
+        <div className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-white px-4 py-2 rounded-full border border-surface-mist-dark shadow-sm">
+          <Search className="w-4 h-4 text-gray-400" />
+          <input 
+            type="text" 
+            placeholder="¿A dónde quieres ir?" 
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none"
+          />
+          <button 
+            onClick={() => { setDraftFilters(filters); setShowFilters(!showFilters); }}
+            className="p-1.5 bg-surface-mist text-ink-teal-900 rounded-full hover:bg-surface-mist-dark transition-colors flex-shrink-0"
+            aria-label="Filtros"
           >
-            Zona seleccionada ✕
+            <SlidersHorizontal className="w-3.5 h-3.5" />
           </button>
-        )}
-        <div className="flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
+        </div>
+        
+        <div className="flex items-center justify-end gap-2 ml-auto">
+          {visiblePinIds && (
+            <button
+              onClick={() => setVisiblePinIds(null)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0f766e]/10 text-[#0f766e] text-xs font-bold hover:bg-[#0f766e]/20 transition-colors"
+            >
+              Zona seleccionada ✕
+            </button>
+          )}
+          <div className="flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
           <button
             onClick={() => setViewMode('list')}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
@@ -447,6 +446,7 @@ export default function SearchPage() {
             <List className="w-3 h-3" /><Map className="w-3 h-3" /> Ambas
           </button>
         </div>
+      </div>
       </div>
       {/* ── CATEGORY BADGES ─────────────────────────── */}
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-4">
