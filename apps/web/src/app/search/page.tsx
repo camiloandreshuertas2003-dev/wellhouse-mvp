@@ -229,18 +229,19 @@ export default function SearchPage() {
 
   const activeProps = category !== 'all' ? getCategoryProps(category) : realProps
 
-  const filteredProps = activeProps.filter((p) => {
+  const baseFilteredProps = activeProps.filter((p) => {
     const q = debouncedQuery.toLowerCase()
     const matchQ = !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
     const matchType = !filters.propertyType || p.type.toLowerCase().includes(filters.propertyType.toLowerCase())
     const matchBeds = !filters.bedrooms || p.bedrooms >= parseInt(filters.bedrooms)
     const matchCity = !filters.city || p.location.toLowerCase().includes(filters.city.toLowerCase())
-    const matchVisible = !visiblePinIds || visiblePinIds.includes(p.id)
-    return matchQ && matchType && matchBeds && matchCity && matchVisible
+    return matchQ && matchType && matchBeds && matchCity
   })
 
-  // Build map pins from filtered results (only those with coordinates)
-  const mapPins = filteredProps
+  const listProps = baseFilteredProps.filter(p => !visiblePinIds || visiblePinIds.includes(p.id))
+
+  // Build map pins from base filtered results so the map always shows everything available for current filters
+  const mapPins = baseFilteredProps
     .filter((p: any) => p.latitude && p.longitude)
     .map((p: any) => ({
       id: p.id,
@@ -251,6 +252,9 @@ export default function SearchPage() {
       image: p.image,
       isFavorite: p.isFavorite,
     }))
+    
+  // searchKey is used to trigger map re-centering when search filters change
+  const searchKey = `${debouncedQuery}-${category}-${filters.city}-${filters.propertyType}-${filters.bedrooms}`
 
   const isSearchActive = category !== 'all' || !!debouncedQuery
 
@@ -600,6 +604,7 @@ export default function SearchPage() {
               pins={mapPins}
               highlightedId={highlightedPinId}
               onVisiblePinsChange={setVisiblePinIds}
+              searchKey={searchKey}
               className="h-[calc(100vh-280px)] min-h-[400px] w-full rounded-2xl"
             />
           )}
@@ -608,13 +613,13 @@ export default function SearchPage() {
           {viewMode === 'split' && (
             <div className="flex gap-5">
               <div className="flex-1 min-w-0">
-                {filteredProps.length === 0 ? (
+                {listProps.length === 0 ? (
                   <div className="text-center py-16">
                     <p className="font-fraunces text-base text-[#6b7280]">No encontramos resultados en esta zona.</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {filteredProps.map(p => (
+                    {listProps.map(p => (
                       <div
                         key={p.id}
                         onMouseEnter={() => setHighlightedPinId(p.id)}
@@ -632,6 +637,7 @@ export default function SearchPage() {
                     pins={mapPins}
                     highlightedId={highlightedPinId}
                     onVisiblePinsChange={setVisiblePinIds}
+                    searchKey={searchKey}
                     className="h-full w-full rounded-2xl"
                   />
                 </div>
@@ -641,7 +647,7 @@ export default function SearchPage() {
 
           {/* LIST VIEW (default) */}
           {viewMode === 'list' && (
-            filteredProps.length === 0 ? (
+            listProps.length === 0 ? (
               <div className="text-center py-16">
                 <p className="font-fraunces text-base text-[#6b7280]">No encontramos resultados que coincidan.</p>
                 <button
@@ -653,7 +659,7 @@ export default function SearchPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                {filteredProps.map(p => (
+                {listProps.map(p => (
                   <div
                     key={p.id}
                     onMouseEnter={() => setHighlightedPinId(p.id)}
