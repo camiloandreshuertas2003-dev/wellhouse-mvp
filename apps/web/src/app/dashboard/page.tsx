@@ -11,7 +11,7 @@ import {
   Video, User, ShieldAlert, Trophy
 } from 'lucide-react'
 import PropertyCarousel from '@/components/PropertyCarousel'
-import { type PropertyCardData } from '@/components/PropertyCard'
+import PropertyCard, { type PropertyCardData } from '@/components/PropertyCard'
 
 interface UserProfile {
   name: string
