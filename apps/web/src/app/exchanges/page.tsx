@@ -1,273 +1,193 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
+import {
+  ArrowUpDown, Calendar, CheckCircle, XCircle, Clock, Home,
+  User as UserIcon, AlertCircle, ArrowRight, ShieldCheck
+} from 'lucide-react'
 
-export default function ExchangesPage() {
-  const [activeTab, setActiveTab] = useState('sent')
+const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
+  requested:   { label: 'Solicitado',   color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200' },
+  countered:   { label: 'Contraoferta', color: 'text-blue-700',   bg: 'bg-blue-50 border-blue-200' },
+  confirmed:   { label: 'Confirmado',   color: 'text-teal-700',   bg: 'bg-teal-50 border-teal-200' },
+  in_progress: { label: 'En curso',     color: 'text-[#0f766e]',  bg: 'bg-[#f0fdf9] border-teal-200' },
+  completed:   { label: 'Completado',   color: 'text-indigo-700', bg: 'bg-indigo-50 border-indigo-200' },
+  closed:      { label: 'Cerrado',      color: 'text-gray-600',   bg: 'bg-gray-50 border-gray-200' },
+  cancelled:   { label: 'Cancelado',    color: 'text-red-600',    bg: 'bg-red-50 border-red-200' },
+  disputed:    { label: 'En disputa',   color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
+  pending:     { label: 'Pendiente',    color: 'text-amber-700',  bg: 'bg-amber-50 border-amber-200' },
+  accepted:    { label: 'Aceptado',     color: 'text-teal-700',   bg: 'bg-teal-50 border-teal-200' },
+}
 
-  const sentRequests = [
-    {
-      id: '1',
-      property: {
-        title: 'Casa con jardín en Barcelona',
-        location: 'Barcelona, España',
-        image: '/images/property-2.jpg'
-      },
-      host: {
-        name: 'Juan Rodríguez',
-        avatar: 'J'
-      },
-      dates: {
-        checkIn: '2026-07-15',
-        checkOut: '2026-07-22'
-      },
-      status: 'pending',
-      createdAt: '2026-06-20',
-      wellPoints: 350
-    },
-    {
-      id: '2',
-      property: {
-        title: 'Apartamento en Valencia',
-        location: 'Valencia, España',
-        image: '/images/property-3.jpg'
-      },
-      host: {
-        name: 'Ana Martínez',
-        avatar: 'A'
-      },
-      dates: {
-        checkIn: '2026-08-01',
-        checkOut: '2026-08-07'
-      },
-      status: 'accepted',
-      createdAt: '2026-06-15',
-      wellPoints: 280
-    }
-  ]
+function StatusBadge({ status }: { status: string }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.pending
+  return (
+    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${cfg.bg} ${cfg.color}`}>
+      {cfg.label}
+    </span>
+  )
+}
 
-  const receivedRequests = [
-    {
-      id: '3',
-      property: {
-        title: 'Mi apartamento en Madrid',
-        location: 'Madrid, España',
-        image: '/images/property-1.jpg'
-      },
-      requester: {
-        name: 'Carlos López',
-        avatar: 'C'
-      },
-      dates: {
-        checkIn: '2026-09-01',
-        checkOut: '2026-09-08'
-      },
-      status: 'pending',
-      createdAt: '2026-06-18',
-      wellPoints: 420
-    },
-    {
-      id: '4',
-      property: {
-        title: 'Mi apartamento en Madrid',
-        location: 'Madrid, España',
-        image: '/images/property-1.jpg'
-      },
-      requester: {
-        name: 'Laura Sánchez',
-        avatar: 'L'
-      },
-      dates: {
-        checkIn: '2026-08-15',
-        checkOut: '2026-08-22'
-      },
-      status: 'rejected',
-      createdAt: '2026-06-10',
-      wellPoints: 350
-    }
-  ]
-
-  const getStatusBadge = (status: string) => {
-    const statusConfig = {
-      pending: { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pendiente' },
-      accepted: { bg: 'bg-green-100', text: 'text-green-800', label: 'Aceptado' },
-      rejected: { bg: 'bg-red-100', text: 'text-red-800', label: 'Rechazado' },
-      cancelled: { bg: 'bg-gray-100', text: 'text-gray-800', label: 'Cancelado' },
-      completed: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Completado' }
-    }
-    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending
-    return (
-      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${config.bg} ${config.text}`}>
-        {config.label}
-      </span>
-    )
-  }
+function ExchangeCard({ ex, userId }: { ex: any; userId: string }) {
+  const isHost = ex.host_id === userId
+  const other = isHost ? ex.guest : ex.host
+  const property = ex.property
+  const nights = ex.nights || 1
+  const wpTotal = ex.wp_total || (nights * (ex.wp_per_night || ex.wellrank_snapshot || 0))
+  const needsAction = isHost && ['requested', 'countered'].includes(ex.status)
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Mis solicitudes de intercambio</h1>
+    <Link href={`/exchanges/${ex.id}`} className="block group">
+      <div className={`bg-white rounded-2xl border shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden ${needsAction ? 'border-amber-300 ring-1 ring-amber-200' : 'border-surface-mist-dark'}`}>
+        {needsAction && (
+          <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center gap-2">
+            <AlertCircle className="w-3.5 h-3.5 text-amber-600 flex-shrink-0" />
+            <span className="text-xs font-bold text-amber-700">Necesita tu respuesta</span>
+          </div>
+        )}
+        <div className="p-4 sm:p-5 flex gap-4 items-start">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-surface-mist overflow-hidden flex-shrink-0">
+            {property?.photos?.[0]?.url
+              ? <img src={property.photos[0].url} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center"><Home className="w-7 h-7 text-gray-300" /></div>
+            }
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-1.5">
+              <div>
+                <p className="text-[10px] font-bold text-text-muted-custom uppercase tracking-wide">
+                  {isHost ? 'Eres anfitrion' : 'Eres huesped'}
+                </p>
+                <h3 className="font-fraunces font-bold text-sm text-ink-teal-900 leading-tight line-clamp-2">
+                  {property?.title || 'Propiedad sin titulo'}
+                </h3>
+              </div>
+              <StatusBadge status={ex.status} />
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-text-muted-custom mb-1">
+              <Calendar className="w-3 h-3 flex-shrink-0" />
+              {ex.checkin_date
+                ? `${new Date(ex.checkin_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} -> ${new Date(ex.checkout_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })} . ${nights} noches`
+                : 'Fechas no definidas'}
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full bg-surface-mist overflow-hidden flex items-center justify-center">
+                  {other?.avatar_url
+                    ? <img src={other.avatar_url} alt="" className="w-full h-full object-cover" />
+                    : <UserIcon className="w-3.5 h-3.5 text-gray-400" />}
+                </div>
+                <span className="text-xs font-medium text-ink-teal-900">{other?.name || 'Usuario'}</span>
+                {other?.is_verified && <ShieldCheck className="w-3 h-3 text-[#0f766e]" />}
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-bold text-wellpoint-gold">{wpTotal} WP</p>
+                <p className="text-[10px] text-text-muted-custom">{ex.wp_per_night || ex.wellrank_snapshot} WP/noche</p>
+              </div>
+            </div>
+          </div>
+          <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-ink-teal-900 transition-colors flex-shrink-0 mt-1" />
         </div>
       </div>
+    </Link>
+  )
+}
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-sm mb-6">
-          <div className="border-b">
-            <nav className="flex">
-              <button
-                onClick={() => setActiveTab('sent')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 ${
-                  activeTab === 'sent'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Enviadas ({sentRequests.length})
+export default function ExchangesPage() {
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [exchanges, setExchanges] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'all' | 'host' | 'guest' | 'needs_response'>('all')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) { router.push('/login'); return }
+      const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()
+      setUser(profile || data.user)
+      fetchExchanges(data.user.id)
+    })
+  }, [])
+
+  const fetchExchanges = useCallback(async (uid: string) => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('exchanges')
+      .select(`*, property:properties(id, title, city, wellrank, photos:property_photos(url)), host:users!exchanges_host_id_fkey(id, name, avatar_url, trust_index, is_verified), guest:users!exchanges_guest_id_fkey(id, name, avatar_url, trust_index, is_verified)`)
+      .or(`host_id.eq.${uid},guest_id.eq.${uid}`)
+      .order('created_at', { ascending: false })
+    setExchanges(data || [])
+    setLoading(false)
+  }, [])
+
+  const filtered = exchanges.filter(ex => {
+    if (tab === 'host') return ex.host_id === user?.id
+    if (tab === 'guest') return ex.guest_id === user?.id
+    if (tab === 'needs_response') return ex.host_id === user?.id && ['requested', 'countered'].includes(ex.status)
+    return true
+  })
+
+  const needsResponseCount = exchanges.filter(ex => ex.host_id === user?.id && ['requested', 'countered'].includes(ex.status)).length
+
+  const TABS = [
+    { key: 'all', label: 'Todos', count: exchanges.length },
+    { key: 'host', label: 'Soy anfitrion', count: exchanges.filter(e => e.host_id === user?.id).length },
+    { key: 'guest', label: 'Soy huesped', count: exchanges.filter(e => e.guest_id === user?.id).length },
+    { key: 'needs_response', label: 'Necesitan respuesta', count: needsResponseCount, urgent: true },
+  ]
+
+  return (
+    <div className="min-h-screen bg-[#fafafa] pb-24 md:pb-10">
+      <div className="bg-white border-b border-surface-mist-dark">
+        <div className="max-w-3xl mx-auto px-4 py-5">
+          <h1 className="font-fraunces font-bold text-xl text-ink-teal-900">Mis Intercambios</h1>
+          <p className="text-xs text-text-muted-custom mt-0.5">Gestiona todas tus propuestas y estadias confirmadas</p>
+        </div>
+      </div>
+      <div className="bg-white border-b border-surface-mist-dark sticky top-[60px] z-30">
+        <div className="max-w-3xl mx-auto px-4">
+          <div className="flex gap-0 overflow-x-auto">
+            {TABS.map(t => (
+              <button key={t.key} onClick={() => setTab(t.key as any)}
+                className={`flex-shrink-0 px-4 py-3 text-xs font-semibold border-b-2 transition-colors flex items-center gap-1.5 ${tab === t.key ? 'border-ink-teal-900 text-ink-teal-900' : 'border-transparent text-text-muted-custom hover:text-ink-teal-900'}`}>
+                {t.label}
+                {t.count > 0 && (
+                  <span className={`rounded-full text-[10px] font-bold px-1.5 py-0.5 ${(t as any).urgent && t.count > 0 ? 'bg-amber-100 text-amber-700' : 'bg-surface-mist text-text-muted-custom'}`}>
+                    {t.count}
+                  </span>
+                )}
               </button>
-              <button
-                onClick={() => setActiveTab('received')}
-                className={`px-6 py-4 text-sm font-medium border-b-2 ${
-                  activeTab === 'received'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Recibidas ({receivedRequests.length})
-              </button>
-            </nav>
+            ))}
           </div>
         </div>
-
-        {/* Content */}
-        {activeTab === 'sent' ? (
+      </div>
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        {loading ? (
           <div className="space-y-4">
-            {sentRequests.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                <p className="text-gray-600">No has enviado solicitudes de intercambio</p>
-                <Link href="/search" className="text-blue-600 hover:underline mt-2 inline-block">
-                  Buscar viviendas
-                </Link>
+            {[1,2,3].map(i => (
+              <div key={i} className="bg-white rounded-2xl border border-surface-mist-dark p-5 animate-pulse">
+                <div className="flex gap-4"><div className="w-24 h-24 bg-surface-mist rounded-xl flex-shrink-0" /><div className="flex-1 space-y-2"><div className="h-3 bg-surface-mist rounded w-1/3" /><div className="h-4 bg-surface-mist rounded w-2/3" /></div></div>
               </div>
-            ) : (
-              sentRequests.map((request) => (
-                <Link key={request.id} href={`/exchanges/${request.id}`} className="block">
-                  <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-                    <div className="flex gap-6">
-                      <div className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={request.property.image} alt={request.property.title} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-lg">{request.property.title}</h3>
-                            <p className="text-gray-600 text-sm">{request.property.location}</p>
-                          </div>
-                          {getStatusBadge(request.status)}
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                            </svg>
-                            {new Date(request.dates.checkIn).toLocaleDateString('es-ES')} - {new Date(request.dates.checkOut).toLocaleDateString('es-ES')}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                            </svg>
-                            {request.host.name}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-500">
-                            Enviada el {new Date(request.createdAt).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="text-sm font-semibold text-blue-600">
-                            {request.wellPoints} WellPoints
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-16 h-16 mx-auto bg-surface-mist rounded-2xl flex items-center justify-center mb-4">
+              <ArrowUpDown className="w-8 h-8 text-gray-300" />
+            </div>
+            <p className="font-semibold text-ink-teal-900 text-sm">{tab === 'needs_response' ? 'No tienes solicitudes pendientes' : 'No tienes intercambios aqui'}</p>
+            {tab !== 'needs_response' && (
+              <Link href="/search" className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 bg-ink-teal-900 text-white text-sm font-semibold rounded-xl hover:opacity-90 transition">
+                Explorar viviendas
+              </Link>
             )}
           </div>
         ) : (
           <div className="space-y-4">
-            {receivedRequests.length === 0 ? (
-              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                </svg>
-                <p className="text-gray-600">No has recibido solicitudes de intercambio</p>
-              </div>
-            ) : (
-              receivedRequests.map((request) => (
-                <Link key={request.id} href={`/exchanges/${request.id}`} className="block">
-                  <div className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow">
-                    <div className="flex gap-6">
-                      <div className="w-32 h-32 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                        <img src={request.property.image} alt={request.property.title} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <h3 className="font-semibold text-lg">{request.property.title}</h3>
-                            <p className="text-gray-600 text-sm">{request.property.location}</p>
-                          </div>
-                          {getStatusBadge(request.status)}
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                            </svg>
-                            {new Date(request.dates.checkIn).toLocaleDateString('es-ES')} - {new Date(request.dates.checkOut).toLocaleDateString('es-ES')}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" />
-                            </svg>
-                            {request.requester.name}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-500">
-                            Recibida el {new Date(request.createdAt).toLocaleDateString('es-ES')}
-                          </p>
-                          <p className="text-sm font-semibold text-blue-600">
-                            {request.wellPoints} WellPoints
-                          </p>
-                        </div>
-
-                        {request.status === 'pending' && (
-                          <div className="flex gap-2 mt-4">
-                            <button className="flex-1 bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700">
-                              Aceptar
-                            </button>
-                            <button className="flex-1 border border-gray-300 py-2 rounded-lg font-semibold hover:bg-gray-50">
-                              Rechazar
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
+            {filtered.map(ex => <ExchangeCard key={ex.id} ex={ex} userId={user?.id} />)}
           </div>
         )}
       </div>
