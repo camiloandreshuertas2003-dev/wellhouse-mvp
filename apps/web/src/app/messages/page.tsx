@@ -90,7 +90,7 @@ function MessagesContent() {
       .from('conversations')
       .select('*, participant_a(id, name, avatar_url, trust_index, plan), participant_b(id, name, avatar_url, trust_index, plan), properties(id, title, city, wellrank, user_id)')
       .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
-      .order('updated_at', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (data) {
       // fetch last message + unread count for each conversation
@@ -130,8 +130,8 @@ function MessagesContent() {
         const bPaid = otherB?.plan === 'monthly_pass' ? 1 : 0
         if (bPaid !== aPaid) return bPaid - aPaid
         // Then by last message time
-        const aTime = lMap[a.id]?.created_at || a.updated_at || a.created_at
-        const bTime = lMap[b.id]?.created_at || b.updated_at || b.created_at
+        const aTime = lMap[a.id]?.created_at || a.created_at
+        const bTime = lMap[b.id]?.created_at || b.created_at
         return new Date(bTime).getTime() - new Date(aTime).getTime()
       })
 
