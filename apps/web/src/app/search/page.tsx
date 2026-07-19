@@ -3,10 +3,20 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import PropertyCard, { type PropertyCardData } from '@/components/PropertyCard'
-import { Sparkles, Search, SlidersHorizontal, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin } from 'lucide-react'
+import { Sparkles, Search, SlidersHorizontal, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin, Map, List } from 'lucide-react'
 import Link from 'next/link'
-
+import dynamic from 'next/dynamic'
 import StoryViewer from '@/components/Stories/StoryViewer'
+
+// Dynamic import for map (client-only, avoids SSR issues with mapbox-gl)
+const SearchMapView = dynamic(() => import('@/components/Map/SearchMapView'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center bg-surface-mist rounded-2xl h-full">
+      <div className="w-6 h-6 border-4 border-[#0f766e] border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+})
 
 // ─── WellRank Calculator ─────────────────────────────────────────────────────
 function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): number {
@@ -42,6 +52,12 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true)
   const [stories, setStories] = useState<any[]>([])
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null)
+
+  // View mode: 'list' | 'map' | 'split'
+  type ViewMode = 'list' | 'map' | 'split'
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
+  const [highlightedPinId, setHighlightedPinId] = useState<string | null>(null)
+  const [visiblePinIds, setVisiblePinIds] = useState<string[] | null>(null)
 
   // Hero banner state
   const [banners, setBanners] = useState<HeroBanner[]>([])
@@ -126,7 +142,7 @@ export default function SearchPage() {
 
         let queryBuilder = supabase
           .from('properties')
-          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to, wellrank, users(avatar_url)')
+          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to, wellrank, latitude, longitude, users(avatar_url)')
           .eq('status', 'published')
 
         // Hide user's own properties
@@ -166,7 +182,9 @@ export default function SearchPage() {
             isMock: false,
             wellRank: p.wellrank || calcWellRank(p.capacity || 2, p.bedrooms || 1, p.bathrooms || 1),
             host_avatar: p.users?.avatar_url,
-            isFavorite: favSet.has(p.id)
+            isFavorite: favSet.has(p.id),
+            latitude: p.latitude,
+            longitude: p.longitude,
           }))
           setRealProps(dbProps)
         } else {
@@ -217,8 +235,24 @@ export default function SearchPage() {
     const matchType = !filters.propertyType || p.type.toLowerCase().includes(filters.propertyType.toLowerCase())
     const matchBeds = !filters.bedrooms || p.bedrooms >= parseInt(filters.bedrooms)
     const matchCity = !filters.city || p.location.toLowerCase().includes(filters.city.toLowerCase())
-    return matchQ && matchType && matchBeds && matchCity
+    const matchVisible = !visiblePinIds || visiblePinIds.includes(p.id)
+    return matchQ && matchType && matchBeds && matchCity && matchVisible
   })
+
+  // Build map pins from filtered results (only those with coordinates)
+  const mapPins = filteredProps
+    .filter((p: any) => p.latitude && p.longitude)
+    .map((p: any) => ({
+      id: p.id,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      price_wp: p.wellRank || 100,
+      title: p.title,
+      image: p.image,
+      isFavorite: p.isFavorite,
+    }))
+
+  const isSearchActive = category !== 'all' || !!debouncedQuery
 
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24 md:pb-12">
@@ -373,6 +407,43 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+      {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-end gap-2">
+        {visiblePinIds && (
+          <button
+            onClick={() => setVisiblePinIds(null)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0f766e]/10 text-[#0f766e] text-xs font-bold hover:bg-[#0f766e]/20 transition-colors"
+          >
+            Zona seleccionada ✕
+          </button>
+        )}
+        <div className="flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              viewMode === 'list' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
+            }`}
+          >
+            <List className="w-3.5 h-3.5" /> Lista
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              viewMode === 'map' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
+            }`}
+          >
+            <Map className="w-3.5 h-3.5" /> Mapa
+          </button>
+          <button
+            onClick={() => setViewMode('split')}
+            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              viewMode === 'split' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
+            }`}
+          >
+            <List className="w-3 h-3" /><Map className="w-3 h-3" /> Ambas
+          </button>
+        </div>
+      </div>
       {/* ── CATEGORY BADGES ─────────────────────────── */}
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-4">
         {/* Mobile: all 6 in one row */}
@@ -505,44 +576,94 @@ export default function SearchPage() {
 
         </div>
       ) : (
-        /* ── FILTERED STATE (Category is active, or user is searching) ── */
-        <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-8">
+        /* ── FILTERED STATE ─────────────────────────── */
+        <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-6">
           <div className="flex justify-between items-center mb-5">
             <p className="font-fraunces font-semibold text-lg md:text-xl text-ink-teal-900">
               {debouncedQuery ? (
-                <>
-                  Resultados para <span className="text-[#0f766e] font-bold">&ldquo;{debouncedQuery}&rdquo;</span>
-                </>
+                <>Resultados para <span className="text-[#0f766e] font-bold">&ldquo;{debouncedQuery}&rdquo;</span></>
               ) : (
-                <>
-                  {category === "fincas" ? "Campo" : category === "playa" ? "Playa y costa" : category === "urbano" ? "Ciudad" : category === "montana" ? "Montaña" : "Nuevas"}
-                </>
+                <>{category === 'fincas' ? 'Campo' : category === 'playa' ? 'Playa y costa' : category === 'urbano' ? 'Ciudad' : category === 'montana' ? 'Montaña' : 'Nuevas'}</>
               )}
             </p>
             <button
-              onClick={() => { setCategory('all'); setQuery('') }}
+              onClick={() => { setCategory('all'); setQuery(''); setVisiblePinIds(null) }}
               className="text-xs sm:text-sm font-bold text-[#0f766e] hover:underline"
             >
               Limpiar búsqueda
             </button>
           </div>
 
-          {filteredProps.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="font-fraunces text-base text-[#6b7280]">No encontramos resultados que coincidan.</p>
-              <button
-                onClick={() => { setQuery(''); setCategory('all') }}
-                className="mt-3 bg-[#0f766e] hover:bg-[#0d635c] text-white font-bold text-sm px-6 py-2.5 rounded-full"
-              >
-                Ver todo
-              </button>
+          {/* MAP-ONLY VIEW */}
+          {viewMode === 'map' && (
+            <SearchMapView
+              pins={mapPins}
+              highlightedId={highlightedPinId}
+              onVisiblePinsChange={setVisiblePinIds}
+              className="h-[calc(100vh-280px)] min-h-[400px] w-full rounded-2xl"
+            />
+          )}
+
+          {/* SPLIT VIEW (desktop: left list, right map sticky) */}
+          {viewMode === 'split' && (
+            <div className="flex gap-5">
+              <div className="flex-1 min-w-0">
+                {filteredProps.length === 0 ? (
+                  <div className="text-center py-16">
+                    <p className="font-fraunces text-base text-[#6b7280]">No encontramos resultados en esta zona.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {filteredProps.map(p => (
+                      <div
+                        key={p.id}
+                        onMouseEnter={() => setHighlightedPinId(p.id)}
+                        onMouseLeave={() => setHighlightedPinId(null)}
+                      >
+                        <PropertyCard property={p} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="hidden md:block w-[45%] shrink-0">
+                <div className="sticky top-24 h-[calc(100vh-120px)]">
+                  <SearchMapView
+                    pins={mapPins}
+                    highlightedId={highlightedPinId}
+                    onVisiblePinsChange={setVisiblePinIds}
+                    className="h-full w-full rounded-2xl"
+                  />
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-              {filteredProps.map(p => (
-                <PropertyCard key={p.id} property={p} />
-              ))}
-            </div>
+          )}
+
+          {/* LIST VIEW (default) */}
+          {viewMode === 'list' && (
+            filteredProps.length === 0 ? (
+              <div className="text-center py-16">
+                <p className="font-fraunces text-base text-[#6b7280]">No encontramos resultados que coincidan.</p>
+                <button
+                  onClick={() => { setQuery(''); setCategory('all') }}
+                  className="mt-3 bg-[#0f766e] hover:bg-[#0d635c] text-white font-bold text-sm px-6 py-2.5 rounded-full"
+                >
+                  Ver todo
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
+                {filteredProps.map(p => (
+                  <div
+                    key={p.id}
+                    onMouseEnter={() => setHighlightedPinId(p.id)}
+                    onMouseLeave={() => setHighlightedPinId(null)}
+                  >
+                    <PropertyCard property={p} />
+                  </div>
+                ))}
+              </div>
+            )
           )}
         </div>
       )}
