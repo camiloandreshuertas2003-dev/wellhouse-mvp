@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Trophy, Shield, ArrowLeft, Star, Repeat, Coins } from 'lucide-react'
+import { Trophy, Shield, ArrowLeft, Repeat, Coins, Medal, User as UserIcon, Star } from 'lucide-react'
 
 interface LeaderboardUser {
   user_id: string
@@ -89,64 +89,89 @@ export default function RankingsPage() {
               <p className="text-[#6b7280] text-sm">Aún no hay registros en la tabla de líderes. ¡Sé el primero!</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto pb-4">
+              <table className="w-full text-left border-collapse min-w-[500px] md:min-w-full">
                 <thead>
                   <tr className="border-b border-surface-mist-dark bg-surface-mist/50">
-                    <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider w-16">Posición</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider">Usuario</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider text-center">Nivel</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider text-center">Intercambios</th>
-                    <th className="py-4 px-6 text-xs font-bold text-[#6b7280] uppercase tracking-wider text-right">Saldo WP</th>
+                    <th className="py-3 px-2 md:px-4 w-12 md:w-16">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Medal className="w-4 h-4 md:w-5 md:h-5 text-[#6b7280]" />
+                        <span className="text-[9px] md:text-xs font-bold text-[#6b7280] uppercase tracking-wider">Posición</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 md:px-4 text-left">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <UserIcon className="w-4 h-4 md:w-5 md:h-5 text-[#6b7280]" />
+                        <span className="text-[9px] md:text-xs font-bold text-[#6b7280] uppercase tracking-wider">Usuario</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 md:px-4 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Shield className="w-4 h-4 md:w-5 md:h-5 text-[#6b7280]" />
+                        <span className="text-[9px] md:text-xs font-bold text-[#6b7280] uppercase tracking-wider">Nivel</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 md:px-4 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Repeat className="w-4 h-4 md:w-5 md:h-5 text-[#6b7280]" />
+                        <span className="text-[9px] md:text-xs font-bold text-[#6b7280] uppercase tracking-wider">Intercambios</span>
+                      </div>
+                    </th>
+                    <th className="py-3 px-2 md:px-4 text-center">
+                      <div className="flex flex-col items-center justify-center gap-1">
+                        <Coins className="w-4 h-4 md:w-5 md:h-5 text-[#6b7280]" />
+                        <span className="text-[9px] md:text-xs font-bold text-[#6b7280] uppercase tracking-wider">Saldo WP</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#f0ede8]">
                   {leaders.map((user, idx) => {
                     const badge = RANK_BADGES[user.rank_level] || RANK_BADGES['Explorador']
+                    const isFirst = idx === 0
                     const posColor = idx === 0 ? 'bg-amber-100 text-amber-800 border-amber-300' 
                                    : idx === 1 ? 'bg-slate-100 text-slate-800 border-slate-300'
                                    : idx === 2 ? 'bg-orange-100 text-orange-800 border-orange-300'
                                    : 'bg-gray-100 text-gray-700 border-gray-200'
+                    
+                    const rowBg = isFirst ? 'bg-amber-50/30' : 'hover:bg-surface-mist/30'
 
                     return (
-                      <tr key={user.user_id} className="hover:bg-surface-mist/30 transition-colors">
-                        <td className="py-4 px-6">
-                          <div className={`w-8 h-8 rounded-full border flex items-center justify-center font-bold text-sm ${posColor}`}>
+                      <tr key={user.user_id} className={`transition-colors ${rowBg}`}>
+                        <td className="py-4 px-2 md:px-4 text-center">
+                          <div className={`w-7 h-7 md:w-8 md:h-8 rounded-full border flex items-center justify-center font-bold text-xs md:text-sm mx-auto ${posColor}`}>
                             {idx + 1}
                           </div>
                         </td>
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-cover bg-center shrink-0 flex items-center justify-center font-bold text-white text-sm"
+                        <td className="py-4 px-2 md:px-4">
+                          <div className="flex items-center gap-2 md:gap-3">
+                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-cover bg-center shrink-0 flex items-center justify-center font-bold text-white text-xs md:text-sm"
                               style={user.avatar_url ? { backgroundImage: `url('${user.avatar_url}')` } : { backgroundColor: badge.color }}>
                               {!user.avatar_url && user.name.charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <p className="font-semibold text-sm text-ink-teal-900 flex items-center gap-1.5">
+                            <div className="min-w-0 flex-1">
+                              <p className="font-semibold text-xs md:text-sm text-ink-teal-900 leading-tight">
                                 {user.name}
-                                {user.wellpoints > 500 && (
-                                  <Shield className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-                                )}
                               </p>
                             </div>
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-center">
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold inline-block"
+                        <td className="py-4 px-2 md:px-4 text-center">
+                          <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold inline-block whitespace-nowrap"
                             style={{ color: badge.color, backgroundColor: badge.bg, border: `1px solid ${badge.color}20` }}>
                             {badge.label}
                           </span>
                         </td>
-                        <td className="py-4 px-6 text-center font-medium text-sm text-ink-teal-900">
+                        <td className="py-4 px-2 md:px-4 text-center font-medium text-xs md:text-sm text-ink-teal-900">
                           <div className="flex items-center justify-center gap-1">
-                            <Repeat className="w-3.5 h-3.5 text-[#6b7280]" />
+                            <Repeat className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#6b7280]" />
                             {user.exchanges_completed}
                           </div>
                         </td>
-                        <td className="py-4 px-6 text-right font-bold text-sm text-amber-500">
-                          <div className="flex items-center justify-end gap-1">
-                            <Coins className="w-3.5 h-3.5" />
-                            {user.wellpoints} WP
+                        <td className="py-4 px-2 md:px-4 text-center font-bold text-xs md:text-sm text-amber-500">
+                          <div className="flex items-center justify-center gap-1">
+                            <Coins className="w-3 h-3 md:w-3.5 md:h-3.5" />
+                            {user.wellpoints} <span className="text-[10px] md:text-xs">WP</span>
                           </div>
                         </td>
                       </tr>
@@ -154,6 +179,14 @@ export default function RankingsPage() {
                   })}
                 </tbody>
               </table>
+
+              {/* Info Box */}
+              <div className="mx-4 mt-6 mb-2 p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-start gap-3">
+                <Star className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 fill-transparent" strokeWidth={2} />
+                <p className="text-sm text-amber-900/80 leading-relaxed">
+                  Los puntos WellPoints (WP) se obtienen al realizar intercambios, recibir reseñas y completar retos en la comunidad.
+                </p>
+              </div>
             </div>
           )}
         </div>
