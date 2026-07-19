@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { 
   Users, AlertOctagon, FileCheck, DollarSign, Ban, CheckCircle, 
-  XCircle, ExternalLink, ShieldAlert, BarChart3, TrendingUp, CreditCard, ArrowLeft
+  XCircle, ExternalLink, ShieldAlert, BarChart3, TrendingUp, CreditCard, ArrowLeft, Image, Plus, Trash2, Eye, EyeOff
 } from 'lucide-react'
 import Link from 'next/link'
 
-type TabType = 'stats' | 'users' | 'reports' | 'verifications'
+type TabType = 'stats' | 'users' | 'reports' | 'verifications' | 'banners'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -26,6 +26,11 @@ export default function AdminPage() {
 
   // Status updates
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Banner state
+  const [banners, setBanners] = useState<any[]>([])
+  const [newBanner, setNewBanner] = useState({ title: '', subtitle: '', image_url: '' })
+  const [bannerSaving, setBannerSaving] = useState(false)
 
   useEffect(() => {
     async function checkAdminAccess() {
@@ -112,6 +117,43 @@ export default function AdminPage() {
     }
   }
 
+  // ─── BANNER HELPERS ─────────────────────────────────────────────────────────
+  async function loadBanners() {
+    const { data } = await supabase
+      .from('hero_banners')
+      .select('*')
+      .order('order_index', { ascending: true })
+    if (data) setBanners(data)
+  }
+
+  async function handleAddBanner() {
+    if (!newBanner.title || !newBanner.image_url) return
+    setBannerSaving(true)
+    const { error } = await supabase.from('hero_banners').insert({
+      ...newBanner,
+      order_index: banners.length + 1,
+      is_active: true
+    })
+    if (!error) {
+      setNewBanner({ title: '', subtitle: '', image_url: '' })
+      await loadBanners()
+    } else {
+      alert('Error al guardar el banner: ' + error.message)
+    }
+    setBannerSaving(false)
+  }
+
+  async function handleToggleBanner(id: string, isActive: boolean) {
+    await supabase.from('hero_banners').update({ is_active: !isActive }).eq('id', id)
+    setBanners(prev => prev.map(b => b.id === id ? { ...b, is_active: !isActive } : b))
+  }
+
+  async function handleDeleteBanner(id: string) {
+    if (!confirm('¿Eliminar este banner?')) return
+    await supabase.from('hero_banners').delete().eq('id', id)
+    setBanners(prev => prev.filter(b => b.id !== id))
+  }
+
   // ─── ADMIN ACTIONS ──────────────────────────────────────────────────────────
 
   const handleUserBanToggle = async (userId: string, currentStatus: string) => {
@@ -191,6 +233,12 @@ export default function AdminPage() {
   const pendingVerifications = verifications.filter(v => v.status === 'pending').length
   const pendingReports = reports.filter(r => r.status === 'pending').length
 
+  // Auto-load banners when that tab is selected
+  useEffect(() => {
+    if (activeTab === 'banners') loadBanners()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab])
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#fafafa] flex items-center justify-center">
@@ -249,6 +297,7 @@ export default function AdminPage() {
             { id: 'users', label: `Moderación de Usuarios (${userList.length})`, icon: Users },
             { id: 'reports', label: `Reportes (${pendingReports} pendientes)`, icon: AlertOctagon },
             { id: 'verifications', label: `Manuales y Verificaciones (${pendingVerifications} pendientes)`, icon: FileCheck },
+            { id: 'banners', label: 'Banners del Hero', icon: Image },
           ].map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -608,6 +657,111 @@ export default function AdminPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'banners' && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-fraunces font-bold text-2xl text-ink-teal-900">Banners del Hero</h2>
+                <p className="text-sm text-text-muted-custom mt-1">Gestiona las imágenes y textos que aparecen en la página de búsqueda</p>
+              </div>
+              <button onClick={loadBanners} className="text-sm text-[#0f766e] hover:underline font-bold">Recargar</button>
+            </div>
+
+            {/* New Banner Form */}
+            <div className="bg-white rounded-2xl border border-surface-mist-dark p-6 shadow-sm">
+              <h3 className="font-bold text-base text-ink-teal-900 mb-4 flex items-center gap-2">
+                <Plus className="w-4 h-4" /> Agregar nuevo banner
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Título *</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Descubre tu próxima aventura"
+                    value={newBanner.title}
+                    onChange={e => setNewBanner({ ...newBanner, title: e.target.value })}
+                    className="w-full p-2.5 border border-surface-mist-dark rounded-xl text-sm font-inter text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Subtítulo</label>
+                  <input
+                    type="text"
+                    placeholder="Ej: Vive experiencias únicas"
+                    value={newBanner.subtitle}
+                    onChange={e => setNewBanner({ ...newBanner, subtitle: e.target.value })}
+                    className="w-full p-2.5 border border-surface-mist-dark rounded-xl text-sm font-inter text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">URL de la imagen *</label>
+                  <input
+                    type="text"
+                    placeholder="https://... o /imagen-local.jpg"
+                    value={newBanner.image_url}
+                    onChange={e => setNewBanner({ ...newBanner, image_url: e.target.value })}
+                    className="w-full p-2.5 border border-surface-mist-dark rounded-xl text-sm font-inter text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e]"
+                  />
+                  {newBanner.image_url && (
+                    <div className="mt-2 h-28 rounded-xl overflow-hidden">
+                      <img src={newBanner.image_url} alt="Preview" className="w-full h-full object-cover" onError={(e: any) => e.target.style.display='none'} />
+                    </div>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleAddBanner}
+                disabled={bannerSaving || !newBanner.title || !newBanner.image_url}
+                className="mt-4 px-6 py-2.5 bg-[#0f766e] text-white rounded-full font-bold text-sm hover:bg-[#0d635c] transition-colors disabled:opacity-50"
+              >
+                {bannerSaving ? 'Guardando...' : 'Agregar Banner'}
+              </button>
+            </div>
+
+            {/* Existing Banners */}
+            <div className="space-y-4">
+              <h3 className="font-bold text-sm text-text-muted-custom uppercase tracking-wide">Banners Actuales</h3>
+              {banners.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-surface-mist-dark p-8 text-center">
+                  <Image className="w-8 h-8 text-text-muted-custom mx-auto mb-2" />
+                  <p className="text-sm text-text-muted-custom">No hay banners. Agrega uno arriba o recarga.</p>
+                </div>
+              ) : (
+                banners.map((banner) => (
+                  <div key={banner.id} className="bg-white rounded-2xl border border-surface-mist-dark shadow-sm overflow-hidden flex flex-col md:flex-row">
+                    <div className="w-full md:w-48 h-32 shrink-0 bg-gray-100">
+                      <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" onError={(e: any) => { e.target.style.display='none' }} />
+                    </div>
+                    <div className="flex-1 p-4 flex flex-col justify-between">
+                      <div>
+                        <p className="font-bold text-ink-teal-900 text-sm">{banner.title}</p>
+                        {banner.subtitle && <p className="text-xs text-text-muted-custom mt-0.5">{banner.subtitle}</p>}
+                        <p className="text-[10px] text-text-muted-custom mt-1 break-all">{banner.image_url}</p>
+                      </div>
+                      <div className="flex items-center gap-2 mt-3">
+                        <button
+                          onClick={() => handleToggleBanner(banner.id, banner.is_active)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                            banner.is_active ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {banner.is_active ? <><Eye className="w-3 h-3" /> Activo</> : <><EyeOff className="w-3 h-3" /> Inactivo</>}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteBanner(banner.id)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors"
+                        >
+                          <Trash2 className="w-3 h-3" /> Eliminar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         )}

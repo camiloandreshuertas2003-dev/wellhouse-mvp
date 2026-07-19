@@ -14,13 +14,22 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): nu
 }
 
 const CATEGORY_TABS = [
-  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-5 h-5 sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
 ]
+
+interface HeroBanner {
+  id: string
+  title: string
+  subtitle: string
+  image_url: string
+  is_active: boolean
+  order_index: number
+}
 
 export default function SearchPage() {
   const [query, setQuery] = useState('')
@@ -33,6 +42,43 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true)
   const [stories, setStories] = useState<any[]>([])
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null)
+
+  // Hero banner state
+  const [banners, setBanners] = useState<HeroBanner[]>([])
+  const [activeBannerIndex, setActiveBannerIndex] = useState(0)
+  const [bannerFading, setBannerFading] = useState(false)
+
+  // Fetch hero banners from Supabase
+  useEffect(() => {
+    async function loadBanners() {
+      try {
+        const { data, error } = await supabase
+          .from('hero_banners')
+          .select('*')
+          .eq('is_active', true)
+          .order('order_index', { ascending: true })
+        if (!error && data && data.length > 0) {
+          setBanners(data)
+        }
+      } catch (err) {
+        console.error('Error fetching banners:', err)
+      }
+    }
+    loadBanners()
+  }, [])
+
+  // Rotate banners every 10s with a fade effect
+  useEffect(() => {
+    if (banners.length <= 1) return
+    const interval = setInterval(() => {
+      setBannerFading(true)
+      setTimeout(() => {
+        setActiveBannerIndex(prev => (prev + 1) % banners.length)
+        setBannerFading(false)
+      }, 500)
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [banners.length])
 
   // Fetch host stories from Supabase
   useEffect(() => {
@@ -201,20 +247,27 @@ export default function SearchPage() {
       {/* ── HERO BANNER SECTION ─────────────────────────────────────────── */}
       <div className="max-w-[1380px] mx-auto md:px-6">
         <div className="mx-4 md:mx-0 rounded-3xl md:rounded-none relative h-[200px] md:h-[350px] overflow-hidden bg-black mt-2">
-          {/* Background Image */}
+          {/* Background Image (dynamic, with fade) */}
           <img 
-            src="/image_inicio_search.png" 
+            src={banners[activeBannerIndex]?.image_url || '/image_inicio_search.png'} 
             alt="Wellhouse" 
-            className="absolute inset-0 w-full h-full object-cover opacity-75 object-center"
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-500 ${bannerFading ? 'opacity-0' : 'opacity-75'}`}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-black/15" />
           
           {/* Content Inside Hero */}
-          <div className="absolute inset-0 px-4 py-4 md:px-8 md:py-8 flex flex-col justify-end z-10">
+          <div className={`absolute inset-0 px-4 py-4 md:px-8 md:py-8 flex flex-col justify-end z-10 transition-opacity duration-500 ${bannerFading ? 'opacity-0' : 'opacity-100'}`}>
             <h1 className="font-fraunces font-bold text-xl md:text-[38px] text-white leading-tight max-w-[240px] md:max-w-xl">
-              No es una estadía, <br />
-              es tu próxima <span className="italic font-normal text-[#14b8a6]">experiencia</span>
+              {banners[activeBannerIndex]?.title
+                ? banners[activeBannerIndex].title
+                : (<>No es una estadía, <br />es tu próxima <span className="italic font-normal text-[#14b8a6]">experiencia</span></>)
+              }
             </h1>
+            {banners[activeBannerIndex]?.subtitle && (
+              <p className="text-white/70 text-xs md:text-sm mt-1 max-w-[240px] md:max-w-sm">
+                {banners[activeBannerIndex].subtitle}
+              </p>
+            )}
 
             {/* Search Pill Bar */}
             <div className="mt-4 hidden md:flex items-center gap-3 bg-white p-1.5 rounded-full shadow-lg max-w-lg w-full">
@@ -237,6 +290,19 @@ export default function SearchPage() {
               </button>
             </div>
           </div>
+
+          {/* Dot indicators */}
+          {banners.length > 1 && (
+            <div className="absolute bottom-3 right-4 flex items-center gap-1.5 z-10">
+              {banners.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => { setBannerFading(true); setTimeout(() => { setActiveBannerIndex(i); setBannerFading(false); }, 400) }}
+                  className={`rounded-full transition-all duration-300 ${i === activeBannerIndex ? 'w-5 h-1.5 bg-white' : 'w-1.5 h-1.5 bg-white/40'}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -308,22 +374,23 @@ export default function SearchPage() {
         </div>
       )}
       {/* ── CATEGORY BADGES ─────────────────────────── */}
-      <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-5">
-        <div className="grid grid-cols-3 sm:flex sm:flex-row gap-2 sm:gap-2 sm:overflow-x-auto sm:no-scrollbar pb-2">
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-4">
+        {/* Mobile: all 6 in one row */}
+        <div className="flex gap-1.5 sm:gap-2 sm:overflow-x-auto sm:no-scrollbar pb-2 justify-between sm:justify-start">
           {CATEGORY_TABS.map(tab => {
             const isActive = category === tab.id
             return (
               <button
                 key={tab.id}
                 onClick={() => { setCategory(tab.id); setQuery('') }}
-                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 py-2 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[11px] sm:text-sm font-bold transition-all sm:flex-shrink-0 sm:h-[42px] ${
+                className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
                   isActive 
                     ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
                     : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
                 }`}
               >
                 {tab.icon(isActive)}
-                <span>{tab.label}</span>
+                <span className="leading-tight">{tab.label}</span>
               </button>
             )
           })}
