@@ -593,6 +593,7 @@ function MessagesContent() {
               {composingProposal && (
                 <ProposalComposer
                   property={activeConv.properties}
+                  isHost={activeConv.properties?.user_id === user?.id}
                   onCancel={() => setComposingProposal(false)}
                   onSubmit={handleSendProposal}
                 />
