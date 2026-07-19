@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import { Trophy, Shield, ArrowLeft, Repeat, Coins, Medal, User as UserIcon, Star } from 'lucide-react'
+import { Trophy, Shield, ArrowLeft, Repeat, Coins, Medal, User as UserIcon, Star, Crown, Navigation } from 'lucide-react'
 
 interface LeaderboardUser {
   user_id: string
@@ -15,11 +15,12 @@ interface LeaderboardUser {
   exchanges_completed: number
 }
 
-const RANK_BADGES: Record<string, { label: string, color: string, bg: string }> = {
-  'Leyenda':    { label: 'Leyenda Platino', color: '#8b5cf6', bg: '#eef2ff' },
-  'Embajador': { label: 'Embajador Oro',   color: '#d97706', bg: '#fef3c7' },
-  'Anfitrión':  { label: 'Anfitrión Plata', color: '#2563eb', bg: '#dbeafe' },
-  'Explorador': { label: 'Explorador',      color: '#4b5563', bg: '#f3f4f6' },
+// RANK_BADGES now includes the corresponding Lucide icons
+const RANK_BADGES: Record<string, { label: string, color: string, bg: string, icon: any }> = {
+  'Leyenda':    { label: 'Leyenda Platino', color: '#8b5cf6', bg: '#eef2ff', icon: Crown },
+  'Embajador': { label: 'Embajador Oro',   color: '#d97706', bg: '#fef3c7', icon: Trophy },
+  'Anfitrión':  { label: 'Anfitrión Plata', color: '#2563eb', bg: '#dbeafe', icon: Shield },
+  'Explorador': { label: 'Explorador',      color: '#4b5563', bg: '#f3f4f6', icon: Navigation },
 }
 
 export default function RankingsPage() {
@@ -45,20 +46,16 @@ export default function RankingsPage() {
 
   return (
     <div className="min-h-screen bg-surface-mist font-inter">
-      {/* Header Bar */}
-      <header className="border-b border-surface-mist-dark bg-white sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/dashboard" className="flex items-center gap-2 text-text-muted-custom hover:text-ink-teal-900 transition-colors text-sm font-semibold">
-            <ArrowLeft className="w-4 h-4" /> Volver al Panel
-          </Link>
-          <div className="flex items-center gap-1">
-            <span className="font-fraunces font-semibold text-xl text-ink-teal-900">Well</span>
-            <span className="font-fraunces font-semibold text-xl text-[#f0a500]">house</span>
-          </div>
-        </div>
-      </header>
+      <main className="max-w-4xl mx-auto px-4 py-4 md:py-8">
+        {/* Simple back button outside header */}
+        <Link 
+          href="/dashboard" 
+          className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-white border border-surface-mist-dark text-ink-teal-900 hover:bg-surface-mist transition-colors mb-6 shadow-sm"
+          aria-label="Volver al Panel"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
         {/* Banner de Presentación */}
         <div className="rounded-3xl p-8 text-white mb-8 relative overflow-hidden bg-gradient-to-br from-ink-teal-900 to-[#2a2a2a]">
           <div className="absolute -top-32 -right-32 w-[350px] h-[350px] rounded-full bg-amber-400/20 blur-3xl pointer-events-none" />
@@ -74,7 +71,7 @@ export default function RankingsPage() {
         </div>
 
         {/* Tabla de Rankings */}
-        <div className="bg-white rounded-3xl border border-surface-mist-dark overflow-hidden shadow-sm">
+        <div className="bg-white rounded-3xl border border-surface-mist-dark overflow-hidden shadow-sm mb-12">
           <div className="p-6 border-b border-surface-mist-dark">
             <h2 className="text-ink-teal-900 font-semibold text-base">Top 20 Miembros Destacados</h2>
           </div>
@@ -128,6 +125,7 @@ export default function RankingsPage() {
                 <tbody className="divide-y divide-[#f0ede8]">
                   {leaders.map((user, idx) => {
                     const badge = RANK_BADGES[user.rank_level] || RANK_BADGES['Explorador']
+                    const BadgeIcon = badge.icon
                     const isFirst = idx === 0
                     const posColor = idx === 0 ? 'bg-amber-100 text-amber-800 border-amber-300' 
                                    : idx === 1 ? 'bg-slate-100 text-slate-800 border-slate-300'
@@ -149,7 +147,7 @@ export default function RankingsPage() {
                               style={user.avatar_url ? { backgroundImage: `url('${user.avatar_url}')` } : { backgroundColor: badge.color }}>
                               {!user.avatar_url && user.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0 flex-1 hidden md:block">
                               <p className="font-semibold text-xs md:text-sm text-ink-teal-900 leading-tight">
                                 {user.name}
                               </p>
@@ -157,10 +155,16 @@ export default function RankingsPage() {
                           </div>
                         </td>
                         <td className="py-4 px-2 md:px-4 text-center">
-                          <span className="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-bold inline-block whitespace-nowrap"
-                            style={{ color: badge.color, backgroundColor: badge.bg, border: `1px solid ${badge.color}20` }}>
-                            {badge.label}
-                          </span>
+                          <div className="flex justify-center">
+                            <div 
+                              className="w-7 h-7 md:w-auto md:h-auto md:px-2.5 md:py-1 rounded-full flex items-center justify-center gap-1.5"
+                              style={{ color: badge.color, backgroundColor: badge.bg, border: `1px solid ${badge.color}20` }}
+                              title={badge.label}
+                            >
+                              <BadgeIcon className="w-3.5 h-3.5" />
+                              <span className="hidden md:inline font-bold text-xs whitespace-nowrap">{badge.label}</span>
+                            </div>
+                          </div>
                         </td>
                         <td className="py-4 px-2 md:px-4 text-center font-medium text-xs md:text-sm text-ink-teal-900">
                           <div className="flex items-center justify-center gap-1">
@@ -181,11 +185,26 @@ export default function RankingsPage() {
               </table>
 
               {/* Info Box */}
-              <div className="mx-4 mt-6 mb-2 p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-start gap-3">
+              <div className="mx-4 mt-6 p-4 rounded-xl bg-amber-50/50 border border-amber-100 flex items-start gap-3">
                 <Star className="w-5 h-5 text-amber-500 shrink-0 mt-0.5 fill-transparent" strokeWidth={2} />
                 <p className="text-sm text-amber-900/80 leading-relaxed">
                   Los puntos WellPoints (WP) se obtienen al realizar intercambios, recibir reseñas y completar retos en la comunidad.
                 </p>
+              </div>
+
+              {/* Ranks Legend */}
+              <div className="mx-4 mt-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+                {Object.values(RANK_BADGES).map(badge => {
+                  const Icon = badge.icon
+                  return (
+                    <div key={badge.label} className="flex items-center gap-2 p-2.5 rounded-lg bg-surface-mist/30 border border-surface-mist-dark/50">
+                      <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: badge.bg }}>
+                        <Icon className="w-3.5 h-3.5" style={{ color: badge.color }} />
+                      </div>
+                      <span className="text-[10px] md:text-xs font-bold text-ink-teal-900">{badge.label}</span>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
