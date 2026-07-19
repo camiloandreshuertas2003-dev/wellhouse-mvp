@@ -411,7 +411,7 @@ export default function SearchPage() {
           </button>
         </div>
         
-        <div className="flex items-center justify-end gap-2 ml-auto">
+        <div className="flex items-center justify-end gap-2 ml-auto" id="results-container">
           {visiblePinIds && (
             <button
               onClick={() => setVisiblePinIds(null)}
@@ -422,7 +422,10 @@ export default function SearchPage() {
           )}
           <div className="flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              setViewMode('list');
+              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'list' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
             }`}
@@ -430,7 +433,10 @@ export default function SearchPage() {
             <List className="w-3.5 h-3.5" /> Lista
           </button>
           <button
-            onClick={() => setViewMode('map')}
+            onClick={() => {
+              setViewMode('map');
+              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'map' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
             }`}
@@ -438,7 +444,10 @@ export default function SearchPage() {
             <Map className="w-3.5 h-3.5" /> Mapa
           </button>
           <button
-            onClick={() => setViewMode('split')}
+            onClick={() => {
+              setViewMode('split');
+              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
             className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'split' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
             }`}

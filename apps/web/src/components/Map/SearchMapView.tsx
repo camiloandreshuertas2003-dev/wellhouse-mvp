@@ -41,9 +41,9 @@ export default function SearchMapView({
   const mapRef = useRef<any>(null)
   const [selectedPin, setSelectedPin] = useState<MapPinData | null>(null)
   const [viewport, setViewport] = useState({
-    latitude: 4.7110,   // Colombia center
-    longitude: -74.0721,
-    zoom: 5.5,
+    latitude: 20,       // Center closer to equator
+    longitude: -40,     // Center over Atlantic to show Americas and Europe/Africa
+    zoom: 1.5,          // Zoom out to show the world
   })
   const [bounds, setBounds] = useState<[number, number, number, number] | null>(null)
   const [showSearchHere, setShowSearchHere] = useState(false)
@@ -53,11 +53,36 @@ export default function SearchMapView({
   const handleMove = useCallback((evt: any) => {
     setViewport(evt.viewState)
     setShowSearchHere(true)
+    if (evt.originalEvent) {
+      setHasScrolled(true)
+    }
     if (mapRef.current) {
       const b = mapRef.current.getBounds()
       setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()])
     }
   }, [])
+
+  // Auto pan animation
+  useEffect(() => {
+    let animationId: number;
+    const panMap = () => {
+      if (!hasScrolled && mapRef.current) {
+        const center = mapRef.current.getCenter();
+        // slowly pan longitude
+        center.lng += 0.01;
+        mapRef.current.jumpTo({ center: [center.lng, center.lat] });
+        animationId = requestAnimationFrame(panMap);
+      }
+    };
+    
+    if (!hasScrolled) {
+      animationId = requestAnimationFrame(panMap);
+    }
+  
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, [hasScrolled]);
 
   // Prepare data for clustering
   const points = pins.map(pin => ({

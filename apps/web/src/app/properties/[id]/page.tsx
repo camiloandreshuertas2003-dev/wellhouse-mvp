@@ -175,6 +175,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const [createdConversationId, setCreatedConversationId] = useState<string | null>(null)
   const [bookError, setBookError] = useState('')
   const [hasPendingRequest, setHasPendingRequest] = useState(false)
+  const [isSaved, setIsSaved] = useState(false)
 
   // Mobile booking modal
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
@@ -199,6 +200,9 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const [answerText, setAnswerText] = useState('')
 
   useEffect(() => {
+    // Force scroll to top on load
+    window.scrollTo(0, 0)
+
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       setCurrentUser(user)
@@ -361,6 +365,27 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const desc = parseDescription(property?.description)
   const catLabel = CATEGORY_LABELS[property?.category] || property?.type || 'Vivienda'
   const amenitiesList: string[] = property?.amenities || []
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: property?.title,
+          text: 'Mira esta increíble propiedad en Wellhouse',
+          url: window.location.href,
+        })
+      } catch (err) {
+        console.log('Error sharing', err)
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      alert('Enlace copiado al portapapeles')
+    }
+  }
+
+  const handleSave = () => {
+    setIsSaved(!isSaved)
+  }
 
   const handleRequest = async () => {
     setBookError('')
@@ -689,8 +714,10 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           <span className="font-fraunces font-bold text-xl tracking-tight text-ink-teal-900">Wellhouse</span>
         </button>
         <div className="flex items-center gap-4">
-          <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Share2 className="w-5 h-5" /></button>
-          <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Heart className="w-5 h-5" /></button>
+          <button onClick={handleShare} className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Share2 className="w-5 h-5" /></button>
+          <button onClick={handleSave} className="text-ink-teal-900 hover:opacity-75 transition-opacity">
+            <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+          </button>
           <button className="text-ink-teal-900 hover:opacity-75 transition-opacity"><MoreHorizontal className="w-5 h-5" /></button>
         </div>
       </div>
@@ -717,13 +744,13 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             {property.title}
           </h1>
           <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-            <button className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
+            <button onClick={handleShare} className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">Compartir</span>
             </button>
-            <button className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
-              <Heart className="w-4 h-4" />
-              <span className="hidden sm:inline">Guardar</span>
+            <button onClick={handleSave} className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
+              <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+              <span className="hidden sm:inline">{isSaved ? 'Guardado' : 'Guardar'}</span>
             </button>
           </div>
         </div>
