@@ -148,7 +148,26 @@ export default function SearchMapView({
         }
 
         const newBounds = [minLon, minLat, maxLon, maxLat] as [number, number, number, number]
-        mapRef.current.fitBounds(newBounds, { padding: 50, duration: 1500, maxZoom: 14 })
+        
+        const lonDiff = maxLon - minLon
+        const latDiff = maxLat - minLat
+        
+        // Si el área de búsqueda es muy concentrada (ej. una ciudad o destino específico)
+        if (lonDiff < 0.5 && latDiff < 0.5) {
+          const centerLon = minLon + lonDiff / 2
+          const centerLat = minLat + latDiff / 2
+          
+          mapRef.current.flyTo({
+            center: [centerLon, centerLat],
+            zoom: 13.5,
+            pitch: 50,       // 3D tilt
+            bearing: -20,    // Subtle angle
+            duration: 3000,
+            essential: true
+          })
+        } else {
+          mapRef.current.fitBounds(newBounds, { padding: 50, duration: 1500, maxZoom: 12 })
+        }
       }
     }
 

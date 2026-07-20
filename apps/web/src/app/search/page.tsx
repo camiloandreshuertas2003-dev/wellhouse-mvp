@@ -609,24 +609,11 @@ export default function SearchPage() {
               )
             })}
           </div>
-          
-          {/* Filters Button */}
-          <button
-            onClick={() => setShowFiltersModal(true)}
-            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all h-[42px] mb-2 shadow-sm flex-shrink-0 ${
-              propertyType || guestCount 
-                ? 'bg-[#0f766e] text-white border-[#0f766e]' 
-                : 'bg-white border-surface-mist-dark text-ink-teal-900 hover:bg-surface-mist'
-            }`}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-            <span className="hidden sm:inline">Filtros</span>
-          </button>
         </div>
       </div>
 
       {/* ── DEFAULT / HOME STATE (Category === 'all' and no active query) ── */}
-      {category === 'all' && !debouncedQuery ? (
+      {category === 'all' && !debouncedQuery && viewMode === 'list' ? (
         <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-8 space-y-10">
           
           {/* SECTION 1: Host Stories ("Inspírate con experiencias reales") */}
