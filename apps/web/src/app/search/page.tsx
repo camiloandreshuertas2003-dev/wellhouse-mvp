@@ -673,25 +673,30 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* SECTION 2: Available Properties ("Hogares disponibles para intercambiar") */}
+          {/* SECTION 2: Category Highlights */}
           <div>
             <div className="flex justify-between items-end mb-4">
-              <div>
-                <h2 className="font-fraunces font-bold text-lg sm:text-xl md:text-[22px] text-ink-teal-900">
-                  Hogares disponibles para intercambiar
-                </h2>
-              </div>
-              <button 
-                onClick={() => setCategory('playa')} 
-                className="text-xs sm:text-sm font-bold text-[#0f766e] hover:underline"
-              >
-                Ver todos →
-              </button>
+              <h2 className="font-fraunces font-bold text-lg sm:text-xl md:text-[22px] text-ink-teal-900">
+                Explora por categoría
+              </h2>
             </div>
-
-            <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-              {realProps.map((p, idx) => (
-                <PropertyCard key={p.id} property={p} variant="carousel" isPriority={idx < 4} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+              {[
+                { id: 'playa', label: 'Playa', emoji: '🏖️', desc: 'Costa Caribe y Pacífico', bg: 'from-blue-400 to-cyan-500' },
+                { id: 'montana', label: 'Montaña', emoji: '🏔️', desc: 'Andes y páramos', bg: 'from-green-500 to-teal-600' },
+                { id: 'fincas', label: 'Campo', emoji: '🌿', desc: 'Fincas y haciendas', bg: 'from-lime-500 to-green-600' },
+                { id: 'urbano', label: 'Ciudad', emoji: '🏙️', desc: 'Capitales y urbes', bg: 'from-slate-500 to-gray-700' },
+                { id: 'exclusivo', label: 'Exclusivo', emoji: '✨', desc: 'Lujo y confort', bg: 'from-amber-500 to-orange-600' },
+              ].map(cat => (
+                <button key={cat.id} onClick={() => setCategory(cat.id)}
+                  className={`relative h-28 sm:h-32 rounded-2xl bg-gradient-to-br ${cat.bg} overflow-hidden group cursor-pointer border-0 text-left`}>
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                  <div className="absolute inset-0 p-3 flex flex-col justify-end">
+                    <span className="text-2xl mb-1">{cat.emoji}</span>
+                    <p className="text-white font-fraunces font-bold text-sm leading-tight">{cat.label}</p>
+                    <p className="text-white/80 text-[10px]">{cat.desc}</p>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
