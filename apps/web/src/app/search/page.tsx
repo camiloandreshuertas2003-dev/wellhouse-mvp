@@ -413,9 +413,29 @@ export default function SearchPage() {
                   locale={es}
                   numberOfMonths={2}
                   pagedNavigation
+                  className="p-2"
                   classNames={{
-                    selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
-                    today: "font-bold text-accent-mango",
+                    months: "flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6",
+                    month: "space-y-3",
+                    caption: "flex justify-center pt-1 relative items-center mb-2",
+                    caption_label: "text-sm font-bold text-ink-teal-900",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: "h-7 w-7 bg-transparent hover:bg-surface-mist rounded-full flex items-center justify-center p-0 opacity-70 hover:opacity-100 transition-colors",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex",
+                    head_cell: "text-text-muted-custom w-8 font-semibold text-[10px] uppercase tracking-wider",
+                    row: "flex w-full mt-1",
+                    cell: "text-center text-sm p-0 relative",
+                    day: "h-8 w-8 p-0 font-medium text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors",
+                    day_selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white font-bold",
+                    day_today: "text-accent-mango font-bold",
+                    day_outside: "text-gray-300 opacity-50",
+                    day_disabled: "text-gray-200 opacity-50",
+                    day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none hover:rounded-none",
+                    day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
+                    day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
                   }}
                 />
               </div>
@@ -453,7 +473,7 @@ export default function SearchPage() {
               Zona seleccionada ✕
             </button>
           )}
-          <div className="flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
+          <div className="hidden md:flex items-center gap-1 bg-white border border-surface-mist-dark rounded-full p-1">
           <button
             onClick={() => {
               setViewMode('list');
@@ -794,9 +814,30 @@ export default function SearchPage() {
                   selected={dateRange}
                   onSelect={setDateRange}
                   locale={es}
+                  numberOfMonths={1}
+                  className="p-1 max-w-[280px] mx-auto"
                   classNames={{
-                    selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
-                    today: "font-bold text-accent-mango",
+                    months: "flex flex-col space-y-4",
+                    month: "space-y-3",
+                    caption: "flex justify-center pt-1 relative items-center mb-2",
+                    caption_label: "text-sm font-bold text-ink-teal-900",
+                    nav: "space-x-1 flex items-center",
+                    nav_button: "h-8 w-8 bg-surface-mist hover:bg-surface-mist-dark rounded-full flex items-center justify-center p-0 opacity-70 transition-colors",
+                    nav_button_previous: "absolute left-1",
+                    nav_button_next: "absolute right-1",
+                    table: "w-full border-collapse space-y-1",
+                    head_row: "flex justify-between",
+                    head_cell: "text-text-muted-custom w-9 font-semibold text-[10px] uppercase tracking-wider",
+                    row: "flex w-full mt-1 justify-between",
+                    cell: "text-center text-sm p-0 relative",
+                    day: "h-9 w-9 p-0 font-medium text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors",
+                    day_selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white font-bold",
+                    day_today: "text-accent-mango font-bold",
+                    day_outside: "text-gray-300 opacity-50",
+                    day_disabled: "text-gray-200 opacity-50",
+                    day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none",
+                    day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
+                    day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
                   }}
                 />
               </div>
@@ -867,6 +908,28 @@ export default function SearchPage() {
           </div>
         </div>
       )}
+
+      {/* ── MOBILE FLOATING VIEW TOGGLE ─────────────────────────── */}
+      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30">
+        <div className="flex items-center gap-1 bg-gray-900 rounded-full p-1 shadow-xl">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
+              viewMode === 'list' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
+            }`}
+          >
+            <List className="w-4 h-4" /> Lista
+          </button>
+          <button
+            onClick={() => setViewMode('map')}
+            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
+              viewMode === 'map' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
+            }`}
+          >
+            <Map className="w-4 h-4" /> Mapa
+          </button>
+        </div>
+      </div>
 
     </div>
   )
