@@ -664,7 +664,7 @@ export default function SearchPage() {
             { id: 'fincas', label: 'Campo y Fincas', Icon: Trees },
             { id: 'exclusivo', label: 'Exclusivo', Icon: Sparkles },
           ].map(({ id, label, Icon }) => {
-            const catProps = realProps.filter(p => (p.type || '').toLowerCase() === id)
+            const catProps = getCategoryProps(id)
             if (catProps.length === 0) return null
             return (
               <div key={id}>
@@ -680,11 +680,9 @@ export default function SearchPage() {
                     Ver todos →
                   </button>
                 </div>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-1 px-1">
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3">
                   {catProps.map((p, idx) => (
-                    <div key={p.id} className="flex-shrink-0 w-[220px] sm:w-[260px] md:w-[280px]">
-                      <PropertyCard property={p} variant="carousel" isPriority={idx < 4} />
-                    </div>
+                    <PropertyCard key={p.id} property={p} variant="carousel" isPriority={idx < 4} />
                   ))}
                 </div>
               </div>
