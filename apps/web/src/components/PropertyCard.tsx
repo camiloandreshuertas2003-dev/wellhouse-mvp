@@ -138,16 +138,9 @@ export default function PropertyCard({ property, variant = 'grid', isPriority = 
 
         {/* Price tag using WellPoint design */}
         <div className="mt-auto pt-2 border-t border-surface-mist flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <span className="text-xs md:text-sm font-bold text-ink-teal-900 font-inter">
-              {property.wellRank}
-            </span>
-            <div className="w-4.5 h-4.5 rounded-full bg-[#0f766e] text-white flex items-center justify-center font-bold text-[8px] tracking-tighter shadow-sm flex-shrink-0">
-              WP
-            </div>
-            <span className="text-text-muted-custom font-normal text-[10px] md:text-xs">
-              / noche
-            </span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-[#14b8a6] font-bold text-sm md:text-base">{property.wellRank}</span>
+            <span className="text-text-muted-custom text-[10px] md:text-xs font-semibold">WP (Wellpoints) / noche</span>
           </div>
         </div>
       </div>

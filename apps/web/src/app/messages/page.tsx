@@ -4,11 +4,13 @@ import React, { useState, useEffect, useRef, Suspense, useCallback } from 'react
 import { supabase } from '@/lib/supabase'
 import {
   ArrowLeft, Send, ShieldCheck, Sparkles, User as UserIcon,
-  Calendar as CalIcon, X, MessageCircle, Check, CheckCheck, Pin
+  Calendar as CalIcon, X, MessageCircle, Check, CheckCheck, Pin,
+  Search, Star
 } from 'lucide-react'
 import ProposalCard from '@/components/messaging/ProposalCard'
 import ProposalComposer from '@/components/messaging/ProposalComposer'
 import { useSearchParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function MessagesPage() {
   return (
@@ -46,6 +48,24 @@ function formatConvTime(dateStr?: string) {
   return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
 }
 
+function getInitials(name?: string) {
+  if (!name) return '?'
+  const parts = name.split(' ').filter(Boolean)
+  if (parts.length === 0) return '?'
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+}
+
+function getAvatarColor(name?: string) {
+  if (!name) return '#9ca3af'
+  const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#14b8a6', '#0ea5e9', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e']
+  let hash = 0
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return colors[Math.abs(hash) % colors.length]
+}
+
 // ─── main content ─────────────────────────────────────────────────────────────
 
 function MessagesContent() {
@@ -56,6 +76,8 @@ function MessagesContent() {
   const [messages, setMessages] = useState<any[]>([])
   const [proposals, setProposals] = useState<any[]>([])
   const [input, setInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [hiddenConvs, setHiddenConvs] = useState<Set<string>>(new Set())
   const [composingProposal, setComposingProposal] = useState(false)
   const [activeExchange, setActiveExchange] = useState<any>(null)
   // Track unread counts per conversation (local state)
@@ -83,7 +105,17 @@ function MessagesContent() {
         fetchConversations(data.user.id)
       }
     })
-  }, [conversationIdParam])
+  }, []) // Removed conversationIdParam dependency to prevent reload loop
+
+  // Handle URL parameter changes safely
+  useEffect(() => {
+    if (conversationIdParam && conversations.length > 0) {
+      if (activeConv?.id !== conversationIdParam) {
+        const found = conversations.find(c => c.id === conversationIdParam)
+        if (found) loadConversation(found, user?.id, true)
+      }
+    }
+  }, [conversationIdParam, conversations.length])
 
   const fetchConversations = useCallback(async (userId: string) => {
     const { data } = await supabase
@@ -136,13 +168,8 @@ function MessagesContent() {
       })
 
       setConversations(sorted)
-
-      if (conversationIdParam) {
-        const found = data.find((c: any) => c.id === conversationIdParam)
-        if (found) loadConversation(found, userId)
-      }
     }
-  }, [conversationIdParam])
+  }, [])
 
   // ── realtime: new messages ─────────────────────────────────────────────────
   useEffect(() => {
@@ -194,9 +221,11 @@ function MessagesContent() {
     return () => { supabase.removeChannel(channel) }
   }, [user?.id, activeConv?.id])
 
-  const loadConversation = async (conv: any, userId?: string) => {
+  const loadConversation = async (conv: any, userId?: string, skipPush?: boolean) => {
     const uid = userId || user?.id
-    router.push(`/messages?conversation_id=${conv.id}`)
+    if (!skipPush) {
+      router.push(`/messages?conversation_id=${conv.id}`)
+    }
     setActiveConv(conv)
     setComposingProposal(false)
 
@@ -452,18 +481,45 @@ function MessagesContent() {
 
   // ─── render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="flex h-[calc(100vh-64px)] bg-surface-mist">
+    <div className="fixed inset-x-0 bottom-0 top-[60px] md:top-[80px] bg-surface-mist flex overflow-hidden z-40">
 
       {/* ── Conversation list ── */}
-      <div className={`w-full md:w-80 lg:w-96 bg-white border-r border-surface-mist-dark flex flex-col flex-shrink-0 ${activeConv ? 'hidden md:flex' : 'flex'}`}>
+      <div className={`w-full md:w-[40%] lg:w-[30%] bg-white border-r border-surface-mist-dark flex flex-col flex-shrink-0 ${activeConv ? 'hidden md:flex' : 'flex'}`}>
+        <div className="p-3 border-b border-surface-mist">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar conversaciones..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[#0f766e] focus:ring-1 focus:ring-[#0f766e]"
+            />
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto">
-          {conversations.length === 0 ? (
-            <div className="p-8 text-center text-sm text-[#6b7280]">
-              <MessageCircle className="w-10 h-10 mx-auto mb-3 text-gray-200" />
-              <p>No tienes conversaciones aún.</p>
-            </div>
-          ) : (
-            conversations.map(c => {
+          {(() => {
+            const filteredConvs = conversations.filter(c => {
+              if (hiddenConvs.has(c.id)) return false
+              const other = getOtherParticipant(c)
+              if (!searchQuery) return true
+              return other?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+            })
+
+            if (filteredConvs.length === 0) {
+              return (
+                <div className="p-8 flex flex-col items-center text-center text-[#6b7280]">
+                  <MessageCircle className="w-12 h-12 mb-3 text-gray-200" />
+                  <p className="font-semibold text-ink-teal-900 mb-1">Aún no hay mensajes</p>
+                  <p className="text-xs mb-4">Explora viviendas y contacta a tu próximo anfitrión.</p>
+                  <Link href="/" className="px-4 py-2 bg-[#0f766e] text-white rounded-xl text-xs font-semibold hover:bg-[#0d635c] transition-colors">
+                    Explorar viviendas
+                  </Link>
+                </div>
+              )
+            }
+
+            return filteredConvs.map(c => {
               const other = getOtherParticipant(c)
               const isPaid = other?.plan === 'monthly_pass'
               const unread = unreadMap[c.id] || 0
@@ -471,64 +527,31 @@ function MessagesContent() {
               const isActive = activeConv?.id === c.id
 
               return (
-                <button
+                <SwipeableConversationItem
                   key={c.id}
+                  conv={c}
+                  isActive={isActive}
+                  isPaid={isPaid}
+                  unread={unread}
+                  lastMsg={lastMsg}
+                  otherUser={other}
                   onClick={() => loadConversation(c)}
-                  className={`w-full px-4 py-3.5 flex items-center gap-3 border-b border-surface-mist hover:bg-gray-50 transition text-left relative ${isActive ? 'bg-[#0f766e]/5 border-l-2 border-l-[#0f766e]' : ''}`}
-                >
-                  {/* Pin indicator for paid */}
-                  {isPaid && (
-                    <div className="absolute top-2 right-3 flex items-center gap-1 text-[9px] font-bold text-[#0f766e]">
-                      <Pin className="w-2.5 h-2.5" /> PRIORITARIO
-                    </div>
-                  )}
-
-                  {/* Avatar */}
-                  <div className="relative flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center">
-                      {other?.avatar_url
-                        ? <img src={other.avatar_url} alt="" className="w-full h-full object-cover" />
-                        : <UserIcon className="w-6 h-6 text-gray-400" />}
-                    </div>
-                    {isPaid && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#0f766e] rounded-full flex items-center justify-center">
-                        <span className="text-white text-[7px] font-bold">★</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0 mt-3">
-                    <div className="flex items-baseline justify-between">
-                      <h4 className={`text-sm truncate ${unread > 0 ? 'font-bold text-ink-teal-900' : 'font-semibold text-ink-teal-900'}`}>
-                        {other?.name || 'Usuario'}
-                      </h4>
-                      {lastMsg && (
-                        <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2">
-                          {formatConvTime(lastMsg.created_at)}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center justify-between mt-0.5">
-                      <p className={`text-xs truncate max-w-[180px] ${unread > 0 ? 'font-semibold text-ink-teal-900' : 'text-[#6b7280]'}`}>
-                        {lastMsg?.content || c.properties?.title || 'Nueva conversación'}
-                      </p>
-                      {unread > 0 && (
-                        <span className="flex-shrink-0 ml-2 min-w-[20px] h-5 bg-[#0f766e] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5">
-                          {unread > 9 ? '9+' : unread}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </button>
+                  onArchive={() => setHiddenConvs(prev => new Set(prev).add(c.id))}
+                  onToggleRead={() => {
+                    setUnreadMap(prev => ({
+                      ...prev,
+                      [c.id]: prev[c.id] ? 0 : 1
+                    }))
+                  }}
+                />
               )
             })
-          )}
+          })()}
         </div>
       </div>
 
       {/* ── Chat area ── */}
-      <div className={`flex-1 flex flex-col bg-surface-mist min-w-0 ${activeConv ? 'flex' : 'hidden md:flex'}`}>
+      <div className={`flex-1 md:w-[60%] lg:w-[70%] flex flex-col bg-surface-mist min-w-0 ${activeConv ? 'flex' : 'hidden md:flex'}`}>
         {activeConv ? (
           <>
             {/* Chat header */}
@@ -540,19 +563,19 @@ function MessagesContent() {
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
-                <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                <Link href={`/users/${getOtherParticipant(activeConv)?.id}`} className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0 cursor-pointer hover:opacity-80 transition">
                   {getOtherParticipant(activeConv)?.avatar_url
                     ? <img src={getOtherParticipant(activeConv).avatar_url} alt="" className="w-full h-full object-cover" />
                     : <UserIcon className="w-5 h-5 text-gray-400" />}
-                </div>
-                <div>
+                </Link>
+                <Link href={`/users/${getOtherParticipant(activeConv)?.id}`} className="flex flex-col cursor-pointer hover:opacity-80 transition">
                   <h2 className="font-semibold text-sm text-ink-teal-900 leading-tight">
                     {getOtherParticipant(activeConv)?.name || 'Usuario'}
                   </h2>
                   <p className="text-[11px] text-[#6b7280] truncate max-w-[180px] md:max-w-none">
                     {activeConv.properties?.title || 'Sin propiedad'}
                   </p>
-                </div>
+                </Link>
               </div>
               <div>{renderStatus()}</div>
             </div>
@@ -646,11 +669,12 @@ function MessagesContent() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-[#6b7280] gap-3">
-            <div className="w-16 h-16 rounded-2xl bg-surface-mist-dark flex items-center justify-center">
-              <MessageCircle className="w-8 h-8 text-[#0f766e]/30" />
+          <div className="flex-1 flex flex-col items-center justify-center text-[#6b7280] gap-4">
+            <div className="w-20 h-20 rounded-full bg-white shadow-sm flex items-center justify-center border border-neutral-100">
+              <MessageCircle className="w-10 h-10 text-[#0f766e]/40" />
             </div>
-            <p className="text-sm font-medium">Selecciona una conversación</p>
+            <p className="text-base font-semibold text-ink-teal-900">Selecciona una conversación para comenzar</p>
+            <p className="text-sm max-w-xs text-center">Tus mensajes, propuestas y detalles de intercambio aparecerán aquí.</p>
           </div>
         )}
       </div>
@@ -709,6 +733,103 @@ function DateSeparator({ label }: { label: string }) {
       <div className="flex-1 h-px bg-gray-200" />
       <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap bg-surface-mist px-2">{label}</span>
       <div className="flex-1 h-px bg-gray-200" />
+    </div>
+  )
+}
+
+function SwipeableConversationItem({
+  conv, isActive, isPaid, unread, lastMsg, onClick, otherUser, onArchive, onToggleRead
+}: any) {
+  const [startX, setStartX] = useState<number | null>(null)
+  const [translateX, setTranslateX] = useState(0)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setStartX(e.touches[0].clientX)
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (startX === null) return
+    const currentX = e.touches[0].clientX
+    const diff = currentX - startX
+    if (diff > 100) setTranslateX(100)
+    else if (diff < -100) setTranslateX(-100)
+    else setTranslateX(diff)
+  }
+
+  const handleTouchEnd = () => {
+    if (translateX > 60) {
+      onToggleRead()
+    } else if (translateX < -60) {
+      onArchive()
+    }
+    setStartX(null)
+    setTranslateX(0)
+  }
+
+  return (
+    <div className="relative border-b border-surface-mist overflow-hidden bg-gray-100">
+      {/* Background Actions */}
+      <div className="absolute inset-0 flex items-center justify-between px-4">
+        <div className="text-blue-600 font-bold text-xs flex items-center gap-1.5 w-[80px]">
+          <Check className="w-4 h-4" /> {unread ? 'Leído' : 'No leído'}
+        </div>
+        <div className="text-red-500 font-bold text-xs flex items-center justify-end gap-1.5 w-[80px]">
+          Archivar <X className="w-4 h-4" />
+        </div>
+      </div>
+
+      {/* Foreground Card */}
+      <button
+        onClick={onClick}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        style={{ transform: `translateX(${translateX}px)`, transition: startX === null ? 'transform 0.2s ease-out' : 'none' }}
+        className={`w-full px-4 py-3.5 flex items-start gap-3 hover:bg-gray-50 text-left relative z-10 ${isActive ? 'bg-[#0f766e]/5 border-l-2 border-l-[#0f766e]' : unread > 0 ? 'bg-[#F9FAFB]' : 'bg-white'}`}
+      >
+        {/* Avatar */}
+        <div className="relative flex-shrink-0 mt-0.5">
+          {unread > 0 && (
+            <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-2 h-2 bg-[#00A86B] rounded-full shadow-sm" />
+          )}
+          <div className="w-12 h-12 rounded-full overflow-hidden flex items-center justify-center font-bold text-white text-lg shadow-sm border border-neutral-100" style={{ backgroundColor: otherUser?.avatar_url ? 'transparent' : getAvatarColor(otherUser?.name) }}>
+            {otherUser?.avatar_url
+              ? <img src={otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
+              : getInitials(otherUser?.name)}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+              <h4 className={`text-sm truncate ${unread > 0 ? 'font-bold text-ink-teal-900' : 'font-semibold text-ink-teal-900'}`}>
+                {otherUser?.name || 'Usuario'}
+              </h4>
+              {isPaid && (
+                <div className="mt-0.5 sm:mt-0 flex items-center gap-1 bg-gradient-to-r from-[#FFD700] to-[#F39C12] text-white px-2 py-0.5 rounded-xl text-[10px] font-bold uppercase shadow-sm w-fit">
+                  <Star className="w-2.5 h-2.5 fill-white" /> Prioritario
+                </div>
+              )}
+            </div>
+            {lastMsg && (
+              <span className="text-[10px] text-gray-400 flex-shrink-0 ml-2 mt-0.5">
+                {formatConvTime(lastMsg.created_at)}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <p className={`text-xs truncate max-w-[180px] ${unread > 0 ? 'font-semibold text-ink-teal-900' : 'text-[#6b7280]'}`}>
+              {lastMsg?.content || conv.properties?.title || 'Nueva conversación'}
+            </p>
+            {unread > 0 && (
+              <span className="flex-shrink-0 ml-2 min-w-[20px] h-5 bg-[#00A86B] text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1.5 shadow-sm">
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
     </div>
   )
 }

@@ -715,64 +715,73 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Page content ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-8 lg:px-8 pt-4 sm:pt-10 pb-24 lg:pb-8">
-
-        {/* ── Breadcrumb & Mobile Actions ── */}
-        <nav className="flex items-center justify-between gap-1.5 mb-4 font-inter text-xs text-text-muted-custom">
-          <div className="flex items-center gap-1.5">
-            <button onClick={() => router.back()} className="flex items-center gap-1 hover:text-ink-teal-900 transition-colors">
-              <Home className="w-5 h-5 sm:w-3.5 sm:h-3.5 text-[#0f766e] md:text-text-muted-custom" />
+      <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-8 lg:px-8 pt-0 md:pt-6 pb-28 md:pb-12">
+        
+        {/* ── Mobile Floating Top Bar ── */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent pointer-events-none">
+          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors pointer-events-auto">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+              <Share2 className="w-5 h-5" />
             </button>
-            <ChevronRight className="w-3 h-3" />
-            <span className="flex items-center gap-1.5 capitalize">
-              {catLabel}
-            </span>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-ink-teal-900 font-medium truncate max-w-[150px] sm:max-w-[200px]">{property.city}, {property.country}</span>
-          </div>
-          
-          <div className="flex md:hidden items-center gap-4 flex-shrink-0">
-            <button onClick={handleShare} className="text-ink-teal-900 hover:opacity-75 transition-opacity"><Share2 className="w-5 h-5" /></button>
-            <button onClick={handleSave} className="text-ink-teal-900 hover:opacity-75 transition-opacity">
+            <button onClick={handleSave} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
               <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
           </div>
-        </nav>
+        </div>
 
-        {/* ── Title row ── */}
-        <div className="flex items-start justify-between mb-4 gap-4">
-          <h1 className="font-fraunces font-semibold text-2xl sm:text-3xl text-ink-teal-900 leading-tight max-w-2xl">
-            {property.title}
-          </h1>
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-            <button onClick={handleShare} className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
-              <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Compartir</span>
-            </button>
-            <button onClick={handleSave} className="flex items-center gap-1.5 font-inter text-sm font-medium text-ink-teal-900 px-3 py-2 border border-neutral-200 rounded-radius-sm hover:bg-surface-mist transition-colors">
-              <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
-              <span className="hidden sm:inline">{isSaved ? 'Guardado' : 'Guardar'}</span>
-            </button>
+        <div className="flex flex-col">
+          {/* Gallery (Order 1 on mobile, 2 on desktop) */}
+          <div className="order-1 md:order-2 mb-6 md:mb-10">
+            <PropertyGallery
+              images={images}
+              title={property.title}
+              isOwner={!!(currentUser && property.user_id === currentUser.id)}
+            />
           </div>
-        </div>
 
-        {/* ── Meta line ── */}
-        <div className="flex flex-wrap items-center gap-2 mb-6 font-inter text-xs text-text-muted-custom">
-          <MapPin className="w-3.5 h-3.5 text-text-muted-custom" />
-          <span>{property.city}, {property.country}</span>
-        </div>
+          {/* Headers (Order 2 on mobile, 1 on desktop) */}
+          <div className="order-2 md:order-1 mb-8 md:mb-6 mt-4 md:mt-0">
+            {/* ── Desktop Breadcrumb ── */}
+            <nav className="hidden md:flex items-center gap-1.5 mb-4 font-inter text-xs text-text-muted-custom">
+              <button onClick={() => router.back()} className="flex items-center gap-1 hover:text-ink-teal-900 transition-colors">
+                <Home className="w-3.5 h-3.5 text-text-muted-custom" />
+              </button>
+              <ChevronRight className="w-3 h-3" />
+              <span className="flex items-center gap-1.5 capitalize">{catLabel}</span>
+              <ChevronRight className="w-3 h-3" />
+              <span className="text-ink-teal-900 font-medium truncate max-w-[200px]">{property.city}, {property.country}</span>
+            </nav>
 
-        {/* ── Gallery ── */}
-        <div className="mb-8">
-          <PropertyGallery
-            images={images}
-            title={property.title}
-            isOwner={!!(currentUser && property.user_id === currentUser.id)}
-          />
-        </div>
+            {/* ── Title row ── */}
+            <div className="flex items-start justify-between gap-4 mb-2">
+              <h1 className="font-fraunces font-bold text-2xl sm:text-4xl text-ink-teal-900 leading-tight max-w-2xl">
+                {property.title}
+              </h1>
+              <div className="hidden md:flex items-center gap-2 flex-shrink-0">
+                <button onClick={handleShare} className="flex items-center gap-1.5 font-inter text-sm font-semibold text-ink-teal-900 px-4 py-2.5 border border-neutral-200 rounded-xl hover:bg-surface-mist transition-colors shadow-sm">
+                  <Share2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Compartir</span>
+                </button>
+                <button onClick={handleSave} className="flex items-center gap-1.5 font-inter text-sm font-semibold text-ink-teal-900 px-4 py-2.5 border border-neutral-200 rounded-xl hover:bg-surface-mist transition-colors shadow-sm">
+                  <Heart className={`w-4 h-4 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+                  <span className="hidden sm:inline">{isSaved ? 'Guardado' : 'Guardar'}</span>
+                </button>
+              </div>
+            </div>
 
-        {/* ── Main 2-col layout ── */}
-        <div className="grid lg:grid-cols-[1fr_380px] gap-12">
+            {/* ── Meta line ── */}
+            <div className="flex flex-wrap items-center gap-2 font-inter text-sm font-medium text-text-muted-custom">
+              <MapPin className="w-4 h-4 text-text-muted-custom" />
+              <span>{property.city}, {property.country}</span>
+            </div>
+          </div>
+
+          {/* ── Main 2-col layout (Order 3) ── */}
+          <div className="order-3">
+            <div className="grid lg:grid-cols-[1fr_380px] gap-16">
 
           {/* ─ Left column ─ */}
           <div className="space-y-8">
@@ -820,19 +829,39 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
 
 
 
-            {/* Amenities grid */}
+            {/* Amenities grouped */}
             {amenitiesList.length > 0 && (
               <div className="border-t border-surface-mist pt-8">
-                <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-5">
+                <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-6">
                   Lo que ofrece este lugar
                 </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {amenitiesList.map((slug: string) => (
-                    <div key={slug} className="flex items-center gap-3 font-inter text-sm text-ink-teal-900">
-                      <AmenityIcon slug={slug} className="w-5 h-5 text-text-muted-custom flex-shrink-0" strokeWidth={1.5} />
-                      <span>{AMENITY_LABELS[slug] || slug}</span>
-                    </div>
-                  ))}
+                
+                <div className="flex flex-col gap-6">
+                  {[
+                    { title: 'Conectividad y espacio de trabajo', keys: ['wifi', 'workspace'] },
+                    { title: 'Cocina y lavandería', keys: ['kitchen', 'cocina', 'washer'] },
+                    { title: 'Climatización', keys: ['ac', 'heating'] },
+                    { title: 'Entretenimiento', keys: ['tv', 'pool', 'gym'] },
+                    { title: 'Exteriores', keys: ['garden', 'balcony', 'bbq', 'beach-access', 'mountain-view'] },
+                    { title: 'Servicios e Instalaciones', keys: ['parking', 'elevator', 'pets', 'premium', 'tour-cafetero', 'beds'] }
+                  ].map(category => {
+                    const categoryAmenities = amenitiesList.filter(slug => category.keys.includes(slug))
+                    if (categoryAmenities.length === 0) return null
+
+                    return (
+                      <div key={category.title}>
+                        <h3 className="font-inter font-bold text-sm text-ink-teal-900 mb-3">{category.title}</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-2">
+                          {categoryAmenities.map((slug: string) => (
+                            <div key={slug} className="flex items-center gap-3 font-inter text-sm text-ink-teal-900">
+                              <AmenityIcon slug={slug} className="w-6 h-6 text-ink-teal-900 flex-shrink-0" strokeWidth={1.5} />
+                              <span className="text-text-muted-custom font-medium">{AMENITY_LABELS[slug] || slug}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -854,9 +883,21 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             {/* Map section */}
             <div className="border-t border-surface-mist pt-8">
               <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-4">Dónde vas a estar</h2>
-              <div className="h-64 w-full bg-surface-mist rounded-[16px] flex items-center justify-center mb-8 overflow-hidden relative z-0">
+              <div className="h-72 w-full bg-surface-mist rounded-[20px] flex items-center justify-center mb-8 overflow-hidden relative z-0 border border-neutral-200">
                 {property.latitude && property.longitude ? (
-                  <LeafletMap lat={property.latitude} lng={property.longitude} />
+                  <div className="w-full h-full relative">
+                    <div className="absolute inset-0 filter blur-[6px] scale-[1.03] opacity-80 pointer-events-none">
+                      <LeafletMap lat={property.latitude} lng={property.longitude} />
+                    </div>
+                    {/* Privacy Overlay */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-ink-teal-900/5">
+                      <div className="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center mb-3 shadow-lg border border-neutral-200">
+                        <MapPin className="w-8 h-8 text-accent-mango" />
+                      </div>
+                      <p className="font-fraunces font-bold text-xl text-ink-teal-900 drop-shadow-sm">{property.city}, {property.country}</p>
+                      <p className="font-inter text-sm font-medium text-ink-teal-900 mt-1 bg-white/80 px-4 py-1.5 rounded-full shadow-sm">Ubicación aproximada por privacidad</p>
+                    </div>
+                  </div>
                 ) : (
                   <div className="text-center">
                     <p className="font-inter text-sm font-medium text-text-muted-custom">{property.city}, {property.country}</p>
@@ -870,11 +911,6 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                     </a>
                   </div>
                 )}
-                <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                  <span className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm font-inter text-xs text-ink-teal-900 border border-surface-mist-dark">
-                    La ubicación exacta se revela al confirmar el intercambio
-                  </span>
-                </div>
               </div>
               
               {/* AI Local Guide Section */}
@@ -946,38 +982,52 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-8 relative z-10 bg-white/50 rounded-xl backdrop-blur-sm border border-white/40">
-                    <Compass className="w-8 h-8 text-surface-mist mx-auto mb-2" />
-                    <p className="font-inter text-sm text-text-muted-custom">
-                      Aún no hay una guía local para esta propiedad.
+                  <div className="text-center py-10 relative z-10 bg-white/70 rounded-2xl backdrop-blur-sm border border-white flex flex-col items-center shadow-sm">
+                    <Compass className="w-12 h-12 text-accent-mango mb-3 opacity-80" />
+                    <h4 className="font-fraunces font-bold text-lg text-ink-teal-900 mb-1">Crea la guía de {property.city}</h4>
+                    <p className="font-inter text-sm text-text-muted-custom max-w-md mx-auto mb-4">
+                      ¿Conoces bien la zona? Ayuda a otros viajeros compartiendo los mejores lugares y consejos locales para esta ubicación.
                     </p>
+                    {isOwner && !isMock && (
+                      <button
+                        onClick={handleGenerateGuide}
+                        disabled={generatingGuide}
+                        className="bg-ink-teal-900 text-white px-6 py-2.5 rounded-xl font-inter font-medium text-sm hover:bg-ink-teal-800 transition-colors shadow-md flex items-center gap-2"
+                      >
+                         {generatingGuide ? 'Generando...' : '¡Quiero crear la guía local!'}
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             {/* Host Section */}
-            <div className="border-t border-surface-mist pt-8">
-              <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-6">Conoce al anfitrión</h2>
-              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
-                <div className="flex flex-col items-center text-center gap-2 min-w-[120px]">
-                  <div className="w-24 h-24 rounded-full bg-surface-mist overflow-hidden relative">
-                    {property.users?.avatar_url ? (
-                      <img src={property.users.avatar_url} alt={property.users?.name || 'Anfitrión'} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-3xl text-ink-teal-900 font-fraunces bg-accent-mango/10">
-                        {(property.users?.name || 'A')[0].toUpperCase()}
-                      </div>
-                    )}
-                    {property.users?.is_verified && (
-                      <div className="absolute bottom-0 right-0 bg-[#0f766e] text-white p-1 rounded-full border-2 border-white">
-                        <ShieldCheck className="w-4 h-4" />
-                      </div>
-                    )}
+            <div className="border-t border-surface-mist pt-10">
+              <h2 className="font-fraunces font-semibold text-2xl text-ink-teal-900 mb-8">Conoce al anfitrión</h2>
+              <div className="bg-white border border-neutral-200 rounded-[24px] p-8 shadow-sm flex flex-col md:flex-row gap-8 items-start">
+                <div className="flex flex-col items-center text-center gap-3 min-w-[140px]">
+                  <div className="relative">
+                    <div className="w-28 h-28 rounded-full bg-surface-mist overflow-hidden shadow-inner border-[4px] border-white ring-1 ring-neutral-200">
+                      {property.users?.avatar_url ? (
+                        <img src={property.users.avatar_url} alt={property.users?.name || 'Anfitrión'} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-4xl text-ink-teal-900 font-fraunces bg-accent-mango/10">
+                          {(property.users?.name || 'A')[0].toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    {/* Verified Badge */}
+                    <div className="absolute bottom-1 right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md border border-neutral-100">
+                      <ShieldCheck className="w-5 h-5 text-[#0f766e]" />
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-fraunces font-semibold text-lg text-ink-teal-900">{property.users?.name || 'Anfitrión'}</h3>
-                    <p className="font-inter text-xs text-text-muted-custom mt-1">Miembro desde {property.users?.created_at ? new Date(property.users.created_at).getFullYear() : '2026'}</p>
+                  <div className="flex flex-col items-center">
+                    <h3 className="font-fraunces font-bold text-xl text-ink-teal-900">{property.users?.name || 'Anfitrión'}</h3>
+                    <div className="flex items-center gap-1.5 px-3 py-1 mt-1 bg-surface-mist rounded-full font-inter text-xs font-semibold text-[#0f766e]">
+                      Identidad verificada
+                    </div>
+                    <p className="font-inter text-xs text-text-muted-custom mt-2">Miembro desde {property.users?.created_at ? new Date(property.users.created_at).getFullYear() : '2026'}</p>
                   </div>
                 </div>
                 
@@ -1108,24 +1158,26 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           </div>
 
           {/* ─ Right column: Sticky booking panel (desktop only) ─ */}
-          <div className="hidden lg:block">
-            <div className="sticky top-24 bg-white border border-neutral-200 rounded-[20px] shadow-lg p-6">
+          <div className="hidden lg:block relative">
+            <div className="sticky top-24 bg-white border border-neutral-200 rounded-3xl shadow-xl p-6">
               {renderBookingForm()}
             </div>
           </div>
         </div>
       </div>
+    </div>
+  </div>
 
-      {/* ── Mobile: Fixed bottom booking bar ── */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-neutral-200 px-4 py-3 flex items-center justify-between gap-4 shadow-[0_-4px_24px_rgba(0,0,0,0.08)]">
+  {/* ── Mobile: Fixed bottom booking bar ── */}
+  <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[60] bg-white border-t border-neutral-200 px-5 py-4 flex items-center justify-between gap-4 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]">
         <div>
-          <p className="font-plex font-bold text-lg text-ink-teal-900">{wellRank} WP<span className="font-inter text-sm font-normal text-text-muted-custom">/noche</span></p>
-          {(submitted || hasPendingRequest) && <p className="font-inter text-xs text-[#0f766e] font-semibold">✓ Solicitud en curso</p>}
+          <p className="font-plex font-bold text-xl text-ink-teal-900">{wellRank} WP<span className="font-inter text-sm font-semibold text-text-muted-custom"> / noche</span></p>
+          {(submitted || hasPendingRequest) && <p className="font-inter text-xs text-[#0f766e] font-bold mt-1">✓ Solicitud en curso</p>}
         </div>
         <button
           onClick={() => setBookingModalOpen(true)}
           disabled={hasPendingRequest || submitted}
-          className="bg-accent-mango text-white px-6 py-2.5 rounded-xl font-inter font-semibold hover:bg-accent-mango/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-[#0f766e] text-white px-8 py-3.5 rounded-xl font-inter font-bold text-base hover:bg-[#0f766e]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md min-w-[140px]"
         >
           {hasPendingRequest || submitted ? 'Solicitado' : 'Solicitar'}
         </button>

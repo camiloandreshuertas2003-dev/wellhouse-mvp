@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { 
   Bell, Compass, Home, Plus, MessageCircle, User, MoreHorizontal,
-  Trophy, Sparkles, Heart, Star, Video, Settings, ShieldAlert, X, HelpCircle, Bot
+  Trophy, Sparkles, Heart, Star, Video, Settings, ShieldAlert, X, HelpCircle, Bot, Search
 } from 'lucide-react'
 import NotificationsDropdown from './notifications/NotificationsDropdown'
 import { useNotifications } from './notifications/NotificationsProvider'
@@ -27,6 +27,8 @@ const NavbarContent = memo(function NavbarContent() {
   const [checkingPublish, setCheckingPublish] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showWellBot, setShowWellBot] = useState(false)
+  const [isScrolled, setIsScrolled] = useState(false)
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
   useEffect(() => {
@@ -45,8 +47,16 @@ const NavbarContent = memo(function NavbarContent() {
         setRole(null)
       }
     })
+
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20)
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true })
     
-    return () => subscription.unsubscribe()
+    return () => {
+      subscription.unsubscribe()
+      window.removeEventListener('scroll', handleScroll)
+    }
   }, [])
 
 
@@ -105,77 +115,91 @@ const NavbarContent = memo(function NavbarContent() {
   return (
     <>
       {/* ── Desktop Navbar ─────────────────────────────────────────────── */}
-      <nav className="hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Navegación principal">
+      <nav className={`hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 transition-all duration-300 ease-in-out ${isScrolled ? 'shadow-md' : 'shadow-sm'}`} role="navigation" aria-label="Navegación principal">
         <div className="max-w-[1380px] mx-auto px-6 lg:px-8">
-          <div className="flex items-center h-20">
+          <div className={`flex items-center transition-all duration-300 ease-in-out ${isScrolled ? 'h-16' : 'h-20'}`}>
 
             {/* Logo - Left */}
             <div className="flex-1 flex justify-start">
             <Link href="/search" className="focus:outline-none rounded">
-              <span className="font-fraunces font-bold text-2xl text-ink-teal-900 tracking-tight">Wellhouse</span>
+              <span className={`font-fraunces font-bold text-ink-teal-900 tracking-tight transition-all duration-300 ${isScrolled ? 'text-xl' : 'text-2xl'}`}>Wellhouse</span>
             </Link>
 
             </div>
 
-            {/* Desktop Links - Center */}
-            <div className="flex items-center justify-center gap-10 lg:gap-14 h-full relative">
-              <Link href="/search" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
-                <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/search' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-                  <img src="/images/nav_icons/explorar.png" alt="Explorar" className="w-full h-full object-contain" />
-                </div>
-                <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/search' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
-                  Explorar
-                </span>
-                {pathname === '/search' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
-              </Link>
-              
-              <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
-                <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/how-it-works' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-                  <img src="/images/nav_icons/como_funciona.png" alt="Cómo funciona" className="w-full h-full object-contain" />
-                </div>
-                <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/how-it-works' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
-                  Cómo funciona
-                </span>
-                {pathname === '/how-it-works' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
-              </Link>
-
-              {session && (
-                <>
-                  <Link href="/dashboard" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
-                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/dashboard' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-                      <img src="/images/nav_icons/mi_espacio.png" alt="Mi espacio" className="w-full h-full object-contain" />
+            {/* Desktop Links / Mega-Search - Center */}
+            <div className="flex items-center justify-center h-full relative flex-1 min-w-[300px]">
+              {isScrolled ? (
+                <div className="w-full max-w-sm animate-in fade-in zoom-in duration-300">
+                  <Link href="/search" className="flex items-center gap-3 bg-gray-50 border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all rounded-full px-4 py-2 w-full">
+                    <Search className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500 font-medium flex-1 text-left">¿A dónde vas?</span>
+                    <div className="w-7 h-7 bg-[#0f766e] rounded-full flex items-center justify-center">
+                      <Search className="w-3.5 h-3.5 text-white" />
                     </div>
-                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/dashboard' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
-                      Mi espacio
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-10 lg:gap-14 h-full animate-in fade-in duration-300">
+                  <Link href="/search" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/search' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                      <img src="/images/nav_icons/explorar.png" alt="Explorar" className="w-full h-full object-contain" />
+                    </div>
+                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/search' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                      Explorar
                     </span>
-                    {pathname === '/dashboard' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                    {pathname === '/search' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                  </Link>
+                  
+                  <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/how-it-works' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                      <img src="/images/nav_icons/como_funciona.png" alt="Cómo funciona" className="w-full h-full object-contain" />
+                    </div>
+                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/how-it-works' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                      Cómo funciona
+                    </span>
+                    {pathname === '/how-it-works' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
                   </Link>
 
-                  <Link href="/messages" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
-                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/messages' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-                      <img src="/images/nav_icons/mensajes.png" alt="Mensajes" className="w-full h-full object-contain" />
-                    </div>
-                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/messages' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
-                      Mensajes
-                    </span>
-                    {pathname === '/messages' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
-                  </Link>
-                </>
+                  {session && (
+                    <>
+                      <Link href="/dashboard" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                        <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/dashboard' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                          <img src="/images/nav_icons/mi_espacio.png" alt="Mi espacio" className="w-full h-full object-contain" />
+                        </div>
+                        <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/dashboard' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                          Mi espacio
+                        </span>
+                        {pathname === '/dashboard' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                      </Link>
+
+                      <Link href="/messages" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                        <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/messages' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                          <img src="/images/nav_icons/mensajes.png" alt="Mensajes" className="w-full h-full object-contain" />
+                        </div>
+                        <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/messages' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                          Mensajes
+                        </span>
+                        {pathname === '/messages' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                      </Link>
+                    </>
+                  )}
+                </div>
               )}
             </div>
 
             {/* Desktop Right - Actions */}
-            <div className="flex-1 flex items-center justify-end gap-5">
+            <div className="flex-1 flex items-center justify-end gap-3 lg:gap-5">
               {session ? (
                 <>
                   {role === 'ADMIN' && (
-                    <Link href="/admin" className="font-inter font-bold text-sm text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200">
+                    <Link href="/admin" className="hidden lg:inline-flex font-inter font-bold text-sm text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200 hover:bg-rose-100 transition-colors">
                       Admin
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
-                    className="font-inter font-medium text-sm text-signal-red hover:opacity-80 transition-opacity"
+                    className="hidden lg:inline-flex font-inter font-medium text-sm text-signal-red hover:opacity-80 transition-opacity"
                   >
                     Salir
                   </button>
@@ -204,9 +228,13 @@ const NavbarContent = memo(function NavbarContent() {
                     >
                       <Bell className="w-5 h-5" />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
-                          {unreadCount > 9 ? '9+' : unreadCount}
-                        </span>
+                        unreadCount > 99 ? (
+                          <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                        ) : (
+                          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                            {unreadCount}
+                          </span>
+                        )
                       )}
                     </button>
                     {showNotifications && (
@@ -216,13 +244,45 @@ const NavbarContent = memo(function NavbarContent() {
                     )}
                   </div>
 
-                  <Link href="/dashboard?tab=settings" className="w-8 h-8 rounded-full overflow-hidden border border-surface-mist-dark bg-gray-100 flex items-center justify-center transition-transform hover:scale-105" title="Modificar perfil">
-                    {avatarUrl ? (
-                      <img src={avatarUrl} alt="Perfil" className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="w-4 h-4 text-gray-400" />
+                  {/* Profile Dropdown */}
+                  <div className="relative">
+                    <button 
+                      onClick={() => setProfileMenuOpen(!profileMenuOpen)} 
+                      className="w-8 h-8 rounded-full overflow-hidden border border-surface-mist-dark bg-gray-100 flex items-center justify-center transition-transform hover:scale-105" 
+                      title="Menú de perfil"
+                    >
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Perfil" className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-4 h-4 text-gray-400" />
+                      )}
+                    </button>
+                    
+                    {profileMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setProfileMenuOpen(false)}></div>
+                        <div className="absolute right-0 top-full mt-2 w-48 bg-white border border-surface-mist-dark shadow-xl rounded-xl py-1 z-50 overflow-hidden">
+                          <Link href="/dashboard?tab=settings" onClick={() => setProfileMenuOpen(false)} className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-ink-teal-900 hover:bg-gray-50 transition-colors">
+                            <Settings className="w-4 h-4" />
+                            Ajustes
+                          </Link>
+                          {role === 'ADMIN' && (
+                            <Link href="/admin" onClick={() => setProfileMenuOpen(false)} className="lg:hidden flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors">
+                              <ShieldAlert className="w-4 h-4" />
+                              Admin
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => { setProfileMenuOpen(false); handleLogout() }}
+                            className="lg:hidden w-full flex items-center gap-2 text-left px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+                          >
+                            <X className="w-4 h-4" />
+                            Salir
+                          </button>
+                        </div>
+                      </>
                     )}
-                  </Link>
+                  </div>
                 </>
               ) : (
                 <>
@@ -250,42 +310,50 @@ const NavbarContent = memo(function NavbarContent() {
         </div>
 
           <div className="flex items-center gap-2">
-            {/* WellBot — Mobile */}
-            <div className="relative">
-              <button
-                onClick={() => setShowWellBot(!showWellBot)}
-                className="p-2 text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
-                aria-label="WellBot"
-              >
-                <Bot className="w-5 h-5" />
-              </button>
-              {showWellBot && (
-                <div className="absolute right-[-48px] md:right-0 top-full mt-2 z-50 w-[90vw] max-w-[380px] h-[500px] max-h-[70vh] bg-white rounded-2xl shadow-xl border border-surface-mist-dark overflow-hidden flex flex-col">
-                  <WellBotPanel onClose={() => setShowWellBot(false)} />
+            {session && (
+              <>
+                {/* WellBot — Mobile */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowWellBot(!showWellBot)}
+                    className="p-2 text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                    aria-label="WellBot"
+                  >
+                    <Bot className="w-5 h-5" />
+                  </button>
+                  {showWellBot && (
+                    <div className="absolute right-[-48px] md:right-0 top-full mt-2 z-50 w-[90vw] max-w-[380px] h-[500px] max-h-[70vh] bg-white rounded-2xl shadow-xl border border-surface-mist-dark overflow-hidden flex flex-col">
+                      <WellBotPanel onClose={() => setShowWellBot(false)} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Bell — Mobile */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
-                aria-label="Notificaciones"
-              >
-                <Bell className="w-5 h-5" />
-                {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
-                    {unreadCount > 9 ? '9+' : unreadCount}
-                  </span>
-                )}
-              </button>
-              {showNotifications && (
-                <div className="absolute right-[-48px] top-full mt-2 z-50">
-                  <NotificationsDropdown onClose={() => setShowNotifications(false)} />
+                {/* Bell — Mobile */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowNotifications(!showNotifications)}
+                    className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                    aria-label="Notificaciones"
+                  >
+                    <Bell className="w-5 h-5" />
+                    {unreadCount > 0 && (
+                      unreadCount > 99 ? (
+                        <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                      ) : (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5">
+                          {unreadCount}
+                        </span>
+                      )
+                    )}
+                  </button>
+                  {showNotifications && (
+                    <div className="md:hidden">
+                      <NotificationsDropdown onClose={() => setShowNotifications(false)} />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
 
             <Link href={session ? "/dashboard?tab=settings" : "/login"} className="w-9 h-9 rounded-full overflow-hidden border border-surface-mist-dark bg-gray-100 flex items-center justify-center">
               {avatarUrl ? (

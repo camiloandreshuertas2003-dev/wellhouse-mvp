@@ -61,8 +61,8 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
   return (
     <>
       {/* ── Mobile: Rounded card carousel ──────────────────────────────── */}
-      <div className="md:hidden relative">
-        <div className="relative aspect-[16/10] overflow-hidden rounded-3xl bg-surface-mist shadow-sm">
+      <div className="md:hidden relative -mx-4 sm:mx-0 -mt-4 sm:mt-0">
+        <div className="relative aspect-[4/3] overflow-hidden sm:rounded-3xl bg-surface-mist shadow-sm">
           <img
             src={safeImages[mobileIndex]}
             alt={`${title} — foto ${mobileIndex + 1}`}
@@ -107,7 +107,7 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
       {/* ── Desktop: Mosaico WellHouse ───────────────────────────────── */}
       <div className="hidden md:block">
         {safeImages.length >= 5 ? (
-          <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-[16px] overflow-hidden h-[420px] lg:h-[480px]">
+          <div className="grid grid-cols-4 grid-rows-2 gap-2 rounded-[24px] overflow-hidden h-[420px] lg:h-[480px]">
             {/* Main photo */}
             <div
               className="relative cursor-pointer overflow-hidden col-span-2 row-span-2"
@@ -150,7 +150,7 @@ export default function PropertyGallery({ images, title, isOwner = false }: Prop
         ) : (
           /* Single large photo when < 4 photos */
           <div
-            className="relative h-[420px] lg:h-[480px] rounded-[16px] overflow-hidden cursor-pointer"
+            className="relative h-[420px] lg:h-[480px] rounded-[24px] overflow-hidden cursor-pointer"
             onClick={() => openModal(0)}
           >
             <img

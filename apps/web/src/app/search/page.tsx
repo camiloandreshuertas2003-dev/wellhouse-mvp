@@ -57,6 +57,9 @@ export default function SearchPage() {
   const [stories, setStories] = useState<any[]>([])
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null)
 
+  const [showMobileSearchModal, setShowMobileSearchModal] = useState(false)
+  const [showFiltersModal, setShowFiltersModal] = useState(false)
+
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
   const uniqueLocations = Array.from(new Set(realProps.map(p => p.location.split(',')[0].trim()))).filter(loc => loc !== '—').sort()
 
@@ -281,94 +284,27 @@ export default function SearchPage() {
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24 md:pb-12">
       
-      {/* Sticky Mobile Search Bar */}
-      <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-2.5 shadow-sm flex flex-col gap-2">
-        <div className="relative flex items-center gap-2 bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
-          <Search className="w-3.5 h-3.5 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="¿A dónde quieres ir?" 
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value)
-              setShowLocationDropdown(true)
-            }}
-            onFocus={() => setShowLocationDropdown(true)}
-            onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
-            className="w-full text-base md:text-sm text-ink-teal-900 bg-transparent focus:outline-none"
-          />
-          {showLocationDropdown && (query.length > 0 || uniqueLocations.length > 0) && (
-            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-surface-mist-dark rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto overflow-x-hidden p-2">
-              <p className="text-[10px] font-bold text-text-muted-custom uppercase px-2 py-1">Sugerencias</p>
-              {uniqueLocations
-                .filter(loc => normalize(loc).includes(normalize(query)))
-                .map((loc, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      setQuery(loc)
-                      setShowLocationDropdown(false)
-                    }}
-                    className="w-full text-left px-3 py-2 text-sm text-ink-teal-900 hover:bg-surface-mist rounded-xl flex items-center gap-2"
-                  >
-                    <MapPin className="w-3 h-3 text-[#0f766e]" /> {loc}
-                  </button>
-                ))}
-              {uniqueLocations.filter(loc => normalize(loc).includes(normalize(query))).length === 0 && (
-                <p className="text-xs text-text-muted-custom px-3 py-2">No hay destinos sugeridos</p>
-              )}
-            </div>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex-[1.5] flex items-center bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark" onClick={() => setShowDatePicker(true)}>
-            <div className="w-full text-xs text-ink-teal-900 bg-transparent focus:outline-none truncate cursor-pointer text-center font-semibold text-[#0f766e]">
-              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'd MMM', { locale: es })} - ${format(dateRange.to, 'd MMM', { locale: es })}` : format(dateRange.from, 'd MMM', { locale: es })) : "Fechas"}
-            </div>
+      {/* ── Mega-Search Trigger (Mobile) ──────────────── */}
+      <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-3 shadow-sm">
+        <button 
+          onClick={() => setShowMobileSearchModal(true)}
+          className="w-full flex items-center bg-white px-4 py-3 rounded-full border border-surface-mist-dark shadow-sm"
+        >
+          <Search className="w-5 h-5 text-ink-teal-900 mr-3 flex-shrink-0" />
+          <div className="flex flex-col items-start flex-1 text-left min-w-0">
+            <span className="text-sm font-bold text-ink-teal-900 truncate w-full">{query || '¿A dónde quieres ir?'}</span>
+            <span className="text-[10px] text-text-muted-custom truncate w-full">
+              {dateRange?.from ? 'Fechas añadidas' : 'Fechas'} · {guestCount ? `${guestCount} huéspedes` : 'Huéspedes'}
+            </span>
           </div>
-          <div className="flex-1 flex items-center bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
-             <input type="number" placeholder="Huéspedes" value={guestCount} onChange={e => setGuestCount(e.target.value ? parseInt(e.target.value) : '')} className="w-full text-xs text-ink-teal-900 bg-transparent focus:outline-none text-center" />
-          </div>
-          <div className="flex-[1.2] flex items-center bg-white px-2 py-2 rounded-full border border-surface-mist-dark">
-            <select
-              className="w-full text-[11px] font-semibold text-ink-teal-900 bg-transparent focus:outline-none cursor-pointer"
-              value={propertyType}
-              onChange={e => setPropertyType(e.target.value)}
-            >
-              <option value="">Tipo</option>
-              <option value="Finca">Finca</option>
-              <option value="Casa">Casa</option>
-              <option value="Apartamento">Apto</option>
-              <option value="Loft">Loft</option>
-              <option value="Cabaña">Cabaña</option>
-            </select>
-          </div>
-        </div>
+        </button>
       </div>
 
-      {/* Mobile DatePicker Modal overlay */}
-      {showDatePicker && (
-        <div className="md:hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-4 shadow-2xl relative w-full max-w-[360px]">
-            <button onClick={() => setShowDatePicker(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold z-10">✕</button>
-            <DayPicker
-              mode="range"
-              selected={dateRange}
-              onSelect={setDateRange}
-              locale={es}
-              classNames={{
-                selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
-                today: "font-bold text-accent-mango",
-              }}
-            />
-            <button onClick={() => setShowDatePicker(false)} className="mt-4 w-full bg-ink-teal-900 text-white font-bold py-3 rounded-xl transition-colors active:bg-[#0d635c]">Aplicar fechas</button>
-          </div>
-        </div>
-      )}
+
 
       {/* ── HERO BANNER SECTION ─────────────────────────────────────────── */}
       <div className="max-w-[1380px] mx-auto md:px-6">
-        <div className="mx-4 md:mx-0 rounded-3xl md:rounded-none relative h-[200px] md:h-[350px] overflow-hidden bg-black mt-2">
+        <div className="mx-4 md:mx-0 rounded-3xl md:rounded-none relative h-[120px] md:h-[240px] overflow-hidden bg-black mt-2">
           {/* Background Image (dynamic, with fade) */}
           <img 
             src={banners[activeBannerIndex]?.image_url || '/image_inicio_search.png'} 
@@ -497,25 +433,10 @@ export default function SearchPage() {
              />
           </div>
 
-          <div className="px-4 py-2 flex items-center justify-between rounded-r-full hover:bg-surface-mist transition-colors cursor-pointer focus-within:bg-surface-mist w-[180px]">
-            <div className="flex flex-col justify-center w-full">
-              <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Tipo</label>
-              <select
-                className="w-full text-sm font-medium text-ink-teal-900 bg-transparent focus:outline-none cursor-pointer"
-                value={propertyType}
-                onChange={e => setPropertyType(e.target.value)}
-              >
-                <option value="">Cualquiera</option>
-                <option value="Finca">Finca</option>
-                <option value="Casa">Casa</option>
-                <option value="Apartamento">Apartamento</option>
-                <option value="Loft">Loft</option>
-                <option value="Cabaña">Cabaña</option>
-              </select>
-            </div>
+          <div className="px-4 py-2 flex items-center justify-end rounded-r-full hover:bg-surface-mist transition-colors w-[80px]">
             <button 
               onClick={() => { setShowDatePicker(false); }}
-              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors ml-2 shadow-sm"
+              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-sm"
               aria-label="Buscar"
             >
               <Search className="w-4 h-4" />
@@ -568,25 +489,40 @@ export default function SearchPage() {
       </div>
       {/* ── CATEGORY BADGES ─────────────────────────── */}
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-4">
-        {/* Mobile: all 6 in one row */}
-        <div className="flex gap-1.5 sm:gap-2 sm:overflow-x-auto sm:no-scrollbar pb-2 justify-between sm:justify-start">
-          {CATEGORY_TABS.map(tab => {
-            const isActive = category === tab.id
-            return (
-              <button
-                key={tab.id}
-                onClick={() => { setCategory(tab.id); setQuery('') }}
-                className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
-                  isActive 
-                    ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
-                    : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
-                }`}
-              >
-                {tab.icon(isActive)}
-                <span className="leading-tight">{tab.label}</span>
-              </button>
-            )
-          })}
+        <div className="flex items-center gap-2">
+          {/* Categories Scroll */}
+          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between sm:justify-start">
+            {CATEGORY_TABS.map(tab => {
+              const isActive = category === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => { setCategory(tab.id); setQuery('') }}
+                  className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
+                    isActive 
+                      ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
+                      : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
+                  }`}
+                >
+                  {tab.icon(isActive)}
+                  <span className="leading-tight">{tab.label}</span>
+                </button>
+              )
+            })}
+          </div>
+          
+          {/* Filters Button */}
+          <button
+            onClick={() => setShowFiltersModal(true)}
+            className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all h-[42px] mb-2 shadow-sm flex-shrink-0 ${
+              propertyType || guestCount 
+                ? 'bg-[#0f766e] text-white border-[#0f766e]' 
+                : 'bg-white border-surface-mist-dark text-ink-teal-900 hover:bg-surface-mist'
+            }`}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+            <span className="hidden sm:inline">Filtros</span>
+          </button>
         </div>
       </div>
 
@@ -815,6 +751,121 @@ export default function SearchPage() {
           initialIndex={activeStoryIndex}
           onClose={() => setActiveStoryIndex(null)}
         />
+      )}
+
+      {/* ── MOBILE SEARCH MODAL ─────────────────────────── */}
+      {showMobileSearchModal && (
+        <div className="md:hidden fixed inset-0 z-50 bg-[#fafafa] flex flex-col animate-in slide-in-from-bottom-full duration-300">
+          <div className="flex items-center justify-between p-4 border-b border-surface-mist-dark bg-white">
+            <button onClick={() => setShowMobileSearchModal(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist text-ink-teal-900 font-bold">✕</button>
+            <span className="font-bold text-ink-teal-900">Buscar hospedaje</span>
+            <div className="w-8" />
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark">
+              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿A dónde quieres ir?</h2>
+              <div className="relative flex items-center bg-surface-mist px-4 py-3 rounded-2xl">
+                <Search className="w-5 h-5 text-text-muted-custom mr-2" />
+                <input 
+                  type="text" 
+                  placeholder="Destino" 
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="w-full text-base text-ink-teal-900 bg-transparent focus:outline-none"
+                />
+              </div>
+              {query.length > 0 && (
+                <div className="mt-4 flex flex-col gap-2">
+                  {uniqueLocations.filter(loc => normalize(loc).includes(normalize(query))).map((loc, idx) => (
+                    <button key={idx} onClick={() => setQuery(loc)} className="flex items-center gap-3 p-2 hover:bg-surface-mist rounded-xl text-left">
+                      <div className="w-10 h-10 rounded-full bg-surface-mist-dark flex items-center justify-center"><MapPin className="w-5 h-5 text-[#0f766e]" /></div>
+                      <span className="font-medium text-ink-teal-900">{loc}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark overflow-x-auto">
+              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿Cuándo?</h2>
+              <div className="flex justify-center">
+                <DayPicker
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  locale={es}
+                  classNames={{
+                    selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
+                    today: "font-bold text-accent-mango",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark">
+              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿Quiénes?</h2>
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-ink-teal-900">Huéspedes</span>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setGuestCount(Math.max(1, (guestCount as number || 1) - 1))} className="w-8 h-8 rounded-full border border-surface-mist-dark flex items-center justify-center text-ink-teal-900">-</button>
+                  <span className="w-4 text-center font-bold">{guestCount || 0}</span>
+                  <button onClick={() => setGuestCount((guestCount as number || 0) + 1)} className="w-8 h-8 rounded-full border border-surface-mist-dark flex items-center justify-center text-ink-teal-900">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 bg-white border-t border-surface-mist-dark flex items-center justify-between">
+            <button onClick={() => { setQuery(''); setDateRange(undefined); setGuestCount(''); }} className="font-bold text-ink-teal-900 underline">Limpiar</button>
+            <button onClick={() => setShowMobileSearchModal(false)} className="bg-accent-mango text-white font-bold py-3 px-8 rounded-xl shadow-md">Buscar</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── FILTERS MODAL (Desktop & Mobile) ─────────────────────────── */}
+      {showFiltersModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 shadow-2xl relative w-full max-w-md flex flex-col max-h-[90vh]">
+            <button onClick={() => setShowFiltersModal(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold z-10">✕</button>
+            <h2 className="text-xl font-bold text-ink-teal-900 mb-6">Filtros Avanzados</h2>
+            
+            <div className="flex-1 overflow-y-auto pr-2 flex flex-col gap-6">
+              <div>
+                <h3 className="font-bold text-ink-teal-900 mb-3">Tipo de vivienda</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {['Cualquiera', 'Casa', 'Apartamento', 'Finca', 'Loft', 'Cabaña'].map(t => {
+                    const isSelected = t === 'Cualquiera' ? propertyType === '' : propertyType === t
+                    return (
+                      <button 
+                        key={t}
+                        onClick={() => setPropertyType(t === 'Cualquiera' ? '' : t)}
+                        className={`p-3 rounded-xl border font-semibold text-sm transition-colors ${isSelected ? 'border-[#0f766e] bg-[#f0fdfa] text-[#0f766e]' : 'border-surface-mist-dark text-text-muted-custom hover:border-ink-teal-900'}`}
+                      >
+                        {t}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              <div className="hidden md:block">
+                <h3 className="font-bold text-ink-teal-900 mb-3">Capacidad</h3>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-text-muted-custom">Huéspedes mínimos</span>
+                  <div className="flex items-center gap-4">
+                    <button onClick={() => setGuestCount(Math.max(1, (guestCount as number || 1) - 1))} className="w-8 h-8 rounded-full border border-surface-mist-dark flex items-center justify-center text-ink-teal-900">-</button>
+                    <span className="w-4 text-center font-bold text-ink-teal-900">{guestCount || 0}</span>
+                    <button onClick={() => setGuestCount((guestCount as number || 0) + 1)} className="w-8 h-8 rounded-full border border-surface-mist-dark flex items-center justify-center text-ink-teal-900">+</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-between border-t border-surface-mist-dark pt-4">
+              <button onClick={() => { setPropertyType(''); setGuestCount(''); }} className="font-bold text-ink-teal-900 underline">Limpiar</button>
+              <button onClick={() => setShowFiltersModal(false)} className="bg-ink-teal-900 text-white font-bold py-3 px-8 rounded-xl shadow-md">Mostrar resultados</button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

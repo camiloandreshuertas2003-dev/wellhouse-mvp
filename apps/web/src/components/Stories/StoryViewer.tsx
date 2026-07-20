@@ -39,6 +39,12 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const [isMuted, setIsMuted] = useState(true)
+  const [liked, setLiked] = useState(false)
+
+  // Reset liked state when the story changes
+  useEffect(() => {
+    setLiked(false)
+  }, [currentStory?.id])
 
   const handleIframeLoad = () => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
@@ -47,6 +53,16 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
           '*'
         )
+
+        // If not iOS, unmute automatically
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        if (!isIOS) {
+          setIsMuted(false)
+          iframeRef.current?.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'unMute', args: '' }),
+            '*'
+          )
+        }
       }, 300)
     }
   }
@@ -158,7 +174,8 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           user_id: session.user.id,
           property_id: currentStory.property_id
         }, { onConflict: 'user_id,property_id' });
-        // Optional visual feedback
+        
+        setLiked(true);
         const btn = document.getElementById('like-btn-' + currentStory.id);
         if (btn) btn.classList.add('scale-125');
         setTimeout(() => { if (btn) btn.classList.remove('scale-125') }, 200);
@@ -228,7 +245,7 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           <iframe
             ref={iframeRef}
             key={currentStory.id}
-            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`}
+            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080&loop=0`}
             title="Host Story"
             className="w-full h-full object-cover"
             allow="autoplay; encrypted-media; picture-in-picture"
@@ -247,7 +264,7 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
               className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-sm transition-transform active:scale-95 border border-white/20 shadow-lg"
               title="Guardar en favoritos"
             >
-              <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+              <Heart className={`w-5 h-5 ${liked ? 'text-rose-500 fill-rose-500' : 'text-white'}`} />
             </button>
           </div>
 
