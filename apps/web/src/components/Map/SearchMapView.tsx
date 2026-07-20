@@ -30,6 +30,10 @@ interface SearchMapViewProps {
   searchKey?: string
   query?: string
   className?: string
+  searchAsMapMoves?: boolean
+  onSearchAsMapMovesChange?: (val: boolean) => void
+  onMapBoundsChange?: (bounds: { sw_lat: number, sw_lng: number, ne_lat: number, ne_lng: number } | null) => void
+  isMapLoading?: boolean
 }
 
 export default function SearchMapView({
@@ -39,6 +43,10 @@ export default function SearchMapView({
   searchKey,
   query,
   className = '',
+  searchAsMapMoves = false,
+  onSearchAsMapMovesChange,
+  onMapBoundsChange,
+  isMapLoading = false,
 }: SearchMapViewProps) {
   const mapRef = useRef<any>(null)
   const [selectedPin, setSelectedPin] = useState<MapPinData | null>(null)
@@ -50,19 +58,34 @@ export default function SearchMapView({
   const [bounds, setBounds] = useState<[number, number, number, number] | null>(null)
   const [showSearchHere, setShowSearchHere] = useState(false)
   const [hasScrolled, setHasScrolled] = useState(false)
+  const moveTimeout = useRef<NodeJS.Timeout | null>(null)
 
   // When map moves normally
   const handleMove = useCallback((evt: any) => {
     setViewport(evt.viewState)
-    setShowSearchHere(true)
+    if (!searchAsMapMoves) {
+      setShowSearchHere(true)
+    }
     if (evt.originalEvent) {
       setHasScrolled(true)
     }
     if (mapRef.current) {
       const b = mapRef.current.getBounds()
       setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()])
+      
+      if (searchAsMapMoves && onMapBoundsChange) {
+        if (moveTimeout.current) clearTimeout(moveTimeout.current)
+        moveTimeout.current = setTimeout(() => {
+          onMapBoundsChange({
+            sw_lat: b.getSouth(),
+            ne_lat: b.getNorth(),
+            sw_lng: b.getWest(),
+            ne_lng: b.getEast()
+          })
+        }, 400)
+      }
     }
-  }, [])
+  }, [searchAsMapMoves, onMapBoundsChange])
 
   // Auto pan animation
   useEffect(() => {
@@ -218,15 +241,50 @@ export default function SearchMapView({
         })}
       </MapGL>
 
-      {/* "Buscar en esta zona" button */}
-      {showSearchHere && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
+      {/* "Buscar en esta zona" button (only if toggle is off) */}
+      {showSearchHere && !searchAsMapMoves && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2">
           <button
             onClick={handleSearchHere}
             className="flex items-center gap-2 bg-white border border-surface-mist-dark shadow-lg px-4 py-2 rounded-full text-sm font-bold text-ink-teal-900 hover:bg-surface-mist transition-all active:scale-95"
           >
             <Search className="w-4 h-4" /> Buscar en esta zona
           </button>
+        </div>
+      )}
+
+      {/* "Buscar al mover el mapa" toggle */}
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+        <label className="flex items-center gap-2 bg-white/90 backdrop-blur-md border border-surface-mist-dark shadow-lg px-4 py-2 rounded-full text-sm font-bold text-ink-teal-900 cursor-pointer hover:bg-white transition-colors">
+          <input 
+            type="checkbox" 
+            checked={searchAsMapMoves}
+            onChange={(e) => {
+              const val = e.target.checked
+              onSearchAsMapMovesChange?.(val)
+              setShowSearchHere(!val)
+              if (val && mapRef.current && onMapBoundsChange) {
+                const b = mapRef.current.getBounds()
+                onMapBoundsChange({
+                  sw_lat: b.getSouth(),
+                  ne_lat: b.getNorth(),
+                  sw_lng: b.getWest(),
+                  ne_lng: b.getEast()
+                })
+              }
+            }}
+            className="w-4 h-4 rounded border-gray-300 text-ink-teal-900 focus:ring-ink-teal-900"
+          />
+          Buscar al mover el mapa
+        </label>
+      </div>
+
+      {/* Loading overlay when searching as map moves */}
+      {isMapLoading && searchAsMapMoves && (
+        <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] z-10 flex items-center justify-center">
+          <div className="bg-white p-3 rounded-full shadow-xl animate-pulse">
+            <div className="w-6 h-6 border-4 border-ink-teal-900 border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
       )}
 

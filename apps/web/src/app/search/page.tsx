@@ -61,6 +61,9 @@ export default function SearchPage() {
   const [showFiltersModal, setShowFiltersModal] = useState(false)
 
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const [activeSearch, setActiveSearch] = useState<{ query: string, dateRange?: DateRange, guestCount?: number | '' } | null>(null)
+  const [searchError, setSearchError] = useState<string | null>(null)
+
   const uniqueLocations = Array.from(new Set(realProps.map(p => p.location.split(',')[0].trim()))).filter(loc => loc !== '—').sort()
 
   // View mode: 'list' | 'map' | 'split'
@@ -68,6 +71,10 @@ export default function SearchPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [highlightedPinId, setHighlightedPinId] = useState<string | null>(null)
   const [visiblePinIds, setVisiblePinIds] = useState<string[] | null>(null)
+  
+  const [searchAsMapMoves, setSearchAsMapMoves] = useState(true)
+  const [mapBounds, setMapBounds] = useState<{ sw_lat: number, ne_lat: number, sw_lng: number, ne_lng: number } | null>(null)
+  const [isMapLoading, setIsMapLoading] = useState(false)
 
   // Hero banner state
   const [banners, setBanners] = useState<HeroBanner[]>([])
@@ -147,6 +154,7 @@ export default function SearchPage() {
   // Fetch published properties from Supabase
   useEffect(() => {
     async function loadData() {
+      setIsMapLoading(true)
       try {
         const { data: { user } } = await supabase.auth.getUser()
 
@@ -154,6 +162,14 @@ export default function SearchPage() {
           .from('properties')
           .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to, wellrank, latitude, longitude, users(avatar_url)')
           .eq('status', 'published')
+
+        if (searchAsMapMoves && mapBounds) {
+          queryBuilder = queryBuilder
+            .gte('latitude', mapBounds.sw_lat)
+            .lte('latitude', mapBounds.ne_lat)
+            .gte('longitude', mapBounds.sw_lng)
+            .lte('longitude', mapBounds.ne_lng)
+        }
 
         // Hide user's own properties
         if (user) {
@@ -201,14 +217,14 @@ export default function SearchPage() {
           setRealProps([])
         }
       } catch (err) {
-        console.error('Error fetching properties:', err)
-        setRealProps([])
+        console.error('Error loading properties:', err)
       } finally {
         setLoading(false)
+        setIsMapLoading(false)
       }
     }
     loadData()
-  }, [])
+  }, [searchAsMapMoves, mapBounds])
 
   const getCategoryProps = useCallback((catKey: string) => {
     return realProps.filter(p => {
@@ -237,12 +253,37 @@ export default function SearchPage() {
     })
   }, [realProps])
 
+  const executeSearch = () => {
+    setSearchError(null)
+    if (!query.trim()) {
+      setSearchError("Por favor, ingresa un destino.")
+      setTimeout(() => setSearchError(null), 3000)
+      return
+    }
+    if (!dateRange?.from || !dateRange?.to) {
+      setSearchError("Por favor, selecciona fechas de llegada y salida.")
+      setShowDatePicker(true)
+      setTimeout(() => setSearchError(null), 3000)
+      return
+    }
+    if (!guestCount) {
+      setSearchError("Por favor, ingresa la cantidad de huéspedes.")
+      setTimeout(() => setSearchError(null), 3000)
+      return
+    }
+    
+    setActiveSearch({ query, dateRange, guestCount })
+    setShowDatePicker(false)
+    setShowLocationDropdown(false)
+    setShowMobileSearchModal(false)
+  }
+
   const activeProps = category !== 'all' ? getCategoryProps(category) : realProps
 
   const normalize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
 
   const baseFilteredProps = activeProps.filter((p) => {
-    const q = normalize(debouncedQuery)
+    const q = activeSearch ? normalize(activeSearch.query) : ''
     const pTitle = normalize(p.title || '')
     const pLoc = normalize(p.location || '')
     
@@ -256,8 +297,9 @@ export default function SearchPage() {
        }
     }
 
+    const currentGuestCount = activeSearch ? activeSearch.guestCount : null
     const matchType = !propertyType || (p.type || '').toLowerCase().includes(propertyType.toLowerCase())
-    const matchGuests = !guestCount || p.capacity >= (guestCount as number)
+    const matchGuests = !currentGuestCount || p.capacity >= (currentGuestCount as number)
     return matchQ && matchType && matchGuests
   })
 
@@ -277,9 +319,9 @@ export default function SearchPage() {
     }))
     
   // searchKey is used to trigger map re-centering when search filters change
-  const searchKey = `${debouncedQuery}-${category}-${propertyType}-${guestCount}`
+  const searchKey = activeSearch ? `${activeSearch.query}-${category}-${propertyType}-${activeSearch.guestCount}` : `${category}-${propertyType}`
 
-  const isSearchActive = category !== 'all' || !!debouncedQuery
+  const isSearchActive = category !== 'all' || activeSearch !== null
 
   return (
     <div className="min-h-screen bg-[#fafafa] pb-24 md:pb-12">
@@ -455,14 +497,21 @@ export default function SearchPage() {
 
           <div className="px-4 py-2 flex items-center justify-end rounded-r-full hover:bg-surface-mist transition-colors w-[80px]">
             <button 
-              onClick={() => { setShowDatePicker(false); }}
-              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-sm"
+              onClick={executeSearch}
+              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-sm relative"
               aria-label="Buscar"
             >
               <Search className="w-4 h-4" />
             </button>
           </div>
         </div>
+        
+        {/* Error de validación flotante */}
+        {searchError && (
+          <div className="absolute top-[110%] left-1/2 -translate-x-1/2 bg-red-500 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg z-50 animate-in fade-in slide-in-from-top-2">
+            {searchError}
+          </div>
+        )}
         
         <div className="flex items-center justify-end gap-2 ml-auto" id="results-container">
           {visiblePinIds && (
@@ -477,6 +526,7 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('list');
+              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'list' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -487,6 +537,7 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('map');
+              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'map' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -497,6 +548,7 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('split');
+              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
             }}
             className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'split' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -679,6 +731,10 @@ export default function SearchPage() {
               onVisiblePinsChange={setVisiblePinIds}
               searchKey={searchKey}
               query={debouncedQuery}
+              searchAsMapMoves={searchAsMapMoves}
+              onSearchAsMapMovesChange={setSearchAsMapMoves}
+              onMapBoundsChange={setMapBounds}
+              isMapLoading={isMapLoading}
               className="h-[calc(100vh-280px)] min-h-[400px] w-full rounded-2xl"
             />
           )}
@@ -713,6 +769,10 @@ export default function SearchPage() {
                     onVisiblePinsChange={setVisiblePinIds}
                     searchKey={searchKey}
                     query={debouncedQuery}
+                    searchAsMapMoves={searchAsMapMoves}
+                    onSearchAsMapMovesChange={setSearchAsMapMoves}
+                    onMapBoundsChange={setMapBounds}
+                    isMapLoading={isMapLoading}
                     className="h-full w-full rounded-2xl"
                   />
                 </div>
@@ -856,8 +916,11 @@ export default function SearchPage() {
             </div>
           </div>
           <div className="p-4 bg-white border-t border-surface-mist-dark flex items-center justify-between">
-            <button onClick={() => { setQuery(''); setDateRange(undefined); setGuestCount(''); }} className="font-bold text-ink-teal-900 underline">Limpiar</button>
-            <button onClick={() => setShowMobileSearchModal(false)} className="bg-accent-mango text-white font-bold py-3 px-8 rounded-xl shadow-md">Buscar</button>
+            <button onClick={() => { setQuery(''); setDateRange(undefined); setGuestCount(''); setActiveSearch(null) }} className="font-bold text-ink-teal-900 underline">Limpiar</button>
+            <div className="flex flex-col items-end relative">
+              <button onClick={executeSearch} className="bg-accent-mango text-white font-bold py-3 px-8 rounded-xl shadow-md">Buscar</button>
+              {searchError && <span className="text-red-500 text-xs font-bold mt-1 absolute -top-5 right-0 whitespace-nowrap">{searchError}</span>}
+            </div>
           </div>
         </div>
       )}
@@ -913,7 +976,10 @@ export default function SearchPage() {
       <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30">
         <div className="flex items-center gap-1 bg-gray-900 rounded-full p-1 shadow-xl">
           <button
-            onClick={() => setViewMode('list')}
+            onClick={() => {
+              setViewMode('list')
+              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
+            }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
               viewMode === 'list' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
             }`}
@@ -921,7 +987,10 @@ export default function SearchPage() {
             <List className="w-4 h-4" /> Lista
           </button>
           <button
-            onClick={() => setViewMode('map')}
+            onClick={() => {
+              setViewMode('map')
+              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
+            }}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
               viewMode === 'map' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
             }`}
