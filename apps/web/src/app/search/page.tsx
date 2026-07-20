@@ -160,8 +160,8 @@ export default function SearchPage() {
 
         let queryBuilder = supabase
           .from('properties')
-          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to, wellrank, latitude, longitude, users(avatar_url)')
-          .eq('status', 'published')
+          .select('id, user_id, title, city, country, type, bedrooms, bathrooms, capacity, images, available_from, available_to, wellrank, latitude, longitude, users(avatar_url), property_photos(url, is_cover, order)')
+          .in('status', ['published', 'available'])
 
         if (searchAsMapMoves && mapBounds) {
           queryBuilder = queryBuilder
@@ -203,7 +203,15 @@ export default function SearchPage() {
             capacity: p.capacity || 2,
             rating: 0, 
             reviews: 0,
-            image: p.images?.[0] || 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+            image: (() => {
+              // Prefer images array, then cover photo from property_photos, then default
+              if (p.images?.[0]) return p.images[0]
+              const coverPhoto = p.property_photos?.find((ph: any) => ph.is_cover)?.url
+              if (coverPhoto) return coverPhoto
+              const firstPhoto = p.property_photos?.sort((a: any, b: any) => a.order - b.order)?.[0]?.url
+              if (firstPhoto) return firstPhoto
+              return 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'
+            })(),
             verified: false,
             isMock: false,
             wellRank: p.wellrank || calcWellRank(p.capacity || 2, p.bedrooms || 1, p.bathrooms || 1),
@@ -650,18 +658,21 @@ export default function SearchPage() {
 
           {/* Netflix-style rows per category */}
           {[
-            { id: 'playa', label: '🏖️ Playa y Costa' },
-            { id: 'urbano', label: '🏙️ Ciudad' },
-            { id: 'montana', label: '🏔️ Montaña' },
-            { id: 'fincas', label: '🌿 Campo y Fincas' },
-            { id: 'exclusivo', label: '✨ Exclusivo' },
-          ].map(({ id, label }) => {
+            { id: 'playa', label: 'Playa y Costa', Icon: Waves },
+            { id: 'urbano', label: 'Ciudad', Icon: Building },
+            { id: 'montana', label: 'Montaña', Icon: Mountain },
+            { id: 'fincas', label: 'Campo y Fincas', Icon: Trees },
+            { id: 'exclusivo', label: 'Exclusivo', Icon: Sparkles },
+          ].map(({ id, label, Icon }) => {
             const catProps = realProps.filter(p => (p.type || '').toLowerCase() === id)
             if (catProps.length === 0) return null
             return (
               <div key={id}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900">{label}</h2>
+                  <div className="flex items-center gap-2">
+                    <Icon className="w-4 h-4 text-[#0f766e]" />
+                    <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900">{label}</h2>
+                  </div>
                   <button
                     onClick={() => setCategory(id)}
                     className="text-xs sm:text-sm font-bold text-[#0f766e] hover:underline whitespace-nowrap"
@@ -669,9 +680,9 @@ export default function SearchPage() {
                     Ver todos →
                   </button>
                 </div>
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3">
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3 -mx-1 px-1">
                   {catProps.map((p, idx) => (
-                    <div key={p.id} className="flex-shrink-0 w-[260px] sm:w-[280px]">
+                    <div key={p.id} className="flex-shrink-0 w-[220px] sm:w-[260px] md:w-[280px]">
                       <PropertyCard property={p} variant="carousel" isPriority={idx < 4} />
                     </div>
                   ))}
@@ -680,10 +691,13 @@ export default function SearchPage() {
             )
           })}
 
-          {/* If all categories empty - show all */}
+          {/* Fallback: show all if nothing matches categories */}
           {realProps.length > 0 && !['playa','urbano','montana','fincas','exclusivo'].some(id => realProps.some(p => (p.type||'').toLowerCase() === id)) && (
             <div>
-              <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900 mb-3">🏡 Todas las viviendas</h2>
+              <div className="flex items-center gap-2 mb-3">
+                <Home className="w-4 h-4 text-[#0f766e]" />
+                <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900">Todas las viviendas</h2>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 {realProps.map((p, idx) => (
                   <PropertyCard key={p.id} property={p} isPriority={idx < 5} />
