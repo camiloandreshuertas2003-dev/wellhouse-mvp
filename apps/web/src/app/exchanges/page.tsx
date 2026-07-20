@@ -106,7 +106,7 @@ export default function ExchangesPage() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()
+      const { data: profile } = await (supabase as any).from('users').select('*').eq('id', data.user.id).maybeSingle()
       setUser(profile || data.user)
       fetchExchanges(data.user.id)
     })

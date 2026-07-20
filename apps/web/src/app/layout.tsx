@@ -2,7 +2,6 @@ import { Inter, Fraunces, IBM_Plex_Mono } from 'next/font/google'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import { NotificationsProvider } from '@/components/notifications/NotificationsProvider'
-import WellBotBubble from '@/components/WellBot/WellBotBubble'
 import './globals.css'
 
 const inter = Inter({ 
@@ -46,7 +45,6 @@ export default function RootLayout({
         <NotificationsProvider>
           <Navbar />
           {children}
-          <WellBotBubble />
         </NotificationsProvider>
       </body>
     </html>

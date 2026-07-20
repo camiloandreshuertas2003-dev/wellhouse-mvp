@@ -77,7 +77,7 @@ function MessagesContent() {
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data.user) {
-        const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()
+        const { data: profile } = await (supabase as any).from('users').select('*').eq('id', data.user.id).maybeSingle()
         const u = profile || data.user
         setUser(u)
         fetchConversations(data.user.id)
@@ -94,7 +94,7 @@ function MessagesContent() {
 
     if (data) {
       // fetch last message + unread count for each conversation
-      const convIds = data.map(c => c.id)
+      const convIds = data.map((c: any) => c.id)
 
       // Get last messages for all convs
       const { data: lastMsgs } = await supabase
@@ -106,7 +106,7 @@ function MessagesContent() {
       const lMap: Record<string, { content: string; created_at: string }> = {}
       const uMap: Record<string, number> = {}
 
-      lastMsgs?.forEach(m => {
+      lastMsgs?.forEach((m: any) => {
         if (!lMap[m.conversation_id]) {
           lMap[m.conversation_id] = {
             content: m.message_type === 'proposal' ? '📋 Propuesta enviada' : m.content,
@@ -123,7 +123,7 @@ function MessagesContent() {
       setUnreadMap(uMap)
 
       // Sort: paid users first (pinned), then by most recent updated_at
-      const sorted = [...data].sort((a, b) => {
+      const sorted = [...data].sort((a: any, b: any) => {
         const otherA = a.participant_a.id === userId ? a.participant_b : a.participant_a
         const otherB = b.participant_a.id === userId ? b.participant_b : b.participant_a
         const aPaid = otherA?.plan === 'monthly_pass' ? 1 : 0
@@ -138,7 +138,7 @@ function MessagesContent() {
       setConversations(sorted)
 
       if (conversationIdParam) {
-        const found = data.find(c => c.id === conversationIdParam)
+        const found = data.find((c: any) => c.id === conversationIdParam)
         if (found) loadConversation(found, userId)
       }
     }
@@ -162,9 +162,9 @@ function MessagesContent() {
         // If message is in active conversation, add it to messages
         if (activeConv && msg.conversation_id === activeConv.id && msg.sender_id !== user.id) {
           setMessages(prev => [...prev, msg])
-          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+          ;(setTimeout as any)(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
           // mark as read immediately since we're viewing it
-          supabase.from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id).then(() => {})
+          (supabase as any).from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id).then(() => {})
         } else if (msg.sender_id !== user.id) {
           // increment unread
           setUnreadMap(prev => ({ ...prev, [msg.conversation_id]: (prev[msg.conversation_id] || 0) + 1 }))
@@ -216,7 +216,7 @@ function MessagesContent() {
 
     // Mark all unread messages as read
     if (uid) {
-      supabase.from('messages')
+      (supabase as any).from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('conversation_id', conv.id)
         .neq('sender_id', uid)
@@ -242,7 +242,7 @@ function MessagesContent() {
       setActiveExchange(null)
     }
 
-    setTimeout(() => {
+;(setTimeout as any)(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
       inputRef.current?.focus()
     }, 150)
@@ -255,7 +255,7 @@ function MessagesContent() {
     const txt = input.trim()
     setInput('')
 
-    const { data: newMsg } = await supabase.from('messages').insert({
+    const { data: newMsg } = await (supabase as any).from('messages').insert({
       conversation_id: activeConv.id,
       sender_id: user.id,
       content: txt,
@@ -264,13 +264,13 @@ function MessagesContent() {
 
     if (newMsg) {
       setMessages(prev => [...prev, newMsg])
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+;(setTimeout as any)(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
       // Update last msg map
       setLastMsgMap(prev => ({ ...prev, [activeConv.id]: { content: txt, created_at: newMsg.created_at } }))
 
       const other = getOtherParticipant(activeConv)
       if (other?.id) {
-        supabase.from('notifications').insert({
+        (supabase as any).from('notifications').insert({
           user_id: other.id,
           actor_id: user.id,
           type: 'message',
@@ -285,7 +285,7 @@ function MessagesContent() {
   // ── send proposal ─────────────────────────────────────────────────────────────
   const handleSendProposal = async (proposalData: any) => {
     setComposingProposal(false)
-    const { data: newProp } = await supabase.from('proposals').insert({
+    const { data: newProp } = await (supabase as any).from('proposals').insert({
       ...proposalData,
       conversation_id: activeConv.id,
       created_by: user.id
@@ -293,10 +293,10 @@ function MessagesContent() {
 
     if (newProp) {
       setProposals(prev => [...prev, newProp])
-      await supabase.from('conversations').update({ status: 'proposal_sent' }).eq('id', activeConv.id)
+      await (supabase as any).from('conversations').update({ status: 'proposal_sent' }).eq('id', activeConv.id)
       setActiveConv({ ...activeConv, status: 'proposal_sent' })
 
-      const { data: newMsg } = await supabase.from('messages').insert({
+      const { data: newMsg } = await (supabase as any).from('messages').insert({
         conversation_id: activeConv.id,
         sender_id: user.id,
         content: newProp.id,
@@ -305,11 +305,11 @@ function MessagesContent() {
 
       if (newMsg) {
         setMessages(prev => [...prev, newMsg])
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+;(setTimeout as any)(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
 
         const other = getOtherParticipant(activeConv)
         if (other?.id) {
-          supabase.from('notifications').insert({
+          (supabase as any).from('notifications').insert({
             user_id: other.id,
             actor_id: user.id,
             type: 'proposal',
@@ -324,7 +324,7 @@ function MessagesContent() {
 
   // ── accept / reject proposal ──────────────────────────────────────────────────
   const handleAcceptProposal = async (prop: any) => {
-    const { error } = await supabase.rpc('accept_proposal', { p_proposal_id: prop.id })
+    const { error } = await (supabase as any).rpc('accept_proposal', { p_proposal_id: prop.id })
     if (!error) {
       setProposals(proposals.map(p => p.id === prop.id ? { ...p, status: 'accepted' } : p))
       setActiveConv({ ...activeConv, status: 'confirmed' })
@@ -332,8 +332,8 @@ function MessagesContent() {
 
       const other = getOtherParticipant(activeConv)
       if (other?.id) {
-        supabase.from('users').select('email, name').eq('id', other.id).maybeSingle()
-          .then(({ data: userData }) => {
+        (supabase as any).from('users').select('email, name').eq('id', other.id).maybeSingle()
+          .then(({ data: userData }: any) => {
             if (userData?.email) {
               fetch('/api/send-email', {
                 method: 'POST',
@@ -346,7 +346,7 @@ function MessagesContent() {
               }).catch(() => {})
             }
 
-            supabase.from('notifications').insert({
+            (supabase as any).from('notifications').insert({
               user_id: other.id,
               actor_id: user.id,
               type: 'proposal_accepted',
@@ -362,10 +362,10 @@ function MessagesContent() {
   }
 
   const handleRejectProposal = async (prop: any) => {
-    const { error } = await supabase.from('proposals').update({ status: 'rejected' }).eq('id', prop.id)
+    const { error } = await (supabase as any).from('proposals').update({ status: 'rejected' }).eq('id', prop.id)
     if (!error) {
       setProposals(proposals.map(p => p.id === prop.id ? { ...p, status: 'rejected' } : p))
-      await supabase.from('conversations').update({ status: 'chatting' }).eq('id', activeConv.id)
+      await (supabase as any).from('conversations').update({ status: 'chatting' }).eq('id', activeConv.id)
       setActiveConv({ ...activeConv, status: 'chatting' })
     }
   }
@@ -374,8 +374,8 @@ function MessagesContent() {
     e.preventDefault()
     if (!cardNumber || !cardExpiry || !cardCvv || !user) return
     setPaying(true)
-    await new Promise(r => setTimeout(r, 1500))
-    const { error } = await supabase.from('users').update({ plan: 'monthly_pass' }).eq('id', user.id)
+    await new Promise(r => (setTimeout as any)(r, 1500))
+    const { error } = await (supabase as any).from('users').update({ plan: 'monthly_pass' }).eq('id', user.id)
     setPaying(false)
     if (!error) {
       setUser({ ...user, plan: 'monthly_pass' })

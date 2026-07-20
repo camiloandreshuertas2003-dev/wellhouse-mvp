@@ -79,7 +79,7 @@ function DashboardContent() {
         .maybeSingle()
       
       if (!questDone) {
-        await supabase.rpc('complete_quest', {
+        await (supabase as any).rpc('complete_quest', {
           p_user_id: authUser.id,
           p_quest_key: 'login',
           p_reward_points: 50
@@ -95,7 +95,7 @@ function DashboardContent() {
     // WellPoints balance
     let userPoints = 0
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('wellpoint_balances').select('current_balance')
         .eq('user_id', authUser.id).maybeSingle()
       if (data) userPoints = data.current_balance
@@ -104,7 +104,7 @@ function DashboardContent() {
     // Member level
     let userLevel = 'newcomer'
     try {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from('member_levels').select('level')
         .eq('user_id', authUser.id).maybeSingle()
       if (data) userLevel = data.level
@@ -135,7 +135,7 @@ function DashboardContent() {
           id: authUser.id, email: authUser.email || '',
           name, role: 'user', plan: 'free', status: 'active', trust_index: 0,
         }
-        await supabase.from('users').insert(defaultUser)
+        await (supabase as any).from('users').insert(defaultUser)
         meta = { name, bio: '', avatar_url: '', phone: '', is_verified: false, trust_index: 0 }
       } else {
         meta = userData
@@ -627,7 +627,7 @@ function DiscoverCarousel() {
       .eq('status', 'published').limit(8)
       .then(({ data }) => {
         if (data?.length) {
-          setProps(data.map((p, i) => ({
+          setProps(data.map((p: any, i) => ({
             id: p.id,
             title: p.title,
             location: `${p.city || '—'}, ${p.country || '—'}`,
@@ -767,7 +767,7 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
       let ratingStr = '—'
       if (revs && revs.length > 0) {
-        const avg = revs.reduce((acc, curr) => acc + (curr.rating || 0), 0) / revs.length
+        const avg = revs.reduce((acc, curr: any) => acc + (curr.rating || 0), 0) / revs.length
         ratingStr = avg.toFixed(1)
       }
 
@@ -788,7 +788,7 @@ function MyPropertyTab({ property, loadingProperty }: { property: Property | nul
 
     setIsDeleting(true)
     try {
-      const { error } = await supabase.from('properties').delete().eq('id', property.id)
+      const { error } = await (supabase as any).from('properties').delete().eq('id', property.id)
       if (error) throw error
       alert('Vivienda eliminada exitosamente.')
       window.location.reload()
@@ -913,7 +913,7 @@ function ExchangesTab({ hasProperty, userId, exchanges }: { hasProperty: boolean
     })
     const json = await res.json()
     if (!res.ok) { alert(json.error || 'Error'); setActionLoading(null); return }
-    const { data } = await supabase.from('exchanges').select('*')
+    const { data } = await (supabase as any).from('exchanges').select('*')
       .or(`host_id.eq.${userId},guest_id.eq.${userId}`)
       .order('created_at', { ascending: false })
     setList(data || [])
@@ -1203,7 +1203,7 @@ function SettingsTab({
     setSaving(true)
     setMessage(null)
     try {
-      const { error: updateErr } = await supabase
+      const { error: updateErr } = await (supabase as any)
         .from('users')
         .update({ 
           name, 
@@ -1228,7 +1228,7 @@ function SettingsTab({
     setPaymentLoading(true)
     try {
       // Simular transacción de pago de $15 USD
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('users')
         .update({ is_verified: true, trust_index: 3 })
         .eq('id', userId)
@@ -1236,7 +1236,7 @@ function SettingsTab({
       if (error) throw error
 
       // Call the RPC to give points
-      await supabase.rpc('complete_quest', {
+      await (supabase as any).rpc('complete_quest', {
         p_user_id: userId,
         p_quest_key: 'verify_identity',
         p_reward_points: 150
@@ -1484,8 +1484,8 @@ function QuestsTab({ userId, onComplete }: { userId: string, onComplete: () => v
         .eq('user_id', userId)
       
       const completedKeys = (userQuests || [])
-        .filter(q => q.status === 'completed')
-        .map(q => q.quest_key)
+        .filter((q: any) => q.status === 'completed')
+        .map((q: any) => q.quest_key)
 
       const defaultQuests: Quest[] = [
         {
@@ -1614,7 +1614,7 @@ function StoriesTab({ property, userId }: { property: Property | null; userId: s
     const locationTags = `${property.city}, ${property.country}`
 
     try {
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('host_stories')
         .insert({
           property_id: property.id,

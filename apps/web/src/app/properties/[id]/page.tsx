@@ -217,7 +217,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
         return
       }
       
-      const { data } = await supabase
+      const { data }: { data: any } = await supabase
         .from('properties')
         .select('*, users!user_id(id, name, avatar_url, is_verified, trust_index, bio, created_at, email)')
         .eq('id', params.id)
@@ -226,13 +226,13 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
 
       // Increment views count if visitor is not the owner
       if (data && user && data.user_id !== user.id) {
-        supabase.from('properties')
+        (supabase as any).from('properties')
           .update({ views: (data.views || 0) + 1 })
           .eq('id', data.id)
           .then(() => {})
 
         // Insert a notification for the host
-        supabase.from('notifications').insert({
+        (supabase as any).from('notifications').insert({
           user_id: data.user_id,
           actor_id: user.id,
           type: 'view',
@@ -289,7 +289,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       return
     }
 
-    const { data, error } = await supabase.from('property_questions').insert({
+    const { data, error } = await (supabase as any).from('property_questions').insert({
       property_id: property.id,
       user_id: currentUser.id,
       question: newQuestion.trim()
@@ -300,7 +300,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       setNewQuestion('')
       
       if (property.user_id) {
-        supabase.from('notifications').insert({
+        (supabase as any).from('notifications').insert({
           user_id: property.user_id,
           actor_id: currentUser.id,
           type: 'qa_question',
@@ -327,7 +327,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       return
     }
     
-    const { error } = await supabase.from('property_questions').update({
+    const { error } = await (supabase as any).from('property_questions').update({
       answer: answerText.trim(),
       answered_at: new Date().toISOString()
     }).eq('id', qId)
@@ -338,7 +338,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       
       const questionData = questions.find(q => q.id === qId)
       if (questionData && questionData.user_id) {
-        supabase.from('notifications').insert({
+        (supabase as any).from('notifications').insert({
           user_id: questionData.user_id,
           actor_id: currentUser.id,
           type: 'qa_answer',
@@ -408,7 +408,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       setBookError(`La propiedad solo está disponible hasta el ${property.available_to}`); return
     }
 
-    const { data: bal } = await supabase
+    const { data: bal }: { data: any } = await supabase
       .from('wellpoint_balances')
       .select('current_balance')
       .eq('user_id', user.id)
@@ -421,7 +421,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     }
 
     setSubmitting(true)
-    const { error: insertError } = await supabase.from('exchanges').insert({
+    const { error: insertError } = await (supabase as any).from('exchanges').insert({
       host_id: property.user_id,
       guest_id: user.id,
       host_property_id: isMock ? null : params.id,
@@ -433,7 +433,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     })
 
     if (!insertError && property.user_id) {
-      supabase.from('notifications').insert({
+      (supabase as any).from('notifications').insert({
         user_id: property.user_id,
         actor_id: user.id,
         type: 'exchange_request',
@@ -447,11 +447,11 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     let conversationId = null;
     if (!insertError && property.user_id) {
       const [u1, u2] = [user.id, property.user_id].sort()
-      const { data: conv } = await supabase.from('conversations')
+      const { data: conv } = await (supabase as any).from('conversations')
         .select('id').eq('participant_a', u1).eq('participant_b', u2).maybeSingle()
       
       if (!conv) {
-        const { data: newConv } = await supabase.from('conversations').insert({ participant_a: u1, participant_b: u2, property_id: params.id }).select().single()
+        const { data: newConv } = await (supabase as any).from('conversations').insert({ participant_a: u1, participant_b: u2, property_id: params.id }).select().single()
         conversationId = newConv?.id
       } else {
         conversationId = conv.id
@@ -459,14 +459,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       
       // Insert the initial free message
       if (conversationId && initialMessage.trim()) {
-        await supabase.from('messages').insert({
+        await (supabase as any).from('messages').insert({
           conversation_id: conversationId,
           sender_id: user.id,
           content: initialMessage.trim(),
           is_priority: false
         })
         
-        await supabase.from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
+        await (supabase as any).from('conversations').update({ updated_at: new Date().toISOString() }).eq('id', conversationId)
       }
       
       if (conversationId) {

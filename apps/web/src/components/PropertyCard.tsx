@@ -27,9 +27,10 @@ export interface PropertyCardData {
 interface PropertyCardProps {
   property: PropertyCardData
   variant?: 'grid' | 'carousel'
+  isPriority?: boolean
 }
 
-export default function PropertyCard({ property, variant = 'grid' }: PropertyCardProps) {
+export default function PropertyCard({ property, variant = 'grid', isPriority = false }: PropertyCardProps) {
   const [imgError, setImgError] = useState(false)
   const [isLiked, setIsLiked] = useState(property.isFavorite || false)
 
@@ -44,12 +45,12 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
       if (!user) return
 
       if (nextState) {
-        await supabase.from('favorites').insert({
+        await (supabase as any).from('favorites').insert({
           user_id: user.id,
           property_id: property.id
         })
       } else {
-        await supabase.from('favorites')
+        await (supabase as any).from('favorites')
           .delete()
           .eq('user_id', user.id)
           .eq('property_id', property.id)
@@ -78,7 +79,7 @@ export default function PropertyCard({ property, variant = 'grid' }: PropertyCar
             alt={property.title}
             className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500"
             onError={() => setImgError(true)}
-            loading="lazy"
+            loading={isPriority ? "eager" : "lazy"}
           />
         )}
 

@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { 
   Users, AlertOctagon, FileCheck, DollarSign, Ban, CheckCircle, 
-  XCircle, ExternalLink, ShieldAlert, BarChart3, TrendingUp, CreditCard, ArrowLeft, Image, Plus, Trash2, Eye, EyeOff
+  XCircle, ExternalLink, ShieldAlert, BarChart3, TrendingUp, CreditCard, ArrowLeft, Image, Plus, Trash2, Eye, EyeOff, Bot
 } from 'lucide-react'
 import Link from 'next/link'
 
-type TabType = 'stats' | 'users' | 'reports' | 'verifications' | 'banners'
+type TabType = 'stats' | 'users' | 'reports' | 'verifications' | 'banners' | 'wellbot'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -23,6 +23,7 @@ export default function AdminPage() {
   const [verifications, setVerifications] = useState<any[]>([])
   const [purchases, setPurchases] = useState<any[]>([])
   const [currentUser, setCurrentUser] = useState<any>(null)
+  const [insights, setInsights] = useState<any[]>([])
 
   // Status updates
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -41,14 +42,14 @@ export default function AdminPage() {
           return
         }
 
-        const { data: userProfile, error } = await supabase
+        const { data: profile, error } = await supabase
           .from('users')
           .select('*')
           .eq('id', session.user.id)
           .single()
-
+        const userProfile = profile as any;
         if (error || !userProfile) {
-          router.push('/login')
+          router.push('/')
           return
         }
 
@@ -110,6 +111,13 @@ export default function AdminPage() {
         .order('created_at', { ascending: false })
       if (purchasesData) setPurchases(purchasesData)
 
+      // 5. Fetch assistant insights
+      const { data: insightsData } = await supabase
+        .from('assistant_insights')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (insightsData) setInsights(insightsData)
+
     } catch (err) {
       console.error('Error loading dashboard data:', err)
     } finally {
@@ -129,7 +137,7 @@ export default function AdminPage() {
   async function handleAddBanner() {
     if (!newBanner.title || !newBanner.image_url) return
     setBannerSaving(true)
-    const { error } = await supabase.from('hero_banners').insert({
+    const { error } = await ((supabase as any).from('hero_banners') as any).insert({
       ...newBanner,
       order_index: banners.length + 1,
       is_active: true
@@ -144,13 +152,13 @@ export default function AdminPage() {
   }
 
   async function handleToggleBanner(id: string, isActive: boolean) {
-    await supabase.from('hero_banners').update({ is_active: !isActive }).eq('id', id)
+    await ((supabase as any).from('hero_banners') as any).update({ is_active: !isActive }).eq('id', id)
     setBanners(prev => prev.map(b => b.id === id ? { ...b, is_active: !isActive } : b))
   }
 
   async function handleDeleteBanner(id: string) {
     if (!confirm('¿Eliminar este banner?')) return
-    await supabase.from('hero_banners').delete().eq('id', id)
+    await ((supabase as any).from('hero_banners') as any).delete().eq('id', id)
     setBanners(prev => prev.filter(b => b.id !== id))
   }
 
@@ -160,7 +168,7 @@ export default function AdminPage() {
     setActionLoading(`ban-${userId}`)
     const nextStatus = currentStatus === 'banned' ? 'active' : 'banned'
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('users')
         .update({ status: nextStatus })
         .eq('id', userId)
@@ -177,7 +185,7 @@ export default function AdminPage() {
   const handleResolveReport = async (reportId: string) => {
     setActionLoading(`resolve-${reportId}`)
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('reports')
         .update({ status: 'resolved', resolved_at: new Date().toISOString() })
         .eq('id', reportId)
@@ -196,7 +204,7 @@ export default function AdminPage() {
     const status = approve ? 'approved' : 'rejected'
     try {
       // 1. Update verification record
-      const { error: verifError } = await supabase
+      const { error: verifError } = await (supabase as any)
         .from('user_verifications')
         .update({ 
           status, 
@@ -208,8 +216,7 @@ export default function AdminPage() {
 
       // 2. If approved, verify the user's profile
       if (approve) {
-        const { error: userError } = await supabase
-          .from('users')
+        const { error: userError } = await (supabase as any).from('users')
           .update({ is_verified: true, trust_index: 100 })
           .eq('id', userId)
 
@@ -298,6 +305,7 @@ export default function AdminPage() {
             { id: 'reports', label: `Reportes (${pendingReports} pendientes)`, icon: AlertOctagon },
             { id: 'verifications', label: `Manuales y Verificaciones (${pendingVerifications} pendientes)`, icon: FileCheck },
             { id: 'banners', label: 'Banners del Hero', icon: Image },
+            { id: 'wellbot', label: 'WellBot (BI)', icon: Bot },
           ].map(tab => {
             const Icon = tab.icon
             const isActive = activeTab === tab.id
@@ -762,6 +770,95 @@ export default function AdminPage() {
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: WELLBOT (BI) */}
+        {activeTab === 'wellbot' && (
+          <div className="space-y-8">
+            <header className="mb-8">
+              <h2 className="text-3xl font-fraunces font-bold text-ink-teal-900">WellBot - Inteligencia de Negocio</h2>
+              <p className="text-text-muted-custom">Análisis de las interacciones de los usuarios con el asistente.</p>
+            </header>
+
+            {/* KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-surface-mist-dark">
+                <h3 className="text-sm font-semibold text-text-muted-custom uppercase mb-2">Total Analizadas</h3>
+                <p className="text-3xl font-bold text-ink-teal-900">{insights.length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-surface-mist-dark">
+                <h3 className="text-sm font-semibold text-text-muted-custom uppercase mb-2">Resolución</h3>
+                <p className="text-3xl font-bold text-emerald-600">
+                  {Math.round((insights.filter(i => i.resolved).length / Math.max(insights.length, 1)) * 100)}%
+                </p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-surface-mist-dark">
+                <h3 className="text-sm font-semibold text-text-muted-custom uppercase mb-2">Quejas (Alta Prioridad)</h3>
+                <p className="text-3xl font-bold text-red-600">{insights.filter(i => i.is_complaint).length}</p>
+              </div>
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-surface-mist-dark">
+                <h3 className="text-sm font-semibold text-text-muted-custom uppercase mb-2">Dudas No Resueltas</h3>
+                <p className="text-3xl font-bold text-amber-600">{insights.filter(i => i.unanswered_question).length}</p>
+              </div>
+            </div>
+
+            {/* Content Grids */}
+            <div className="grid lg:grid-cols-2 gap-8">
+              
+              {/* Dudas No Resueltas */}
+              <div className="bg-white rounded-2xl shadow-sm border border-surface-mist-dark overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-surface-mist-dark bg-surface-mist/30">
+                  <h3 className="text-lg font-bold text-ink-teal-900">Cola de Dudas No Resueltas</h3>
+                  <p className="text-xs text-text-muted-custom">Agrega estas respuestas al System Prompt (el Cerebro) para que WellBot aprenda.</p>
+                </div>
+                <div className="p-6 flex-1 overflow-y-auto max-h-[500px] space-y-4">
+                  {insights.filter(i => i.unanswered_question).length === 0 ? (
+                    <p className="text-sm text-text-muted-custom text-center py-8">No hay dudas pendientes. ¡WellBot sabe todo!</p>
+                  ) : (
+                    insights.filter(i => i.unanswered_question).map(u => (
+                      <div key={u.id} className="p-4 border border-amber-500/30 bg-amber-500/5 rounded-xl">
+                        <p className="font-semibold text-ink-teal-900 text-sm mb-2">"{u.unanswered_question}"</p>
+                        <div className="flex justify-between items-center mt-3">
+                          <span className="text-[10px] text-text-muted-custom">Chat ID: {u.conversation_id}</span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Sugerencias y Quejas */}
+              <div className="bg-white rounded-2xl shadow-sm border border-surface-mist-dark overflow-hidden flex flex-col">
+                <div className="p-6 border-b border-surface-mist-dark bg-surface-mist/30">
+                  <h3 className="text-lg font-bold text-ink-teal-900">Feedback de Producto</h3>
+                  <p className="text-xs text-text-muted-custom">Funcionalidades pedidas por usuarios y quejas extraídas.</p>
+                </div>
+                <div className="p-6 flex-1 overflow-y-auto max-h-[500px] space-y-6">
+                  <div>
+                    <h4 className="font-bold text-sm text-ink-teal-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 block"></span> Feature Requests ({insights.filter(i => i.is_feature_request).length})
+                    </h4>
+                    {insights.filter(i => i.is_feature_request).map(f => (
+                      <div key={f.id} className="text-sm text-text-muted-custom mb-2 border-b border-surface-mist-dark pb-2 last:border-0">
+                        <p>En el chat {f.conversation_id.slice(0, 8)}...</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-sm text-ink-teal-900 mb-3 flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-red-600 block"></span> Quejas ({insights.filter(i => i.is_complaint).length})
+                    </h4>
+                    {insights.filter(i => i.is_complaint).map(c => (
+                      <div key={c.id} className="text-sm text-red-700/80 mb-2 border-b border-red-100 pb-2 last:border-0 bg-red-50 p-2 rounded">
+                        <p>Revisar chat urgente: {c.conversation_id}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         )}

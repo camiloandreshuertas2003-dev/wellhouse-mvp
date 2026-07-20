@@ -92,7 +92,7 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        await supabase.from('story_dislikes').insert({
+        await (supabase as any).from('story_dislikes').insert({
           user_id: session.user.id,
           story_id: currentStory.id
         });

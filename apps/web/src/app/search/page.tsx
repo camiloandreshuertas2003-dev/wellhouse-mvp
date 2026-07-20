@@ -156,7 +156,7 @@ export default function SearchPage() {
         let favSet = new Set<string>()
         if (user) {
           try {
-            const { data: favs } = await supabase.from('favorites').select('property_id').eq('user_id', user.id)
+            const { data: favs } = await (supabase as any).from('favorites').select('property_id').eq('user_id', user.id)
             if (favs) {
               favs.forEach((f: any) => favSet.add(f.property_id))
             }
@@ -558,10 +558,9 @@ export default function SearchPage() {
               </button>
             </div>
 
-            {/* Properties Horizontal Scroll */}
             <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-              {realProps.map(p => (
-                <PropertyCard key={p.id} property={p} variant="carousel" />
+              {realProps.map((p, idx) => (
+                <PropertyCard key={p.id} property={p} variant="carousel" isPriority={idx < 4} />
               ))}
             </div>
           </div>
@@ -628,13 +627,13 @@ export default function SearchPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {listProps.map(p => (
+                    {listProps.map((p, idx) => (
                       <div
                         key={p.id}
                         onMouseEnter={() => setHighlightedPinId(p.id)}
                         onMouseLeave={() => setHighlightedPinId(null)}
                       >
-                        <PropertyCard property={p} />
+                        <PropertyCard property={p} isPriority={idx < 4} />
                       </div>
                     ))}
                   </div>
@@ -668,13 +667,13 @@ export default function SearchPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-6">
-                {listProps.map(p => (
+                {listProps.map((p, idx) => (
                   <div
                     key={p.id}
                     onMouseEnter={() => setHighlightedPinId(p.id)}
                     onMouseLeave={() => setHighlightedPinId(null)}
                   >
-                    <PropertyCard property={p} />
+                    <PropertyCard property={p} isPriority={idx < 4} />
                   </div>
                 ))}
               </div>

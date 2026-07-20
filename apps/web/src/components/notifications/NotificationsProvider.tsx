@@ -49,13 +49,13 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
   // Fetch initial notifications
   useEffect(() => {
     const fetchNotifications = async () => {
-      const { data: sessionData } = await supabase.auth.getSession()
+      const { data: sessionData } = await (supabase as any).auth.getSession()
       const user = sessionData?.session?.user
       if (!user) return
 
       setUserId(user.id)
 
-      const { data, error } = await supabase
+      const { data, error }: { data: any, error: any } = await (supabase as any)
         .from('notifications')
         .select('*')
         .eq('user_id', user.id)
@@ -64,7 +64,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
       if (data && !error) {
         setNotifications(data)
-        setUnreadCount(data.filter(n => !n.is_read).length)
+        setUnreadCount(data.filter((n: any) => !n.is_read).length)
       }
     }
 
@@ -120,7 +120,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
 
   // Recalculate unread count whenever notifications change
   useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.is_read).length)
+    setUnreadCount(notifications.filter((n: any) => !n.is_read).length)
   }, [notifications])
 
   const markAsRead = async (id: string) => {
@@ -128,16 +128,16 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     )
-    await supabase.from('notifications').update({ is_read: true }).eq('id', id)
+    await (supabase as any).from('notifications').update({ is_read: true }).eq('id', id)
   }
 
   const markAllAsRead = async () => {
     if (!userId) return
-    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id)
+    const unreadIds = notifications.filter((n: any) => !n.is_read).map(n => n.id)
     if (unreadIds.length === 0) return
 
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
-    await supabase
+    await (supabase as any)
       .from('notifications')
       .update({ is_read: true })
       .in('id', unreadIds)

@@ -74,7 +74,7 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
-      const { data: profile } = await supabase.from('users').select('*').eq('id', data.user.id).maybeSingle()
+      const { data: profile } = await (supabase as any).from('users').select('*').eq('id', data.user.id).maybeSingle()
       setUser(profile || data.user)
       fetchExchange(params.id)
     })
@@ -95,7 +95,7 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
     if (!exchange) return
     if (!confirm('Confirmas que quieres cancelar este intercambio?')) return
     setActing(true)
-    const { data, error } = await supabase.rpc('cancel_exchange', { p_exchange_id: exchange.id, p_reason: 'Cancelado por usuario' })
+    const { data, error } = await (supabase as any).rpc('cancel_exchange', { p_exchange_id: exchange.id, p_reason: 'Cancelado por usuario' })
     setActing(false)
     if (data?.success) {
       setMsg('Intercambio cancelado. Los WP fueron devueltos al huesped.')
@@ -109,7 +109,7 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
     if (!exchange) return
     if (!confirm('Confirmas que el intercambio se completo exitosamente? Esto liberara los WellPoints al anfitrion.')) return
     setActing(true)
-    const { data, error } = await supabase.rpc('complete_exchange', { p_exchange_id: exchange.id })
+    const { data, error } = await (supabase as any).rpc('complete_exchange', { p_exchange_id: exchange.id })
     setActing(false)
     if (data?.success) {
       setMsg('Intercambio cerrado! Los WellPoints fueron liberados al anfitrion.')

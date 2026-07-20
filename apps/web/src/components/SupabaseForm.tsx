@@ -19,7 +19,7 @@ export default function SupabaseForm() {
     setMessage(null);
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('users')
         .insert({
           email: formData.email,

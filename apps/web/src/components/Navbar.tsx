@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import NotificationsDropdown from './notifications/NotificationsDropdown'
 import { useNotifications } from './notifications/NotificationsProvider'
+import WellBotPanel from './WellBot/WellBotPanel'
 
 const NavbarContent = memo(function NavbarContent() {
   const router = useRouter()
@@ -50,7 +51,7 @@ const NavbarContent = memo(function NavbarContent() {
 
 
   const fetchUserData = async (userId: string) => {
-    const { data } = await supabase.from('users').select('avatar_url, role').eq('id', userId).single()
+    const { data } = await (supabase as any).from('users').select('avatar_url, role').eq('id', userId).single()
     if (data) {
       if (data.avatar_url) setAvatarUrl(data.avatar_url)
       if (data.role) setRole(data.role)
@@ -466,45 +467,16 @@ const NavbarContent = memo(function NavbarContent() {
 
       {/* ── WellBot Panel ─────────────────────────────────────────────────── */}
       {showWellBot && (
-        <div className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[200] w-[340px] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-surface-mist-dark overflow-hidden flex flex-col" style={{ maxHeight: '480px' }}>
-          {/* Header */}
-          <div className="bg-ink-teal-900 px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div>
-                <p className="text-white font-semibold text-sm leading-tight">WellBot</p>
-                <p className="text-white/60 text-[10px] leading-tight">Asistente IA de Wellhouse</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowWellBot(false)}
-              className="p-1 text-white/60 hover:text-white transition"
-              aria-label="Cerrar WellBot"
-            >
-              <X className="w-4 h-4" />
-            </button>
+        <>
+          {/* Mobile backdrop */}
+          <div
+            className="md:hidden fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowWellBot(false)}
+          />
+          <div className="fixed bottom-0 md:bottom-20 md:top-20 right-0 md:right-4 z-[200] w-full md:w-[380px] h-[85vh] md:h-auto md:max-h-[600px] bg-white md:rounded-2xl shadow-2xl border-t md:border border-surface-mist-dark overflow-hidden flex flex-col slide-in-from-bottom md:slide-in-from-right animate-in rounded-t-3xl md:rounded-t-2xl">
+            <WellBotPanel onClose={() => setShowWellBot(false)} />
           </div>
-          {/* Chat iframe / redirect */}
-          <div className="flex-1 flex flex-col items-center justify-center gap-3 p-5 text-center bg-surface-mist">
-            <div className="w-14 h-14 rounded-2xl bg-ink-teal-900/10 flex items-center justify-center">
-              <Bot className="w-7 h-7 text-ink-teal-900" />
-            </div>
-            <div>
-              <p className="font-semibold text-ink-teal-900 text-sm">Hola, soy WellBot</p>
-              <p className="text-[12px] text-text-muted-custom mt-1 leading-relaxed">
-                Tu asistente IA para intercambios de vivienda. Puedo ayudarte a encontrar propiedades, responder preguntas y orientarte en cada paso.
-              </p>
-            </div>
-            <button
-              onClick={() => { setShowWellBot(false); router.push('/admin/wellbot') }}
-              className="w-full py-2.5 bg-ink-teal-900 text-white text-sm font-semibold rounded-xl hover:bg-[#0d635c] transition-colors"
-            >
-              Abrir WellBot completo
-            </button>
-          </div>
-        </div>
+        </>
       )}
     </>
   )

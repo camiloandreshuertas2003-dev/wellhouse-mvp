@@ -129,7 +129,7 @@ export default function CreatePropertyPage() {
         setUserId(user.id)
         
         // Fetch existing property to edit
-        const { data: prop } = await supabase
+        const { data: prop }: { data: any } = await supabase
           .from('properties')
           .select('*')
           .eq('user_id', user.id)
@@ -251,7 +251,7 @@ export default function CreatePropertyPage() {
     try {
       try { await supabase.auth.refreshSession() } catch {}
 
-      const { error: saveErr } = await supabase.rpc('upsert_property', {
+      const { error: saveErr } = await (supabase as any).rpc('upsert_property', {
         p_property_id:    propertyId,
         p_user_id:        userId,
         p_title:          form.title,

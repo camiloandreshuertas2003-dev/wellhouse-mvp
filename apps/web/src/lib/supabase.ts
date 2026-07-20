@@ -7,10 +7,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Missing Supabase environment variables. Using placeholders for build.');
 }
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co', 
-  supabaseAnonKey || 'placeholder'
-);
+let supabase: ReturnType<typeof createClient>;
+if (typeof window === 'undefined') {
+  supabase = createClient(
+    supabaseUrl || 'https://placeholder.supabase.co', 
+    supabaseAnonKey || 'placeholder'
+  );
+} else {
+  if (!(window as any).__supabaseInstance) {
+    (window as any).__supabaseInstance = createClient(
+      supabaseUrl || 'https://placeholder.supabase.co', 
+      supabaseAnonKey || 'placeholder'
+    );
+  }
+  supabase = (window as any).__supabaseInstance;
+}
+
+export { supabase };
 
 // Type-safe database queries
 export type Database = {

@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 export const maxDuration = 30;
 
 const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
+  apiKey: process.env.GEMINI_API_KEY || 'MISSING_KEY',
 })
 
 const SYSTEM_PROMPT = `
@@ -34,8 +34,8 @@ export async function POST(req: Request) {
     
     // In a real app we'd get the JWT from headers/cookies and authenticate
     // Here we'll create an anon supabase client just for demonstration of tools
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co'
+    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'dummy'
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     // TODO: Extract user ID from auth cookie if present
@@ -96,7 +96,7 @@ export async function POST(req: Request) {
 
     // 2. Generate response with Gemini
     const result = await streamText({
-      model: google('gemini-2.5-flash') as any,
+      model: google('gemini-1.5-flash') as any,
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
       messages: coreMessages,
       tools: tools,

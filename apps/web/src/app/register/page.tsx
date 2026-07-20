@@ -43,7 +43,7 @@ export default function RegisterPage() {
       if (authError) throw authError
       if (authData.user) {
         if (authData.session) {
-          const { error: dbError } = await supabase.from('users').insert({
+          const { error: dbError } = await (supabase as any).from('users').insert({
             id: authData.user.id,
             email: formData.email,
             name: formData.name,
