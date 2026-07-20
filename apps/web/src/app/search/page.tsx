@@ -328,18 +328,45 @@ export default function SearchPage() {
       
       {/* ── Mega-Search Trigger (Mobile) ──────────────── */}
       <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-3 shadow-sm">
-        <button 
-          onClick={() => setShowMobileSearchModal(true)}
-          className="w-full flex items-center bg-white px-4 py-3 rounded-full border border-surface-mist-dark shadow-sm"
-        >
-          <Search className="w-5 h-5 text-ink-teal-900 mr-3 flex-shrink-0" />
-          <div className="flex flex-col items-start flex-1 text-left min-w-0">
-            <span className="text-sm font-bold text-ink-teal-900 truncate w-full">{query || '¿A dónde quieres ir?'}</span>
-            <span className="text-[10px] text-text-muted-custom truncate w-full">
-              {dateRange?.from ? 'Fechas añadidas' : 'Fechas'} · {guestCount ? `${guestCount} huéspedes` : 'Huéspedes'}
-            </span>
+        <div className="flex gap-2 items-center">
+          <button 
+            onClick={() => setShowMobileSearchModal(true)}
+            className="flex-1 flex items-center bg-white px-4 py-3 rounded-full border border-surface-mist-dark shadow-sm min-w-0"
+          >
+            <Search className="w-5 h-5 text-ink-teal-900 mr-3 flex-shrink-0" />
+            <div className="flex flex-col items-start flex-1 text-left min-w-0">
+              <span className="text-sm font-bold text-ink-teal-900 truncate w-full">{query || '¿A dónde quieres ir?'}</span>
+              <span className="text-[10px] text-text-muted-custom truncate w-full">
+                {dateRange?.from ? 'Fechas añadidas' : 'Fechas'} · {guestCount ? `${guestCount} huéspedes` : 'Huéspedes'}
+              </span>
+            </div>
+          </button>
+          
+          <div className="flex bg-surface-mist border border-neutral-200 rounded-full p-1 shadow-inner flex-shrink-0">
+            <button
+              onClick={() => {
+                setViewMode('list')
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
+              }}
+              className={`p-2.5 rounded-full transition-all ${
+                viewMode === 'list' ? 'bg-white text-ink-teal-900 shadow-sm' : 'text-text-muted-custom hover:text-ink-teal-900'
+              }`}
+            >
+              <List className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => {
+                setViewMode('map')
+                setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
+              }}
+              className={`p-2.5 rounded-full transition-all ${
+                viewMode === 'map' ? 'bg-white text-ink-teal-900 shadow-sm' : 'text-text-muted-custom hover:text-ink-teal-900'
+              }`}
+            >
+              <Map className="w-5 h-5" />
+            </button>
           </div>
-        </button>
+        </div>
       </div>
 
 
@@ -972,33 +999,7 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* ── MOBILE FLOATING VIEW TOGGLE ─────────────────────────── */}
-      <div className="md:hidden fixed bottom-20 left-1/2 -translate-x-1/2 z-30">
-        <div className="flex items-center gap-1 bg-gray-900 rounded-full p-1 shadow-xl">
-          <button
-            onClick={() => {
-              setViewMode('list')
-              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
-            }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
-              viewMode === 'list' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
-            }`}
-          >
-            <List className="w-4 h-4" /> Lista
-          </button>
-          <button
-            onClick={() => {
-              setViewMode('map')
-              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
-            }}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-bold transition-colors ${
-              viewMode === 'map' ? 'bg-white text-gray-900' : 'text-white hover:text-gray-200'
-            }`}
-          >
-            <Map className="w-4 h-4" /> Mapa
-          </button>
-        </div>
-      </div>
+
 
     </div>
   )
