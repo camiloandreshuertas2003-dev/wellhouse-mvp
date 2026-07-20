@@ -74,10 +74,15 @@ export async function POST(req: Request) {
 
       if (cached) {
         // Increment usage count in background (fire and forget)
-        serviceSupabase.from('wellbot_qa')
-          .update({ usage_count: (cached.usage_count || 0) + 1 })
-          .eq('question', normalizedQuestion)
-          .then();
+        (async () => {
+          try {
+            await serviceSupabase.from('wellbot_qa')
+              .update({ usage_count: (cached.usage_count || 0) + 1 })
+              .eq('question', normalizedQuestion);
+          } catch (err) {
+            console.error('Error updating wellbot_qa usage count:', err);
+          }
+        })();
 
         // Return cached answer using Vercel AI SDK Data Stream protocol format
         return new Response('0:' + JSON.stringify(cached.answer) + '\n', { 
@@ -94,9 +99,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // 2. Generate response with Gemini
     const result = await streamText({
-      model: google('gemini-3.5-flash') as any,
+      model: google('gemini-1.5-flash') as any,
       system: SYSTEM_PROMPT + `\n\nCONTEXTO DE PÁGINA ACTUAL: ${JSON.stringify(page_context || {})}`,
       messages: coreMessages,
       tools: tools,

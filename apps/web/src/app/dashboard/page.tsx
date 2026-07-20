@@ -621,29 +621,30 @@ function DiscoverCarousel() {
   const [props, setProps] = useState<PropertyCardData[]>([])
 
   useEffect(() => {
-    supabase
-      .from('properties')
-      .select('id, title, city, country, type, bedrooms, bathrooms, capacity, images')
-      .eq('status', 'published').limit(8)
-      .then(({ data }) => {
-        if (data?.length) {
-          setProps(data.map((p: any, i) => ({
-            id: p.id,
-            title: p.title,
-            location: `${p.city || '—'}, ${p.country || '—'}`,
-            type: p.type || 'Vivienda',
-            bedrooms: p.bedrooms || 1,
-            bathrooms: p.bathrooms || 1,
-            capacity: p.capacity || 2,
-            rating: 0, reviews: 0,
-            image: Array.isArray(p.images) && p.images[0]
-              ? p.images[0]
-              : `https://images.unsplash.com/photo-${['1500382017468-9049fed747ef','1499793983690-e29da59ef1c2','1502672260266-1c1ef2d93688'][i % 3]}?auto=format&fit=crop&w=800&q=80`,
-            verified: true,
-            wellRank: Math.max(30, Math.min((p.capacity * 15) + (p.bedrooms * 20) + (p.bathrooms * 10), 300)),
-          })))
-        }
-      })
+    async function loadProps() {
+      const { data } = await supabase
+        .from('properties')
+        .select('id, title, city, country, type, bedrooms, bathrooms, capacity, images')
+        .eq('status', 'published').limit(8)
+      if (data?.length) {
+        setProps(data.map((p: any, i) => ({
+          id: p.id,
+          title: p.title,
+          location: `${p.city || '—'}, ${p.country || '—'}`,
+          type: p.type || 'Vivienda',
+          bedrooms: p.bedrooms || 1,
+          bathrooms: p.bathrooms || 1,
+          capacity: p.capacity || 2,
+          rating: 0, reviews: 0,
+          image: Array.isArray(p.images) && p.images[0]
+            ? p.images[0]
+            : `https://images.unsplash.com/photo-${['1500382017468-9049fed747ef','1499793983690-e29da59ef1c2','1502672260266-1c1ef2d93688'][i % 3]}?auto=format&fit=crop&w=800&q=80`,
+          verified: true,
+          wellRank: Math.max(30, Math.min((p.capacity * 15) + (p.bedrooms * 20) + (p.bathrooms * 10), 300)),
+        })))
+      }
+    }
+    loadProps()
   }, [])
 
   if (props.length === 0) return null

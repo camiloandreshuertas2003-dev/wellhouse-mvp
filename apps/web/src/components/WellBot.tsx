@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 
 const WELCOME = '¡Hola! Soy **WellBot**, tu asistente de Wellhouse 🏡\n\nPuedo ayudarte a:\n• Encontrar viviendas por ciudad o región\n• Entender cómo funcionan los WellPoints\n• Guiarte para publicar tu vivienda\n\n¿Qué buscas hoy?'
 
@@ -64,7 +64,9 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
     }
   };
 
-  const { messages, input, handleInputChange, handleSubmit, setMessages, append, isLoading } = useChat({
+  const [input, setInput] = useState('');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value);
+  const { messages, setMessages, append, isLoading } = useChat({
     api: '/api/chat',
     initialMessages: [
       { id: 'welcome', role: 'assistant', content: initialMessage || WELCOME }
@@ -112,8 +114,7 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
       if (input.trim() && !isLoading) {
         // useChat's handleSubmit usually takes a form event, but we can synthesize one or just use append
         append({ role: 'user', content: input });
-        // The input clearing is handled manually if we use append, or we can use fake event
-        handleInputChange({ target: { value: '' } } as any);
+        setInput('');
       }
     }
   }
@@ -250,7 +251,7 @@ export default function WellBot({ isOpen: externalIsOpen, onClose, initialMessag
               onClick={() => {
                 if (input.trim() && !isLoading) {
                   append({ role: 'user', content: input });
-                  handleInputChange({ target: { value: '' } } as any);
+                  setInput('');
                 }
               }}
               disabled={!input.trim() || isLoading}

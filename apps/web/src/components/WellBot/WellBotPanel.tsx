@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { X, Send, Bot } from 'lucide-react'
 

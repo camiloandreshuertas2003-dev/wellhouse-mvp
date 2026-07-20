@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { HeartOff } from 'lucide-react'
+import { HeartOff, Heart } from 'lucide-react'
 import Link from 'next/link'
 
 export interface HostStory {
@@ -71,6 +71,21 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
     return () => clearInterval(interval)
   }, [currentIndex])
 
+  // Escuchar mensajes de YouTube para auto-avanzar cuando el video termine
+  useEffect(() => {
+    const handleMessage = (e: MessageEvent) => {
+      if (e.origin !== "https://www.youtube.com" && e.origin !== "https://www.youtube-nocookie.com") return;
+      try {
+        const data = JSON.parse(e.data);
+        if (data.event === "infoDelivery" && data.info && data.info.playerState === 0) {
+          handleNext();
+        }
+      } catch(err) {}
+    };
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [currentIndex, activeStories.length]);
+
   const handleNext = () => {
     if (currentIndex < activeStories.length - 1) {
       setCurrentIndex(currentIndex + 1)
@@ -118,6 +133,27 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
       if (currentIndex >= newStories.length) {
         setCurrentIndex(newStories.length - 1);
       }
+    }
+  }
+
+  const handleLike = async () => {
+    if (!currentStory) return;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await (supabase as any).from('favorites').upsert({
+          user_id: session.user.id,
+          property_id: currentStory.property_id
+        }, { onConflict: 'user_id,property_id' });
+        // Optional visual feedback
+        const btn = document.getElementById('like-btn-' + currentStory.id);
+        if (btn) btn.classList.add('scale-125');
+        setTimeout(() => { if (btn) btn.classList.remove('scale-125') }, 200);
+      } else {
+        alert('Debes iniciar sesión para guardar en favoritos.');
+      }
+    } catch (e) {
+      console.error(e);
     }
   }
 
@@ -179,13 +215,28 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           <iframe
             ref={iframeRef}
             key={currentStory.id}
-            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=0&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`}
+            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`}
             title="Host Story"
             className="w-full h-full object-cover"
             allow="autoplay; encrypted-media; picture-in-picture"
             allowFullScreen
             onLoad={handleIframeLoad}
           />
+
+          {/* Botón de Me gusta */}
+          <div className="absolute top-1/2 right-4 -translate-y-[120%] z-30">
+            <button
+              id={`like-btn-${currentStory.id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleLike();
+              }}
+              className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-sm transition-transform active:scale-95 border border-white/20 shadow-lg"
+              title="Guardar en favoritos"
+            >
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500" />
+            </button>
+          </div>
 
           {/* Botón de No me gusta / Ocultar */}
           <div className="absolute top-1/2 right-4 -translate-y-1/2 z-30">

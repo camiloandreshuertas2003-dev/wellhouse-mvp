@@ -25,16 +25,18 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number) {
 }
 
 // Parse structured description from combined field (legacy compat)
-function parseDescription(raw: string | null): { space: string; area: string; directions: string; host: string } {
-  if (!raw) return { space: '', area: '', directions: '', host: '' }
+function parseDescription(raw: string | null): { space: string; area: string; directions: string; rules: string; host: string } {
+  if (!raw) return { space: '', area: '', directions: '', rules: '', host: '' }
   const spaceMatch = raw.match(/El espacio:\s*([\s\S]*?)(?=\n\nLa zona:|$)/)
   const areaMatch = raw.match(/La zona:\s*([\s\S]*?)(?=\n\nCómo llegar:|$)/)
-  const dirMatch = raw.match(/Cómo llegar:\s*([\s\S]*?)(?=\n\nEl anfitrión:|$)/)
+  const dirMatch = raw.match(/Cómo llegar:\s*([\s\S]*?)(?=\n\nReglas de la casa:|\n\nEl anfitrión:|$)/)
+  const rulesMatch = raw.match(/Reglas de la casa:\s*([\s\S]*?)(?=\n\nEl anfitrión:|$)/)
   const hostMatch = raw.match(/El anfitrión:\s*([\s\S]*)/)
   return {
     space: spaceMatch ? spaceMatch[1].trim() : (raw && !raw.includes('El espacio:') ? raw.trim() : ''),
     area: areaMatch ? areaMatch[1].trim() : '',
     directions: dirMatch ? dirMatch[1].trim() : '',
+    rules: rulesMatch ? rulesMatch[1].trim() : '',
     host: hostMatch ? hostMatch[1].trim() : ''
   }
 }
@@ -192,6 +194,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   const [spaceExpanded, setSpaceExpanded] = useState(false)
   const [areaExpanded, setAreaExpanded] = useState(false)
   const [dirExpanded, setDirExpanded] = useState(false)
+  const [rulesExpanded, setRulesExpanded] = useState(false)
   const [hostExpanded, setHostExpanded] = useState(false)
 
   const MOCK_IDS = Object.keys(MOCK_DATA)
@@ -226,20 +229,20 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
 
       // Increment views count if visitor is not the owner
       if (data && user && data.user_id !== user.id) {
-        (supabase as any).from('properties')
+        await (supabase as any).from('properties')
           .update({ views: (data.views || 0) + 1 })
           .eq('id', data.id)
-          .then(() => {})
+          
 
         // Insert a notification for the host
-        (supabase as any).from('notifications').insert({
+        await (supabase as any).from('notifications').insert({
           user_id: data.user_id,
           actor_id: user.id,
           type: 'view',
           title: '¡Nueva visita a tu vivienda! 👀',
           content: `Alguien acaba de ver tu propiedad "${data.title}" en ${data.city}.`,
           link: `/properties/${data.id}`
-        }).then(() => {})
+        })
       }
       
       // Load questions
@@ -300,14 +303,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       setNewQuestion('')
       
       if (property.user_id) {
-        (supabase as any).from('notifications').insert({
+        await (supabase as any).from('notifications').insert({
           user_id: property.user_id,
           actor_id: currentUser.id,
           type: 'qa_question',
           title: 'Nueva pregunta en tu vivienda ❓',
           content: `${currentUser.user_metadata?.full_name || 'Alguien'} ha preguntado: "${newQuestion.trim()}"`,
           link: `/properties/${property.id}`
-        }).then(() => {})
+        })
       }
     }
     setAsking(false)
@@ -338,14 +341,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
       
       const questionData = questions.find(q => q.id === qId)
       if (questionData && questionData.user_id) {
-        (supabase as any).from('notifications').insert({
+        await (supabase as any).from('notifications').insert({
           user_id: questionData.user_id,
           actor_id: currentUser.id,
           type: 'qa_answer',
           title: 'Respondieron a tu pregunta 💡',
           content: `El anfitrión respondió: "${answerText.trim()}"`,
           link: `/properties/${property.id}`
-        }).then(() => {})
+        })
       }
 
       setAnswerText('')
@@ -433,14 +436,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     })
 
     if (!insertError && property.user_id) {
-      (supabase as any).from('notifications').insert({
+      await (supabase as any).from('notifications').insert({
         user_id: property.user_id,
         actor_id: user.id,
         type: 'exchange_request',
         title: '¡Nueva solicitud de intercambio! 🏡',
         content: `Tienes una nueva solicitud para tu vivienda de parte de ${user.user_metadata?.full_name || user.email?.split('@')[0]}`,
         link: '/dashboard?tab=exchanges'
-      }).then(() => {})
+      })
     }
     
     // Create conversation if it doesn't exist
@@ -810,59 +813,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               <DescSection title="El espacio" text={desc.space} expanded={spaceExpanded} onToggle={() => setSpaceExpanded(p => !p)} />
               <DescSection title="La zona" text={desc.area} expanded={areaExpanded} onToggle={() => setAreaExpanded(p => !p)} />
               <DescSection title="Cómo llegar" text={desc.directions} expanded={dirExpanded} onToggle={() => setDirExpanded(p => !p)} />
-              
-              {/* Host Section with Trust Profile integration */}
-              {property.users ? (
-                <div className="mt-8 pt-8 border-t border-surface-mist">
-                  <div className="flex items-center gap-4 mb-4">
-                    <Link href={`/users/${property.users.id}`} className="block flex-shrink-0">
-                      <div className="w-14 h-14 bg-surface-mist-dark rounded-full overflow-hidden border-2 border-surface-mist flex items-center justify-center hover:opacity-90 transition">
-                        {property.users.avatar_url ? (
-                          <img src={property.users.avatar_url} alt={property.users.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xl font-bold text-text-muted-custom">
-                            {(property.users.name || 'U').charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                    <div>
-                      <Link href={`/users/${property.users.id}`} className="hover:underline">
-                        <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900">
-                          {property.users.name ? `${property.users.name.split(' ')[0]} ${property.users.name.split(' ').length > 1 ? property.users.name.split(' ')[property.users.name.split(' ').length - 1].charAt(0) + '.' : ''}` : 'Anfitrión'}
-                        </h2>
-                      </Link>
-                      <div className="flex items-center gap-2 mt-1">
-                        {property.users.is_verified && (
-                          <span className="flex items-center gap-1 text-[11px] font-semibold text-[#10b981] bg-[#10b981]/10 px-2 py-0.5 rounded-full">
-                            <ShieldCheck className="w-3 h-3" /> Verificado
-                          </span>
-                        )}
-                        <span className="text-[11px] font-medium text-text-muted-custom">
-                          Índice: {property.users.trust_index || 0}/5
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <DescSection title="Sobre mí" text={property.users.bio || desc.host || 'Aún no ha escrito su biografía.'} expanded={hostExpanded} onToggle={() => setHostExpanded(p => !p)} />
-                  <Link href={`/users/${property.users.id}`} className="inline-block mt-4 text-xs font-semibold text-ink-teal-900 hover:text-accent-mango transition-colors underline">
-                    Ver perfil completo →
-                  </Link>
-                </div>
-              ) : (
-                <div className="mt-8 pt-8 border-t border-surface-mist">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="w-14 h-14 bg-primary-cobalt/10 rounded-full flex items-center justify-center">
-                      <Users className="w-6 h-6 text-primary-cobalt" />
-                    </div>
-                    <div>
-                      <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900">Conoce a tu anfitrión</h2>
-                      <p className="text-sm text-text-muted-custom font-inter">Anfitrión verificado</p>
-                    </div>
-                  </div>
-                  <DescSection title="Sobre mí" text={desc.host} expanded={hostExpanded} onToggle={() => setHostExpanded(p => !p)} />
-                </div>
-              )}
+              <DescSection title="Reglas de la casa" text={desc.rules} expanded={rulesExpanded} onToggle={() => setRulesExpanded(p => !p)} />
             </div>
 
 

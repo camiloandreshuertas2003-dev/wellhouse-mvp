@@ -164,7 +164,7 @@ function MessagesContent() {
           setMessages(prev => [...prev, msg])
           ;(setTimeout as any)(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
           // mark as read immediately since we're viewing it
-          (supabase as any).from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id).then(() => {})
+          await (supabase as any).from('messages').update({ read_at: new Date().toISOString() }).eq('id', msg.id)
         } else if (msg.sender_id !== user.id) {
           // increment unread
           setUnreadMap(prev => ({ ...prev, [msg.conversation_id]: (prev[msg.conversation_id] || 0) + 1 }))
@@ -216,14 +216,12 @@ function MessagesContent() {
 
     // Mark all unread messages as read
     if (uid) {
-      (supabase as any).from('messages')
+      await (supabase as any).from('messages')
         .update({ read_at: new Date().toISOString() })
         .eq('conversation_id', conv.id)
         .neq('sender_id', uid)
         .is('read_at', null)
-        .then(() => {
-          setUnreadMap(prev => ({ ...prev, [conv.id]: 0 }))
-        })
+      setUnreadMap(prev => ({ ...prev, [conv.id]: 0 }))
     }
 
     // Load exchange details
@@ -270,14 +268,14 @@ function MessagesContent() {
 
       const other = getOtherParticipant(activeConv)
       if (other?.id) {
-        (supabase as any).from('notifications').insert({
+        await (supabase as any).from('notifications').insert({
           user_id: other.id,
           actor_id: user.id,
           type: 'message',
           title: `Nuevo mensaje de ${user.name || 'Huésped'}`,
           content: txt.length > 50 ? txt.slice(0, 47) + '...' : txt,
           link: '/messages'
-        }).then(() => {})
+        })
       }
     }
   }
@@ -309,14 +307,14 @@ function MessagesContent() {
 
         const other = getOtherParticipant(activeConv)
         if (other?.id) {
-          (supabase as any).from('notifications').insert({
+          await (supabase as any).from('notifications').insert({
             user_id: other.id,
             actor_id: user.id,
             type: 'proposal',
             title: `Nueva propuesta de intercambio de ${user.name || 'Usuario'}`,
             content: 'Tienes una propuesta de intercambio para revisar.',
             link: '/messages'
-          }).then(() => {})
+          })
         }
       }
     }
@@ -332,29 +330,27 @@ function MessagesContent() {
 
       const other = getOtherParticipant(activeConv)
       if (other?.id) {
-        (supabase as any).from('users').select('email, name').eq('id', other.id).maybeSingle()
-          .then(({ data: userData }: any) => {
-            if (userData?.email) {
-              fetch('/api/send-email', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  to: userData.email,
-                  subject: '¡Tu viaje fue aprobado!',
-                  html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #f0ede8;border-radius:16px;background:white"><h2 style="color:#0f766e">¡Felicidades, ${userData.name || 'Huésped'}!</h2><p>Tu solicitud para <strong>${activeConv.properties?.title || 'la vivienda'}</strong> fue aprobada.</p><div style="margin-top:30px;text-align:center"><a href="https://wellhouse-mvp.vercel.app/dashboard?tab=exchanges" style="background:#0f766e;color:white;padding:12px 24px;text-decoration:none;border-radius:12px;font-weight:bold;display:inline-block">Ver en mi panel</a></div></div>`
-                })
-              }).catch(() => {})
-            }
+        const { data: userData } = await (supabase as any).from('users').select('email, name').eq('id', other.id).maybeSingle()
+        if (userData?.email) {
+          fetch('/api/send-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              to: userData.email,
+              subject: '¡Tu viaje fue aprobado!',
+              html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px;border:1px solid #f0ede8;border-radius:16px;background:white"><h2 style="color:#0f766e">¡Felicidades, ${userData.name || 'Huésped'}!</h2><p>Tu solicitud para <strong>${activeConv.properties?.title || 'la vivienda'}</strong> fue aprobada.</p><div style="margin-top:30px;text-align:center"><a href="https://wellhouse-mvp.vercel.app/dashboard?tab=exchanges" style="background:#0f766e;color:white;padding:12px 24px;text-decoration:none;border-radius:12px;font-weight:bold;display:inline-block">Ver en mi panel</a></div></div>`
+            })
+          }).catch(() => {})
+        }
 
-            (supabase as any).from('notifications').insert({
-              user_id: other.id,
-              actor_id: user.id,
-              type: 'proposal_accepted',
-              title: '¡Tu viaje ha sido aprobado!',
-              content: `El anfitrión aceptó tu propuesta para ${activeConv.properties?.title || 'la vivienda'}.`,
-              link: '/dashboard?tab=exchanges'
-            }).then(() => {})
-          })
+        await (supabase as any).from('notifications').insert({
+          user_id: other.id,
+          actor_id: user.id,
+          type: 'proposal_accepted',
+          title: '¡Tu viaje ha sido aprobado!',
+          content: `El anfitrión aceptó tu propuesta para ${activeConv.properties?.title || 'la vivienda'}.`,
+          link: '/dashboard?tab=exchanges'
+        })
       }
     } else {
       alert('Error al aceptar la propuesta: ' + error.message)

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { useChat } from 'ai/react'
+import { useChat } from '@ai-sdk/react'
 import { usePathname, useSearchParams } from 'next/navigation'
 import { X, Send, Bot, Sparkles } from 'lucide-react'
 
@@ -114,7 +114,8 @@ function WellBotBubbleContent() {
     return { page: 'other', path }
   }
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
+  const [input, setInput] = useState('')
+  const { messages, append, isLoading } = useChat({
     api: '/api/chat',
     initialMessages: [
       {
@@ -256,13 +257,7 @@ function WellBotBubbleContent() {
                   <button
                     key={prompt}
                     onClick={() => {
-                      // Simulate form submit with this text
-                      const fakeEvent = {
-                        preventDefault: () => {},
-                        target: {}
-                      } as any
-                      handleInputChange({ target: { value: prompt } } as any)
-                      setTimeout(() => handleSubmit(fakeEvent), 10)
+                      append({ role: 'user', content: prompt })
                     }}
                     className="flex-shrink-0 bg-white border border-gray-200 text-[#0f766e] font-inter text-xs px-3 py-2 rounded-full hover:border-[#0f766e] hover:bg-[#f0fdfa] transition-all whitespace-nowrap shadow-sm"
                   >
@@ -274,10 +269,16 @@ function WellBotBubbleContent() {
 
             {/* Input */}
             <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
-              <form onSubmit={handleSubmit} className="flex items-center gap-2">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (input.trim() && !isLoading) {
+                  append({ role: 'user', content: input });
+                  setInput('');
+                }
+              }} className="flex items-center gap-2">
                 <input
                   value={input}
-                  onChange={handleInputChange}
+                  onChange={(e) => setInput(e.target.value)}
                   placeholder="Escribe tu pregunta..."
                   className="flex-1 bg-[#f8fafb] border border-gray-200 rounded-full py-2.5 px-4 text-sm text-[#1a2e2e] focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] outline-none transition-all placeholder:text-gray-400"
                   disabled={isLoading}
