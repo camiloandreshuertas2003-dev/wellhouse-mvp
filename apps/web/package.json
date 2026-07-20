@@ -12,13 +12,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@ai-sdk/google": "^4.0.12",
+    "@ai-sdk/google": "^4.0.18",
     "@react-google-maps/api": "^2.20.8",
     "@supabase/supabase-js": "^2.108.2",
     "@turf/boolean-point-in-polygon": "^7.3.5",
     "@turf/helpers": "^7.3.5",
     "@types/mapbox-gl": "^3.4.1",
-    "ai": "^3.4.0",
+    "ai": "^7.0.31",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
