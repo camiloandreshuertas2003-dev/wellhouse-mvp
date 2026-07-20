@@ -103,29 +103,12 @@ export default function SearchMapView({
     options: { radius: 60, maxZoom: 16 }
   })
 
-  // Auto zoom to new pins when search filter changes or geocode user query
+  // Auto zoom to new pins when search filter changes
   useEffect(() => {
     let active = true
 
     async function centerMap() {
-      // If there is a text query, try to use Mapbox Geocoding first
-      if (query && query.trim().length > 1) {
-        try {
-          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,locality,neighborhood,region,country`)
-          const data = await res.json()
-          if (active && data.features && data.features.length > 0) {
-            const [lng, lat] = data.features[0].center
-            if (mapRef.current) {
-              mapRef.current.flyTo({ center: [lng, lat], zoom: 11, duration: 2000 })
-            }
-            return // Stop here if geocoding succeeded
-          }
-        } catch (err) {
-          console.error("Geocoding error", err)
-        }
-      }
-
-      // Fallback: Fit bounds to the filtered pins
+      // Fit bounds to the filtered pins
       if (active && points.length > 0 && mapRef.current) {
         const lons = points.map(p => p.geometry.coordinates[0])
         const lats = points.map(p => p.geometry.coordinates[1])
@@ -149,7 +132,7 @@ export default function SearchMapView({
     centerMap()
 
     return () => { active = false }
-  }, [searchKey, query])
+  }, [searchKey, query, points.length])
 
   // "Search here" — filter pins to those visible in the current viewport
   const handleSearchHere = useCallback(() => {

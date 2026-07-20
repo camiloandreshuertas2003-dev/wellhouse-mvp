@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import PropertyCard, { type PropertyCardData } from '@/components/PropertyCard'
-import { Sparkles, Search, SlidersHorizontal, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin, Map, List } from 'lucide-react'
+import { Sparkles, Search, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin, Map, List } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import StoryViewer from '@/components/Stories/StoryViewer'
@@ -56,6 +56,9 @@ export default function SearchPage() {
   const [loading, setLoading] = useState(true)
   const [stories, setStories] = useState<any[]>([])
   const [activeStoryIndex, setActiveStoryIndex] = useState<number | null>(null)
+
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const uniqueLocations = Array.from(new Set(realProps.map(p => p.location.split(',')[0].trim()))).filter(loc => loc !== '—').sort()
 
   // View mode: 'list' | 'map' | 'split'
   type ViewMode = 'list' | 'map' | 'split'
@@ -233,12 +236,25 @@ export default function SearchPage() {
 
   const activeProps = category !== 'all' ? getCategoryProps(category) : realProps
 
+  const normalize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+
   const baseFilteredProps = activeProps.filter((p) => {
-    const q = debouncedQuery.toLowerCase()
-    const matchQ = !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
-    const matchType = !propertyType || p.type.toLowerCase().includes(propertyType.toLowerCase())
+    const q = normalize(debouncedQuery)
+    const pTitle = normalize(p.title || '')
+    const pLoc = normalize(p.location || '')
+    
+    let matchQ = !q || pTitle.includes(q) || pLoc.includes(q)
+    
+    // Fuzzy logic: if simple includes fails, check if any word from query exists in location
+    if (!matchQ && q.trim().length > 0) {
+       const queryWords = q.split(' ').filter(w => w.length > 2)
+       if (queryWords.length > 0) {
+         matchQ = queryWords.some(w => pLoc.includes(w) || pTitle.includes(w))
+       }
+    }
+
+    const matchType = !propertyType || (p.type || '').toLowerCase().includes(propertyType.toLowerCase())
     const matchGuests = !guestCount || p.capacity >= (guestCount as number)
-    // Date filtering logic could be added here if available_from and available_to are parsed
     return matchQ && matchType && matchGuests
   })
 
@@ -267,15 +283,42 @@ export default function SearchPage() {
       
       {/* Sticky Mobile Search Bar */}
       <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-2.5 shadow-sm flex flex-col gap-2">
-        <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
+        <div className="relative flex items-center gap-2 bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input 
             type="text" 
             placeholder="¿A dónde quieres ir?" 
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setShowLocationDropdown(true)
+            }}
+            onFocus={() => setShowLocationDropdown(true)}
+            onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
             className="w-full text-base md:text-sm text-ink-teal-900 bg-transparent focus:outline-none"
           />
+          {showLocationDropdown && (query.length > 0 || uniqueLocations.length > 0) && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-surface-mist-dark rounded-2xl shadow-xl z-50 max-h-48 overflow-y-auto overflow-x-hidden p-2">
+              <p className="text-[10px] font-bold text-text-muted-custom uppercase px-2 py-1">Sugerencias</p>
+              {uniqueLocations
+                .filter(loc => normalize(loc).includes(normalize(query)))
+                .map((loc, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setQuery(loc)
+                      setShowLocationDropdown(false)
+                    }}
+                    className="w-full text-left px-3 py-2 text-sm text-ink-teal-900 hover:bg-surface-mist rounded-xl flex items-center gap-2"
+                  >
+                    <MapPin className="w-3 h-3 text-[#0f766e]" /> {loc}
+                  </button>
+                ))}
+              {uniqueLocations.filter(loc => normalize(loc).includes(normalize(query))).length === 0 && (
+                <p className="text-xs text-text-muted-custom px-3 py-2">No hay destinos sugeridos</p>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <div className="flex-[1.5] flex items-center bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark" onClick={() => setShowDatePicker(true)}>
@@ -369,15 +412,45 @@ export default function SearchPage() {
       {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
       <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2">
         <div className="hidden md:flex flex-1 max-w-4xl items-center bg-white rounded-full border border-surface-mist-dark shadow-sm divide-x divide-surface-mist-dark relative">
-          <div className="flex-1 px-4 py-2 flex flex-col justify-center rounded-l-full hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist group">
+          <div className="flex-1 px-4 py-2 flex flex-col justify-center rounded-l-full hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist group relative">
             <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Lugar</label>
             <input 
               type="text" 
               placeholder="¿A dónde vas?" 
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value)
+                setShowLocationDropdown(true)
+              }}
+              onFocus={() => setShowLocationDropdown(true)}
+              onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
               className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom"
             />
+            {showLocationDropdown && (query.length > 0 || uniqueLocations.length > 0) && (
+              <div className="absolute top-[120%] left-0 w-[300px] bg-white border border-surface-mist-dark rounded-3xl shadow-2xl z-50 max-h-64 overflow-y-auto overflow-x-hidden p-3">
+                <p className="text-xs font-bold text-text-muted-custom uppercase px-3 py-2 mb-1">Destinos recomendados</p>
+                {uniqueLocations
+                  .filter(loc => normalize(loc).includes(normalize(query)))
+                  .map((loc, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setQuery(loc)
+                        setShowLocationDropdown(false)
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm font-medium text-ink-teal-900 hover:bg-surface-mist rounded-2xl flex items-center gap-3 transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-surface-mist flex items-center justify-center flex-shrink-0">
+                        <MapPin className="w-4 h-4 text-[#0f766e]" />
+                      </div>
+                      {loc}
+                    </button>
+                  ))}
+                {uniqueLocations.filter(loc => normalize(loc).includes(normalize(query))).length === 0 && (
+                  <p className="text-sm text-text-muted-custom px-4 py-3">No hay destinos sugeridos</p>
+                )}
+              </div>
+            )}
           </div>
 
           <div 

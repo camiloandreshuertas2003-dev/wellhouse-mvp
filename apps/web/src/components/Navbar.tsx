@@ -107,22 +107,67 @@ const NavbarContent = memo(function NavbarContent() {
       {/* ── Desktop Navbar ─────────────────────────────────────────────── */}
       <nav className="hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 shadow-sm" role="navigation" aria-label="Navegación principal">
         <div className="max-w-[1380px] mx-auto px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex items-center h-20">
 
-            {/* Logo */}
+            {/* Logo - Left */}
+            <div className="flex-1 flex justify-start">
             <Link href="/search" className="focus:outline-none rounded">
               <span className="font-fraunces font-bold text-2xl text-ink-teal-900 tracking-tight">Wellhouse</span>
             </Link>
 
-            {/* Desktop Links */}
-            <div className="flex items-center gap-7">
-              <Link href="/search" className={navLinkClass('/search')}>Explorar</Link>
-              <Link href="/how-it-works" className={navLinkClass('/how-it-works')}>Cómo funciona</Link>
+            </div>
 
+            {/* Desktop Links - Center */}
+            <div className="flex items-center justify-center gap-10 lg:gap-14 h-full relative">
+              <Link href="/search" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/search' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                  <img src="/images/nav_icons/explorar.png" alt="Explorar" className="w-full h-full object-contain" />
+                </div>
+                <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/search' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                  Explorar
+                </span>
+                {pathname === '/search' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+              </Link>
+              
+              <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/how-it-works' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                  <img src="/images/nav_icons/como_funciona.png" alt="Cómo funciona" className="w-full h-full object-contain" />
+                </div>
+                <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/how-it-works' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                  Cómo funciona
+                </span>
+                {pathname === '/how-it-works' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+              </Link>
+
+              {session && (
+                <>
+                  <Link href="/dashboard" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/dashboard' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                      <img src="/images/nav_icons/mi_espacio.png" alt="Mi espacio" className="w-full h-full object-contain" />
+                    </div>
+                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/dashboard' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                      Mi espacio
+                    </span>
+                    {pathname === '/dashboard' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                  </Link>
+
+                  <Link href="/messages" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
+                    <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/messages' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                      <img src="/images/nav_icons/mensajes.png" alt="Mensajes" className="w-full h-full object-contain" />
+                    </div>
+                    <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/messages' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
+                      Mensajes
+                    </span>
+                    {pathname === '/messages' && <div className="absolute -bottom-[22px] left-0 right-0 h-[3px] bg-ink-teal-900 rounded-t-full" />}
+                  </Link>
+                </>
+              )}
+            </div>
+
+            {/* Desktop Right - Actions */}
+            <div className="flex-1 flex items-center justify-end gap-5">
               {session ? (
                 <>
-                  <Link href="/dashboard" className={navLinkClass('/dashboard')}>Mi espacio</Link>
-                  <Link href="/messages" className={navLinkClass('/messages')}>Mensajes</Link>
                   {role === 'ADMIN' && (
                     <Link href="/admin" className="font-inter font-bold text-sm text-rose-600 bg-rose-50 px-3 py-1.5 rounded-lg border border-rose-200">
                       Admin
