@@ -11,7 +11,7 @@ import CategoryIcon from '@/components/CategoryIcon'
 import {
   ChevronRight, Users, BedDouble, Bath, ArrowLeft, Share2, Heart,
   MessageCircle, CheckCircle2, RefreshCw, CreditCard, ChevronDown, X, Sparkles, MapPin, Compass, ShieldCheck,
-  ChevronLeft, MoreHorizontal, Home, Calendar
+  ChevronLeft, MoreHorizontal, Home, Calendar, Star
 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { DayPicker, type DateRange } from 'react-day-picker'
@@ -619,12 +619,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          <div className="flex justify-center w-full bg-white rounded-xl border border-neutral-200 overflow-hidden shadow-sm my-4">
+          <div className="flex justify-center w-full bg-white rounded-xl border border-neutral-200 overflow-x-auto shadow-sm my-4">
             <DayPicker
               mode="range"
               selected={dateRange}
               onSelect={setDateRange}
               min={1}
+              numberOfMonths={2}
+              pagedNavigation
               disabled={[
                 { before: property?.available_from ? new Date(property.available_from) : new Date() },
                 { after: property?.available_to ? new Date(property.available_to) : new Date(2100, 1, 1) }
@@ -954,8 +956,67 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            {/* Q&A Section */}
+            {/* Host Section */}
             <div className="border-t border-surface-mist pt-8">
+              <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-6">Conoce al anfitrión</h2>
+              <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm flex flex-col md:flex-row gap-6 items-start">
+                <div className="flex flex-col items-center text-center gap-2 min-w-[120px]">
+                  <div className="w-24 h-24 rounded-full bg-surface-mist overflow-hidden relative">
+                    {property.users?.avatar_url ? (
+                      <img src={property.users.avatar_url} alt={property.users?.name || 'Anfitrión'} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-3xl text-ink-teal-900 font-fraunces bg-accent-mango/10">
+                        {(property.users?.name || 'A')[0].toUpperCase()}
+                      </div>
+                    )}
+                    {property.users?.is_verified && (
+                      <div className="absolute bottom-0 right-0 bg-[#0f766e] text-white p-1 rounded-full border-2 border-white">
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-fraunces font-semibold text-lg text-ink-teal-900">{property.users?.name || 'Anfitrión'}</h3>
+                    <p className="font-inter text-xs text-text-muted-custom mt-1">Miembro desde {property.users?.created_at ? new Date(property.users.created_at).getFullYear() : '2026'}</p>
+                  </div>
+                </div>
+                
+                <div className="flex-1 space-y-4 w-full">
+                  {property.users?.bio ? (
+                    <div>
+                      <h4 className="font-inter font-semibold text-sm text-ink-teal-900 mb-1">Sobre mí</h4>
+                      <p className="font-inter text-sm text-text-muted-custom leading-relaxed">{property.users.bio}</p>
+                    </div>
+                  ) : (
+                    <DescSection title="El anfitrión" text={desc.host} expanded={hostExpanded} onToggle={() => setHostExpanded(p => !p)} />
+                  )}
+
+                  <div className="flex flex-wrap gap-3 pt-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-mist rounded-full font-inter text-xs font-medium text-ink-teal-900">
+                      <Star className="w-3.5 h-3.5 text-accent-mango" /> 
+                      {property.users?.trust_index || 5.0} Trust Index
+                    </div>
+                    {property.users?.is_verified && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-mist rounded-full font-inter text-xs font-medium text-[#0f766e]">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Identidad verificada
+                      </div>
+                    )}
+                  </div>
+                  
+                  {currentUser && property.user_id !== currentUser.id && (
+                    <button 
+                      onClick={() => setBookingModalOpen(true)}
+                      className="mt-2 font-inter text-sm font-semibold text-[#0f766e] hover:underline"
+                    >
+                      Contactar al anfitrión
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Q&A Section */}
+            <div className="border-t border-surface-mist pt-8 mt-8">
               <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-6">Preguntas y respuestas</h2>
               
               <div className="space-y-6 mb-8">

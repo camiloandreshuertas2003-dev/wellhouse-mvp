@@ -245,7 +245,6 @@ export default function CreatePropertyPage() {
       form.description_space && `El espacio: ${form.description_space}`,
       form.description_area && `La zona: ${form.description_area}`,
       form.description_directions && `Cómo llegar: ${form.description_directions}`,
-      form.description_host && `El anfitrión: ${form.description_host}`,
     ].filter(Boolean).join('\n\n') || form.title
 
     try {
@@ -688,16 +687,6 @@ function Step5Description({ form, set }: { form: FormData; set: (f: keyof FormDa
             value={form.description_area}
             onChange={e => set('description_area', e.target.value)}
             placeholder="¿Qué hay cerca? Parques, restaurantes, transporte..."
-          />
-        </div>
-
-        <div>
-          <label className={labelClass}>Conoce al Anfitrión</label>
-          <textarea
-            className={`${inputClass} min-h-[100px] resize-y`}
-            value={form.description_host}
-            onChange={e => set('description_host', e.target.value)}
-            placeholder="¿A qué te dedicas? ¿Cuáles son tus hobbies? Cuéntales a los huéspedes quién eres."
           />
         </div>
 

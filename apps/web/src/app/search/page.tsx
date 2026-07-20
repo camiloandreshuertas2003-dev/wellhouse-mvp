@@ -7,7 +7,10 @@ import { Sparkles, Search, SlidersHorizontal, ShieldCheck, Heart, Home, Waves, M
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import StoryViewer from '@/components/Stories/StoryViewer'
-
+import { DayPicker, DateRange } from 'react-day-picker'
+import { es } from 'date-fns/locale'
+import { format } from 'date-fns'
+import 'react-day-picker/dist/style.css'
 // Dynamic import for map (client-only, avoids SSR issues with mapbox-gl)
 const SearchMapView = dynamic(() => import('@/components/Map/SearchMapView'), {
   ssr: false,
@@ -45,9 +48,10 @@ export default function SearchPage() {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [category, setCategory] = useState('all')
-  const [filters, setFilters] = useState({ propertyType: '', bedrooms: '', city: '' })
-  const [draftFilters, setDraftFilters] = useState({ propertyType: '', bedrooms: '', city: '' })
-  const [showFilters, setShowFilters] = useState(false)
+  const [propertyType, setPropertyType] = useState('')
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [guestCount, setGuestCount] = useState<number | ''>('')
   const [realProps, setRealProps] = useState<PropertyCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [stories, setStories] = useState<any[]>([])
@@ -232,10 +236,10 @@ export default function SearchPage() {
   const baseFilteredProps = activeProps.filter((p) => {
     const q = debouncedQuery.toLowerCase()
     const matchQ = !q || p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q)
-    const matchType = !filters.propertyType || p.type.toLowerCase().includes(filters.propertyType.toLowerCase())
-    const matchBeds = !filters.bedrooms || p.bedrooms >= parseInt(filters.bedrooms)
-    const matchCity = !filters.city || p.location.toLowerCase().includes(filters.city.toLowerCase())
-    return matchQ && matchType && matchBeds && matchCity
+    const matchType = !propertyType || p.type.toLowerCase().includes(propertyType.toLowerCase())
+    const matchGuests = !guestCount || p.capacity >= (guestCount as number)
+    // Date filtering logic could be added here if available_from and available_to are parsed
+    return matchQ && matchType && matchGuests
   })
 
   const listProps = baseFilteredProps.filter(p => !visiblePinIds || visiblePinIds.includes(p.id))
@@ -254,7 +258,7 @@ export default function SearchPage() {
     }))
     
   // searchKey is used to trigger map re-centering when search filters change
-  const searchKey = `${debouncedQuery}-${category}-${filters.city}-${filters.propertyType}-${filters.bedrooms}`
+  const searchKey = `${debouncedQuery}-${category}-${propertyType}-${guestCount}`
 
   const isSearchActive = category !== 'all' || !!debouncedQuery
 
@@ -262,8 +266,8 @@ export default function SearchPage() {
     <div className="min-h-screen bg-[#fafafa] pb-24 md:pb-12">
       
       {/* Sticky Mobile Search Bar */}
-      <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-2.5 flex items-center gap-2 shadow-sm">
-        <div className="flex-1 flex items-center gap-2 bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
+      <div className="md:hidden sticky top-[60px] z-40 bg-[#fafafa]/90 backdrop-blur border-b border-surface-mist-dark p-2.5 shadow-sm flex flex-col gap-2">
+        <div className="flex items-center gap-2 bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
           <Search className="w-3.5 h-3.5 text-gray-400" />
           <input 
             type="text" 
@@ -273,14 +277,51 @@ export default function SearchPage() {
             className="w-full text-base md:text-sm text-ink-teal-900 bg-transparent focus:outline-none"
           />
         </div>
-        <button 
-          onClick={() => { setDraftFilters(filters); setShowFilters(!showFilters); }}
-          className="p-2.5 bg-[#0f766e] text-white rounded-full hover:bg-[#0d635c] transition-all flex-shrink-0"
-          aria-label="Filtros"
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex-[1.5] flex items-center bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark" onClick={() => setShowDatePicker(true)}>
+            <div className="w-full text-xs text-ink-teal-900 bg-transparent focus:outline-none truncate cursor-pointer text-center font-semibold text-[#0f766e]">
+              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'd MMM', { locale: es })} - ${format(dateRange.to, 'd MMM', { locale: es })}` : format(dateRange.from, 'd MMM', { locale: es })) : "Fechas"}
+            </div>
+          </div>
+          <div className="flex-1 flex items-center bg-white px-3.5 py-2 rounded-full border border-surface-mist-dark">
+             <input type="number" placeholder="Huéspedes" value={guestCount} onChange={e => setGuestCount(e.target.value ? parseInt(e.target.value) : '')} className="w-full text-xs text-ink-teal-900 bg-transparent focus:outline-none text-center" />
+          </div>
+          <div className="flex-[1.2] flex items-center bg-white px-2 py-2 rounded-full border border-surface-mist-dark">
+            <select
+              className="w-full text-[11px] font-semibold text-ink-teal-900 bg-transparent focus:outline-none cursor-pointer"
+              value={propertyType}
+              onChange={e => setPropertyType(e.target.value)}
+            >
+              <option value="">Tipo</option>
+              <option value="Finca">Finca</option>
+              <option value="Casa">Casa</option>
+              <option value="Apartamento">Apto</option>
+              <option value="Loft">Loft</option>
+              <option value="Cabaña">Cabaña</option>
+            </select>
+          </div>
+        </div>
       </div>
+
+      {/* Mobile DatePicker Modal overlay */}
+      {showDatePicker && (
+        <div className="md:hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-4 shadow-2xl relative w-full max-w-[360px]">
+            <button onClick={() => setShowDatePicker(false)} className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold z-10">✕</button>
+            <DayPicker
+              mode="range"
+              selected={dateRange}
+              onSelect={setDateRange}
+              locale={es}
+              classNames={{
+                selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
+                today: "font-bold text-accent-mango",
+              }}
+            />
+            <button onClick={() => setShowDatePicker(false)} className="mt-4 w-full bg-ink-teal-900 text-white font-bold py-3 rounded-xl transition-colors active:bg-[#0d635c]">Aplicar fechas</button>
+          </div>
+        </div>
+      )}
 
       {/* ── HERO BANNER SECTION ─────────────────────────────────────────── */}
       <div className="max-w-[1380px] mx-auto md:px-6">
@@ -324,18 +365,74 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* Filter Drawer */}
-      {showFilters && (
-        <div className="max-w-[1280px] mx-auto px-4 sm:px-5 md:px-6 mt-4">
-          <div className="bg-white p-4 rounded-2xl border border-surface-mist-dark shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Tipo de vivienda</label>
-              <select
-                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
-                value={draftFilters.propertyType}
-                onChange={(e) => setDraftFilters({ ...draftFilters, propertyType: e.target.value })}
+
+      {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2">
+        <div className="hidden md:flex flex-1 max-w-4xl items-center bg-white rounded-full border border-surface-mist-dark shadow-sm divide-x divide-surface-mist-dark relative">
+          <div className="flex-1 px-4 py-2 flex flex-col justify-center rounded-l-full hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist group">
+            <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Lugar</label>
+            <input 
+              type="text" 
+              placeholder="¿A dónde vas?" 
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom"
+            />
+          </div>
+
+          <div 
+            className="px-4 py-2 flex flex-col justify-center hover:bg-surface-mist transition-colors cursor-pointer focus-within:bg-surface-mist w-[200px]"
+            onClick={() => setShowDatePicker(!showDatePicker)}
+          >
+            <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Fechas</label>
+            <div className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none truncate cursor-pointer font-medium text-[#0f766e]">
+              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'd MMM', { locale: es })} - ${format(dateRange.to, 'd MMM', { locale: es })}` : format(dateRange.from, 'd MMM', { locale: es })) : <span className="text-text-muted-custom font-normal">Añade fechas</span>}
+            </div>
+            {/* Desktop DatePicker Dropdown */}
+            {showDatePicker && (
+              <div 
+                className="absolute top-[120%] left-1/4 mt-2 bg-white rounded-3xl p-4 shadow-2xl border border-surface-mist-dark z-50 cursor-auto"
+                onClick={e => e.stopPropagation()}
               >
-                <option value="">Todos</option>
+                <div className="flex justify-end mb-2">
+                  <button onClick={() => setShowDatePicker(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold">✕</button>
+                </div>
+                <DayPicker
+                  mode="range"
+                  selected={dateRange}
+                  onSelect={setDateRange}
+                  locale={es}
+                  numberOfMonths={2}
+                  pagedNavigation
+                  classNames={{
+                    selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white",
+                    today: "font-bold text-accent-mango",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          <div className="px-4 py-2 flex flex-col justify-center hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist w-[120px]">
+             <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Quién</label>
+             <input 
+               type="number" 
+               placeholder="¿Cuántos?" 
+               value={guestCount}
+               onChange={(e) => setGuestCount(e.target.value ? parseInt(e.target.value) : '')}
+               className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom"
+             />
+          </div>
+
+          <div className="px-4 py-2 flex items-center justify-between rounded-r-full hover:bg-surface-mist transition-colors cursor-pointer focus-within:bg-surface-mist w-[180px]">
+            <div className="flex flex-col justify-center w-full">
+              <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Tipo</label>
+              <select
+                className="w-full text-sm font-medium text-ink-teal-900 bg-transparent focus:outline-none cursor-pointer"
+                value={propertyType}
+                onChange={e => setPropertyType(e.target.value)}
+              >
+                <option value="">Cualquiera</option>
                 <option value="Finca">Finca</option>
                 <option value="Casa">Casa</option>
                 <option value="Apartamento">Apartamento</option>
@@ -343,72 +440,14 @@ export default function SearchPage() {
                 <option value="Cabaña">Cabaña</option>
               </select>
             </div>
-            <div>
-              <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Habitaciones mínimas</label>
-              <select
-                className="w-full p-2.5 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none bg-white h-[42px]"
-                value={draftFilters.bedrooms}
-                onChange={(e) => setDraftFilters({ ...draftFilters, bedrooms: e.target.value })}
-              >
-                <option value="">Cualquiera</option>
-                {[1, 2, 3, 4].map(n => <option key={n} value={n.toString()}>{n}+ habitaciones</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-text-muted-custom uppercase tracking-wide mb-1.5">Ciudad</label>
-              <input
-                type="text"
-                placeholder="Ej: Medellín, Cali..."
-                className="w-full p-2 border border-surface-mist-dark rounded-xl font-inter text-base md:text-sm text-ink-teal-900 focus:outline-none focus:ring-1 focus:ring-[#0f766e] bg-white h-[42px]"
-                value={draftFilters.city}
-                onChange={(e) => setDraftFilters({ ...draftFilters, city: e.target.value })}
-              />
-            </div>
-            <div className="flex items-end gap-2">
-              <button
-                onClick={() => {
-                  const cleared = { propertyType: '', bedrooms: '', city: '' }
-                  setDraftFilters(cleared)
-                  setFilters(cleared)
-                  setQuery('')
-                  setCategory('all')
-                  setShowFilters(false)
-                }}
-                className="flex-1 py-2.5 text-xs font-bold text-ink-teal-900 border border-surface-mist-dark rounded-xl hover:bg-surface-mist transition-colors h-[42px]"
-              >
-                Limpiar
-              </button>
-              <button
-                onClick={() => {
-                  setFilters(draftFilters)
-                  setShowFilters(false)
-                }}
-                className="flex-1 py-2.5 text-xs font-bold text-white bg-[#0f766e] rounded-xl hover:bg-[#0d635c] transition-colors h-[42px]"
-              >
-                Guardar
-              </button>
-            </div>
+            <button 
+              onClick={() => { setShowDatePicker(false); }}
+              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors ml-2 shadow-sm"
+              aria-label="Buscar"
+            >
+              <Search className="w-4 h-4" />
+            </button>
           </div>
-        </div>
-      )}
-      {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
-      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2">
-        <div className="hidden md:flex flex-1 max-w-md items-center gap-2 bg-white px-4 py-2 rounded-full border border-surface-mist-dark shadow-sm">
-          <Search className="w-4 h-4 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="¿A dónde quieres ir?" 
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none"
-          />
-          <button 
-            onClick={() => { setDraftFilters(filters); setShowFilters(!showFilters); }}
-            className="p-1.5 bg-surface-mist text-ink-teal-900 rounded-full hover:bg-surface-mist-dark transition-colors flex-shrink-0"
-            aria-label="Filtros"
-          >
-            <SlidersHorizontal className="w-3.5 h-3.5" />
-          </button>
         </div>
         
         <div className="flex items-center justify-end gap-2 ml-auto" id="results-container">
@@ -424,7 +463,6 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('list');
-              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'list' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -435,7 +473,6 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('map');
-              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'map' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -446,7 +483,6 @@ export default function SearchPage() {
           <button
             onClick={() => {
               setViewMode('split');
-              document.getElementById('results-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
             className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'split' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
@@ -613,6 +649,7 @@ export default function SearchPage() {
               highlightedId={highlightedPinId}
               onVisiblePinsChange={setVisiblePinIds}
               searchKey={searchKey}
+              query={debouncedQuery}
               className="h-[calc(100vh-280px)] min-h-[400px] w-full rounded-2xl"
             />
           )}
@@ -646,6 +683,7 @@ export default function SearchPage() {
                     highlightedId={highlightedPinId}
                     onVisiblePinsChange={setVisiblePinIds}
                     searchKey={searchKey}
+                    query={debouncedQuery}
                     className="h-full w-full rounded-2xl"
                   />
                 </div>

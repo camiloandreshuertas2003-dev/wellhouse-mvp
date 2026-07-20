@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
-import { HeartOff, Heart } from 'lucide-react'
+import { HeartOff, Heart, Volume2, VolumeX } from 'lucide-react'
 import Link from 'next/link'
 
 export interface HostStory {
@@ -38,19 +38,28 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
   const currentStory = activeStories[currentIndex]
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
+  const [isMuted, setIsMuted] = useState(true)
+
   const handleIframeLoad = () => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
-      // Force play and unmute via YouTube Iframe API postMessage command
       setTimeout(() => {
         iframeRef.current?.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
           '*'
         )
-        iframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'unMute', args: '' }),
-          '*'
-        )
       }, 300)
+    }
+  }
+
+  const toggleMute = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const nextMuted = !isMuted
+    setIsMuted(nextMuted)
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: nextMuted ? 'mute' : 'unMute', args: '' }),
+        '*'
+      )
     }
   }
 
@@ -76,8 +85,12 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
     const handleMessage = (e: MessageEvent) => {
       if (e.origin !== "https://www.youtube.com" && e.origin !== "https://www.youtube-nocookie.com") return;
       try {
-        const data = JSON.parse(e.data);
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data.event === "infoDelivery" && data.info && data.info.playerState === 0) {
+          handleNext();
+        }
+        // Also sometimes YouTube sends onStateChange
+        if (data.event === "onStateChange" && data.info === 0) {
           handleNext();
         }
       } catch(err) {}
@@ -249,6 +262,17 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
               title="No me interesa este video"
             >
               <HeartOff className="w-5 h-5 text-white/90" />
+            </button>
+          </div>
+
+          {/* Botón de Sonido */}
+          <div className="absolute top-1/2 right-4 translate-y-[120%] z-30">
+            <button
+              onClick={toggleMute}
+              className="w-10 h-10 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-sm transition-transform active:scale-95 border border-white/20 shadow-lg"
+              title="Activar/Desactivar Sonido"
+            >
+              {isMuted ? <VolumeX className="w-5 h-5 text-white/90" /> : <Volume2 className="w-5 h-5 text-white/90" />}
             </button>
           </div>
 

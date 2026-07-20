@@ -28,6 +28,7 @@ interface SearchMapViewProps {
   highlightedId?: string | null
   onVisiblePinsChange?: (ids: string[]) => void
   searchKey?: string
+  query?: string
   className?: string
 }
 
@@ -36,6 +37,7 @@ export default function SearchMapView({
   highlightedId,
   onVisiblePinsChange,
   searchKey,
+  query,
   className = '',
 }: SearchMapViewProps) {
   const mapRef = useRef<any>(null)
@@ -101,29 +103,53 @@ export default function SearchMapView({
     options: { radius: 60, maxZoom: 16 }
   })
 
-  // Auto zoom to new pins when search filter changes
+  // Auto zoom to new pins when search filter changes or geocode user query
   useEffect(() => {
-    if (points.length > 0 && mapRef.current) {
-      const lons = points.map(p => p.geometry.coordinates[0])
-      const lats = points.map(p => p.geometry.coordinates[1])
-      let minLon = Math.min(...lons)
-      let minLat = Math.min(...lats)
-      let maxLon = Math.max(...lons)
-      let maxLat = Math.max(...lats)
-      
-      // If there's only 1 point or all points are at the exact same location, pad the bounds artificially
-      if (minLon === maxLon && minLat === maxLat) {
-        minLon -= 0.05
-        maxLon += 0.05
-        minLat -= 0.05
-        maxLat += 0.05
+    let active = true
+
+    async function centerMap() {
+      // If there is a text query, try to use Mapbox Geocoding first
+      if (query && query.trim().length > 1) {
+        try {
+          const res = await fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${MAPBOX_TOKEN}&types=place,locality,neighborhood,region,country`)
+          const data = await res.json()
+          if (active && data.features && data.features.length > 0) {
+            const [lng, lat] = data.features[0].center
+            if (mapRef.current) {
+              mapRef.current.flyTo({ center: [lng, lat], zoom: 11, duration: 2000 })
+            }
+            return // Stop here if geocoding succeeded
+          }
+        } catch (err) {
+          console.error("Geocoding error", err)
+        }
       }
 
-      const newBounds = [minLon, minLat, maxLon, maxLat] as [number, number, number, number]
-      // Add padding to bounds
-      mapRef.current.fitBounds(newBounds, { padding: 50, duration: 1500, maxZoom: 14 })
+      // Fallback: Fit bounds to the filtered pins
+      if (active && points.length > 0 && mapRef.current) {
+        const lons = points.map(p => p.geometry.coordinates[0])
+        const lats = points.map(p => p.geometry.coordinates[1])
+        let minLon = Math.min(...lons)
+        let minLat = Math.min(...lats)
+        let maxLon = Math.max(...lons)
+        let maxLat = Math.max(...lats)
+        
+        if (minLon === maxLon && minLat === maxLat) {
+          minLon -= 0.05
+          maxLon += 0.05
+          minLat -= 0.05
+          maxLat += 0.05
+        }
+
+        const newBounds = [minLon, minLat, maxLon, maxLat] as [number, number, number, number]
+        mapRef.current.fitBounds(newBounds, { padding: 50, duration: 1500, maxZoom: 14 })
+      }
     }
-  }, [searchKey])
+
+    centerMap()
+
+    return () => { active = false }
+  }, [searchKey, query])
 
   // "Search here" — filter pins to those visible in the current viewport
   const handleSearchHere = useCallback(() => {
