@@ -135,13 +135,20 @@ const NavbarContent = memo(function NavbarContent() {
                     Salir
                   </button>
                   {/* WellBot button — Desktop */}
-                  <button
-                    onClick={() => setShowWellBot(!showWellBot)}
-                    className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
-                    title="WellBot — Asistente IA"
-                  >
-                    <Bot className="w-5 h-5" />
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowWellBot(!showWellBot)}
+                      className="p-2 text-ink-teal-900 relative hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                      title="WellBot — Asistente IA"
+                    >
+                      <Bot className="w-5 h-5" />
+                    </button>
+                    {showWellBot && (
+                      <div className="absolute right-0 top-full mt-2 z-50 w-[380px] h-[500px] max-h-[80vh] bg-white rounded-2xl shadow-xl border border-surface-mist-dark overflow-hidden flex flex-col">
+                        <WellBotPanel onClose={() => setShowWellBot(false)} />
+                      </div>
+                    )}
+                  </div>
 
                   {/* Desktop Notification Bell */}
                   <div className="relative">
@@ -199,13 +206,20 @@ const NavbarContent = memo(function NavbarContent() {
 
           <div className="flex items-center gap-2">
             {/* WellBot — Mobile */}
-            <button
-              onClick={() => setShowWellBot(!showWellBot)}
-              className="p-2 text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
-              aria-label="WellBot"
-            >
-              <Bot className="w-5 h-5" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowWellBot(!showWellBot)}
+                className="p-2 text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors flex items-center justify-center"
+                aria-label="WellBot"
+              >
+                <Bot className="w-5 h-5" />
+              </button>
+              {showWellBot && (
+                <div className="absolute right-[-48px] md:right-0 top-full mt-2 z-50 w-[90vw] max-w-[380px] h-[500px] max-h-[70vh] bg-white rounded-2xl shadow-xl border border-surface-mist-dark overflow-hidden flex flex-col">
+                  <WellBotPanel onClose={() => setShowWellBot(false)} />
+                </div>
+              )}
+            </div>
 
             {/* Bell — Mobile */}
             <div className="relative">
@@ -465,19 +479,7 @@ const NavbarContent = memo(function NavbarContent() {
         </div>
       )}
 
-      {/* ── WellBot Panel ─────────────────────────────────────────────────── */}
-      {showWellBot && (
-        <>
-          {/* Mobile backdrop */}
-          <div
-            className="md:hidden fixed inset-0 z-[190] bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowWellBot(false)}
-          />
-          <div className="fixed bottom-0 md:bottom-20 md:top-20 right-0 md:right-4 z-[200] w-full md:w-[380px] h-[85vh] md:h-auto md:max-h-[600px] bg-white md:rounded-2xl shadow-2xl border-t md:border border-surface-mist-dark overflow-hidden flex flex-col slide-in-from-bottom md:slide-in-from-right animate-in rounded-t-3xl md:rounded-t-2xl">
-            <WellBotPanel onClose={() => setShowWellBot(false)} />
-          </div>
-        </>
-      )}
+
     </>
   )
 })
