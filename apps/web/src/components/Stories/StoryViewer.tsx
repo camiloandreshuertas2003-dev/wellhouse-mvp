@@ -41,28 +41,41 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
   const [isMuted, setIsMuted] = useState(true)
   const [liked, setLiked] = useState(false)
 
-  // Reset liked state when the story changes
+  // Check if liked and reset on story change
   useEffect(() => {
-    setLiked(false)
+    const checkLiked = async () => {
+      if (!currentStory) return
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user) {
+        const { data } = await (supabase as any).from('favorites')
+          .select('id')
+          .eq('user_id', session.user.id)
+          .eq('property_id', currentStory.property_id)
+          .maybeSingle()
+        setLiked(!!data)
+      } else {
+        setLiked(false)
+      }
+    }
+    checkLiked()
   }, [currentStory?.id])
 
   const handleIframeLoad = () => {
     if (iframeRef.current && iframeRef.current.contentWindow) {
+      // Subscribe to YouTube iframe API events to receive onStateChange
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'listening' }),
+        '*'
+      )
+      
       setTimeout(() => {
         iframeRef.current?.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
           '*'
         )
-
-        // If not iOS, unmute automatically
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
-        if (!isIOS) {
-          setIsMuted(false)
-          iframeRef.current?.contentWindow?.postMessage(
-            JSON.stringify({ event: 'command', func: 'unMute', args: '' }),
-            '*'
-          )
-        }
+        // Note: Auto-unmuting here breaks autoplay on most browsers (Chrome/Android)
+        // because browsers block unmuted video without direct interaction on the iframe.
+        // It's safer to let it autoplay muted and let the user unmute manually.
       }, 300)
     }
   }
@@ -170,15 +183,21 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        await (supabase as any).from('favorites').upsert({
-          user_id: session.user.id,
-          property_id: currentStory.property_id
-        }, { onConflict: 'user_id,property_id' });
-        
-        setLiked(true);
-        const btn = document.getElementById('like-btn-' + currentStory.id);
-        if (btn) btn.classList.add('scale-125');
-        setTimeout(() => { if (btn) btn.classList.remove('scale-125') }, 200);
+        if (liked) {
+          await (supabase as any).from('favorites').delete()
+            .eq('user_id', session.user.id)
+            .eq('property_id', currentStory.property_id);
+          setLiked(false);
+        } else {
+          await (supabase as any).from('favorites').insert({
+            user_id: session.user.id,
+            property_id: currentStory.property_id
+          });
+          setLiked(true);
+          const btn = document.getElementById('like-btn-' + currentStory.id);
+          if (btn) btn.classList.add('scale-125');
+          setTimeout(() => { if (btn) btn.classList.remove('scale-125') }, 200);
+        }
       } else {
         alert('Debes iniciar sesión para guardar en favoritos.');
       }

@@ -651,10 +651,11 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             <textarea
               value={initialMessage}
               onChange={e => setInitialMessage(e.target.value)}
+              onClick={() => { if (!currentUser) router.push('/register') }}
               placeholder="¡Hola! Me encantaría hospedarme en tu casa. Cuéntale por qué te gustaría intercambiar..."
               rows={3}
               className="w-full px-3 py-2.5 border border-neutral-200 rounded-radius-sm font-inter text-sm text-ink-teal-900 focus:ring-2 focus:ring-accent-mango focus:border-transparent outline-none transition-all resize-none"
-              required
+              required={!!currentUser}
             />
           </div>
 
@@ -671,8 +672,11 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           {bookError && <p className="font-inter text-sm text-red-600">{bookError}</p>}
 
           <button
-            onClick={handleRequest}
-            disabled={submitting || nights < 1 || !initialMessage.trim()}
+            onClick={() => {
+              if (!currentUser) router.push('/register')
+              else handleRequest()
+            }}
+            disabled={submitting || nights < 1 || (!currentUser ? false : !initialMessage.trim())}
             className="w-full bg-[#0f766e] text-white py-3 rounded-xl font-inter font-semibold hover:bg-[#0f766e]/95 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? 'Enviando…' : 'Solicitar intercambio'}
@@ -719,14 +723,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
         
         {/* ── Mobile Floating Top Bar ── */}
         <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent pointer-events-none">
-          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors pointer-events-auto">
+          <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors pointer-events-auto">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-3 pointer-events-auto">
-            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+            <button onClick={handleShare} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors">
               <Share2 className="w-5 h-5" />
             </button>
-            <button onClick={handleSave} className="w-10 h-10 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white hover:bg-white/40 transition-colors">
+            <button onClick={handleSave} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors">
               <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
           </div>
@@ -885,18 +889,16 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               <h2 className="font-fraunces font-semibold text-xl text-ink-teal-900 mb-4">Dónde vas a estar</h2>
               <div className="h-72 w-full bg-surface-mist rounded-[20px] flex items-center justify-center mb-8 overflow-hidden relative z-0 border border-neutral-200">
                 {property.latitude && property.longitude ? (
-                  <div className="w-full h-full relative">
-                    <div className="absolute inset-0 filter blur-[6px] scale-[1.03] opacity-80 pointer-events-none">
+                  <div className="w-full h-full relative group">
+                    <div className="absolute inset-0 z-0">
                       <LeafletMap lat={property.latitude} lng={property.longitude} />
                     </div>
-                    {/* Privacy Overlay */}
-                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10 bg-ink-teal-900/5">
-                      <div className="w-16 h-16 bg-white/90 backdrop-blur rounded-full flex items-center justify-center mb-3 shadow-lg border border-neutral-200">
-                        <MapPin className="w-8 h-8 text-accent-mango" />
-                      </div>
-                      <p className="font-fraunces font-bold text-xl text-ink-teal-900 drop-shadow-sm">{property.city}, {property.country}</p>
-                      <p className="font-inter text-sm font-medium text-ink-teal-900 mt-1 bg-white/80 px-4 py-1.5 rounded-full shadow-sm">Ubicación aproximada por privacidad</p>
-                    </div>
+                    {!currentUser && (
+                      <div 
+                        className="absolute inset-0 z-10 cursor-pointer" 
+                        onClick={() => router.push('/register')} 
+                      />
+                    )}
                   </div>
                 ) : (
                   <div className="text-center">
@@ -1053,9 +1055,12 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                     )}
                   </div>
                   
-                  {currentUser && property.user_id !== currentUser.id && (
+                  {property.user_id !== currentUser?.id && (
                     <button 
-                      onClick={() => setBookingModalOpen(true)}
+                      onClick={() => {
+                        if (!currentUser) router.push('/register')
+                        else setBookingModalOpen(true)
+                      }}
                       className="mt-2 font-inter text-sm font-semibold text-[#0f766e] hover:underline"
                     >
                       Contactar al anfitrión
@@ -1132,7 +1137,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                 )}
               </div>
 
-              {currentUser && (property.user_id !== currentUser.id || isMock) && (
+              {(property.user_id !== currentUser?.id || isMock) && (
                 <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-sm">
                   <h3 className="font-inter font-semibold text-sm text-ink-teal-900 mb-3">Pregúntale al anfitrión</h3>
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -1140,12 +1145,16 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                       type="text"
                       value={newQuestion}
                       onChange={e => setNewQuestion(e.target.value)}
+                      onClick={() => { if (!currentUser) router.push('/register') }}
                       placeholder="Ej: ¿Hay supermercados cerca?"
                       className="flex-1 px-4 py-2.5 border border-neutral-200 rounded-xl font-inter text-sm focus:outline-none focus:border-accent-mango focus:ring-1 focus:ring-accent-mango bg-base-paper"
                     />
                     <button
-                      onClick={handleAskQuestion}
-                      disabled={asking || !newQuestion.trim()}
+                      onClick={() => {
+                        if (!currentUser) router.push('/register')
+                        else handleAskQuestion()
+                      }}
+                      disabled={asking || (!currentUser ? false : !newQuestion.trim())}
                       className="px-6 py-2.5 bg-accent-mango text-white rounded-xl text-sm font-semibold hover:bg-accent-mango-hover disabled:opacity-50 transition-all active:scale-95 whitespace-nowrap"
                     >
                       {asking ? 'Enviando...' : 'Preguntar'}
@@ -1175,7 +1184,10 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
           {(submitted || hasPendingRequest) && <p className="font-inter text-xs text-[#0f766e] font-bold mt-1">✓ Solicitud en curso</p>}
         </div>
         <button
-          onClick={() => setBookingModalOpen(true)}
+          onClick={() => {
+            if (!currentUser) router.push('/register')
+            else setBookingModalOpen(true)
+          }}
           disabled={hasPendingRequest || submitted}
           className="bg-[#0f766e] text-white px-8 py-3.5 rounded-xl font-inter font-bold text-base hover:bg-[#0f766e]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md min-w-[140px]"
         >

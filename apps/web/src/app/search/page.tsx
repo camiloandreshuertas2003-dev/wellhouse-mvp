@@ -315,14 +315,14 @@ export default function SearchPage() {
           
           {/* Content Inside Hero */}
           <div className={`absolute inset-0 px-4 py-4 md:px-8 md:py-8 flex flex-col justify-end z-10 transition-opacity duration-500 ${bannerFading ? 'opacity-0' : 'opacity-100'}`}>
-            <h1 className="font-fraunces font-bold text-xl md:text-[38px] text-white leading-tight max-w-[240px] md:max-w-xl">
+            <h1 className="font-fraunces font-bold text-xl md:text-[38px] text-white leading-tight max-w-[300px] sm:max-w-sm md:max-w-xl">
               {banners[activeBannerIndex]?.title
                 ? banners[activeBannerIndex].title
                 : (<>No es una estadía, <br />es tu próxima <span className="italic font-normal text-[#14b8a6]">experiencia</span></>)
               }
             </h1>
             {banners[activeBannerIndex]?.subtitle && (
-              <p className="text-white/70 text-xs md:text-sm mt-1 max-w-[240px] md:max-w-sm">
+              <p className="text-white/70 text-xs md:text-sm mt-1 max-w-[300px] sm:max-w-sm md:max-w-sm">
                 {banners[activeBannerIndex].subtitle}
               </p>
             )}
