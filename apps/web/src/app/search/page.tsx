@@ -469,16 +469,16 @@ export default function SearchPage() {
                     head_row: "flex",
                     head_cell: "text-text-muted-custom w-8 font-semibold text-[10px] uppercase tracking-wider",
                     row: "flex w-full mt-1",
-                    cell: "text-center text-sm p-0 relative",
-                    day: "h-8 w-8 p-0 font-medium text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors",
-                    day_selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white font-bold",
-                    day_today: "text-accent-mango font-bold",
+                    cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
+                    day: "h-8 w-8 p-0 font-medium rounded-full hover:bg-surface-mist hover:text-ink-teal-900 transition-colors cursor-pointer",
+                    day_selected: "bg-[#0f766e] text-white hover:bg-ink-teal-900 hover:text-white focus:bg-[#0f766e] focus:text-white",
+                    day_today: "font-bold text-accent-mango",
                     day_outside: "text-gray-300 opacity-50",
                     day_disabled: "text-gray-200 opacity-50",
                     day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none hover:rounded-none",
                     day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
                     day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
-                  }}
+                  } as any}
                 />
               </div>
             )}
@@ -898,7 +898,7 @@ export default function SearchPage() {
                     day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none",
                     day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
                     day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
-                  }}
+                  } as any}
                 />
               </div>
             </div>

@@ -18,7 +18,7 @@ export default function ClusterBadge({ latitude, longitude, pointCount, onClick 
       latitude={latitude}
       longitude={longitude}
       anchor="center"
-      onClick={(e) => {
+      onClick={(e: any) => {
         e.originalEvent.stopPropagation()
         onClick()
       }}

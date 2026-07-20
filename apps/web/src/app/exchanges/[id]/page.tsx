@@ -70,6 +70,8 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
   const [loading, setLoading] = useState(true)
   const [acting, setActing] = useState(false)
   const [msg, setMsg] = useState('')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -105,17 +107,22 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
     }
   }
 
-  const handleComplete = async () => {
+  const handleComplete = () => {
     if (!exchange) return
-    if (!confirm('Confirmas que el intercambio se completo exitosamente? Esto liberara los WellPoints al anfitrion.')) return
+    setShowConfirmModal(true)
+  }
+
+  const executeComplete = async () => {
     setActing(true)
+    setShowConfirmModal(false)
     const { data, error } = await (supabase as any).rpc('complete_exchange', { p_exchange_id: exchange.id })
     setActing(false)
     if (data?.success) {
-      setMsg('Intercambio cerrado! Los WellPoints fueron liberados al anfitrion.')
+      window.dispatchEvent(new Event('wp-balance-updated'))
       fetchExchange(exchange.id)
+      setShowSuccessModal(true)
     } else {
-      setMsg('Error: ' + (data?.error || error?.message))
+      setMsg('Error: ' + (data?.error || error?.message || 'No se pudo completar'))
     }
   }
 
@@ -305,6 +312,53 @@ export default function ExchangeDetailPage({ params }: { params: { id: string } 
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-ink-teal-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-teal-50 flex items-center justify-center mb-4">
+              <CheckCircle className="w-6 h-6 text-[#0f766e]" />
+            </div>
+            <h3 className="font-fraunces font-bold text-xl text-ink-teal-900 mb-2">¿Finalizar estadía?</h3>
+            <p className="text-sm text-text-muted-custom mb-6">
+              Confirmas que el intercambio concluyó exitosamente. Se liberarán <span className="font-bold text-wellpoint-gold">{wpTotal} WP</span> a tu billetera inmediatamente.
+            </p>
+            <div className="flex flex-col gap-2">
+              <button onClick={executeComplete} disabled={acting} className="w-full py-3 bg-[#0f766e] text-white font-bold rounded-xl hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2">
+                {acting ? 'Acreditando WP...' : 'Sí, finalizar y acreditar'}
+              </button>
+              <button onClick={() => setShowConfirmModal(false)} disabled={acting} className="w-full py-3 font-bold text-ink-teal-900 bg-surface-mist rounded-xl hover:bg-gray-200">
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success/Review Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-ink-teal-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-16 h-16 rounded-full bg-wellpoint-gold/10 border border-wellpoint-gold/30 flex items-center justify-center mx-auto mb-4">
+              <Coins className="w-8 h-8 text-wellpoint-gold drop-shadow-md" />
+            </div>
+            <h3 className="font-fraunces font-bold text-xl text-ink-teal-900 mb-2">¡Transacción exitosa!</h3>
+            <p className="text-sm text-text-muted-custom mb-6">
+              Se han sumado <span className="font-bold text-wellpoint-gold">+{wpTotal} WP</span> a tu billetera. Ahora que la estadía terminó, ¿qué tal si le dejas una reseña a {other?.name}?
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link href={'/reviews/write?exchange_id=' + exchange.id + '&user_id=' + other?.id}
+                className="w-full py-3 bg-ink-teal-900 text-white font-bold rounded-xl hover:opacity-90 flex items-center justify-center gap-2">
+                <Star className="w-4 h-4" /> Escribir Reseña
+              </Link>
+              <button onClick={() => setShowSuccessModal(false)} className="w-full py-3 font-bold text-gray-400 hover:text-ink-teal-900">
+                Hacerlo más tarde
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -25,7 +25,7 @@ export default function MapPin({ pin, isSelected, onSelect }: MapPinProps) {
       latitude={pin.latitude}
       longitude={pin.longitude}
       anchor="bottom"
-      onClick={(e) => {
+      onClick={(e: any) => {
         e.originalEvent.stopPropagation()
         onSelect(isSelected ? null : pin)
       }}

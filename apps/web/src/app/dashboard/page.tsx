@@ -575,7 +575,7 @@ function OverviewTab({
             className="flex overflow-x-auto lg:grid lg:grid-cols-2 gap-3 pb-2 lg:pb-0 snap-x snap-mandatory"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <style jsx>{`.snap-x::-webkit-scrollbar { display: none; }`}</style>
+            <style>{`.snap-x::-webkit-scrollbar { display: none; }`}</style>
             
             <Link href="/rankings" className="min-w-[100px] snap-center bg-surface-mist rounded-xl border border-neutral-200 p-3 flex flex-col items-center justify-center gap-2 hover:bg-neutral-100 transition-colors text-center group">
               <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
