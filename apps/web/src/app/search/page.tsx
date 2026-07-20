@@ -612,60 +612,35 @@ export default function SearchPage() {
         </div>
       </div>
 
-      {/* ── DEFAULT / HOME STATE (Category === 'all' and no active query) ── */}
+      {/* ── CATÁLOGO ESTILO NETFLIX ─────────────────────────────── */}
       {category === 'all' && !debouncedQuery && viewMode === 'list' ? (
-        <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-8 space-y-10">
-          
-          {/* SECTION 1: Host Stories ("Inspírate con experiencias reales") */}
+        <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-6 space-y-10 pb-10">
+
+          {/* Stories row (if any) */}
           {stories.length > 0 && (
             <div>
-              <div className="flex justify-between items-end mb-4">
-                <div>
-                  <h2 className="font-fraunces font-bold text-lg sm:text-xl md:text-[22px] text-ink-teal-900">
-                    Inspírate con experiencias reales
-                  </h2>
-                </div>
-                <button 
-                  onClick={() => setCategory('playa')} 
-                  className="text-xs sm:text-sm font-bold text-[#0f766e] hover:underline"
-                >
-                  Ver todas →
-                </button>
-              </div>
-
-              {/* Stories Cards Grid / Horizontal Scroll */}
+              <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900 mb-3">
+                ✨ Historias de anfitriones
+              </h2>
               <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                 {stories.map((story, idx) => (
-                  <div 
-                    key={story.id} 
+                  <div
+                    key={story.id}
                     onClick={() => setActiveStoryIndex(idx)}
-                    className="relative w-[120px] md:w-[170px] aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-sm flex-shrink-0 group cursor-pointer"
+                    className="relative w-[110px] md:w-[150px] aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-sm flex-shrink-0 group cursor-pointer"
                   >
-                    <img 
-                      src={story.thumbnail_url} 
-                      alt="" 
-                      className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-102 transition-transform duration-500" 
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/20" />
-                    
-                    {/* Top Left Host Avatar */}
+                    <img src={story.thumbnail_url} alt="" className="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/10" />
                     {story.users?.avatar_url && (
-                      <div className="absolute top-2 left-2 w-6 h-6 rounded-full border border-white shadow-md overflow-hidden bg-gray-200">
+                      <div className="absolute top-2 left-2 w-6 h-6 rounded-full border border-white shadow overflow-hidden bg-gray-200">
                         <img src={story.users.avatar_url} alt="" className="w-full h-full object-cover" />
                       </div>
                     )}
-
-                    {/* Bottom Info Overlay */}
                     <div className="absolute bottom-2.5 left-2.5 right-2.5 text-white">
-                      <span className="inline-flex items-center gap-0.5 bg-[#0f766e]/85 px-1.5 py-0.5 rounded-full text-[8px] font-bold tracking-wide uppercase mb-1">
-                        <MapPin className="w-2 h-2 text-white" /> {story.location_tags}
+                      <span className="inline-flex items-center gap-0.5 bg-[#0f766e]/85 px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase mb-1">
+                        <MapPin className="w-2 h-2" /> {story.location_tags}
                       </span>
-                      <h4 className="font-fraunces font-bold text-[10px] md:text-xs leading-snug line-clamp-2">
-                        {story.properties?.title || 'Trato cerrado'}
-                      </h4>
-                      <p className="text-[9px] md:text-[10px] text-gray-300 font-inter mt-0.5">
-                        {story.users?.name || 'Anfitrión'}
-                      </p>
+                      <h4 className="font-fraunces font-bold text-[10px] md:text-xs leading-snug line-clamp-2">{story.properties?.title || 'Trato cerrado'}</h4>
                     </div>
                   </div>
                 ))}
@@ -673,54 +648,49 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* SECTION 2: Category Highlights */}
-          <div>
-            <div className="flex justify-between items-end mb-4">
-              <h2 className="font-fraunces font-bold text-lg sm:text-xl md:text-[22px] text-ink-teal-900">
-                Explora por categoría
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {[
-                { id: 'playa', label: 'Playa', emoji: '🏖️', desc: 'Costa Caribe y Pacífico', bg: 'from-blue-400 to-cyan-500' },
-                { id: 'montana', label: 'Montaña', emoji: '🏔️', desc: 'Andes y páramos', bg: 'from-green-500 to-teal-600' },
-                { id: 'fincas', label: 'Campo', emoji: '🌿', desc: 'Fincas y haciendas', bg: 'from-lime-500 to-green-600' },
-                { id: 'urbano', label: 'Ciudad', emoji: '🏙️', desc: 'Capitales y urbes', bg: 'from-slate-500 to-gray-700' },
-                { id: 'exclusivo', label: 'Exclusivo', emoji: '✨', desc: 'Lujo y confort', bg: 'from-amber-500 to-orange-600' },
-              ].map(cat => (
-                <button key={cat.id} onClick={() => setCategory(cat.id)}
-                  className={`relative h-28 sm:h-32 rounded-2xl bg-gradient-to-br ${cat.bg} overflow-hidden group cursor-pointer border-0 text-left`}>
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
-                  <div className="absolute inset-0 p-3 flex flex-col justify-end">
-                    <span className="text-2xl mb-1">{cat.emoji}</span>
-                    <p className="text-white font-fraunces font-bold text-sm leading-tight">{cat.label}</p>
-                    <p className="text-white/80 text-[10px]">{cat.desc}</p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          {/* Netflix-style rows per category */}
+          {[
+            { id: 'playa', label: '🏖️ Playa y Costa' },
+            { id: 'urbano', label: '🏙️ Ciudad' },
+            { id: 'montana', label: '🏔️ Montaña' },
+            { id: 'fincas', label: '🌿 Campo y Fincas' },
+            { id: 'exclusivo', label: '✨ Exclusivo' },
+          ].map(({ id, label }) => {
+            const catProps = realProps.filter(p => (p.type || '').toLowerCase() === id)
+            if (catProps.length === 0) return null
+            return (
+              <div key={id}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900">{label}</h2>
+                  <button
+                    onClick={() => setCategory(id)}
+                    className="text-xs sm:text-sm font-bold text-[#0f766e] hover:underline whitespace-nowrap"
+                  >
+                    Ver todos →
+                  </button>
+                </div>
+                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-3">
+                  {catProps.map((p, idx) => (
+                    <div key={p.id} className="flex-shrink-0 w-[260px] sm:w-[280px]">
+                      <PropertyCard property={p} variant="carousel" isPriority={idx < 4} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
 
-          {/* SECTION 3: Trust Banner ("Viaja con confianza") */}
-          <div className="bg-[#f0fdfa] rounded-2xl border border-[#ccfbf1] p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-xl bg-[#0f766e]/10 flex items-center justify-center text-[#0f766e] flex-shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-fraunces font-bold text-sm sm:text-base text-ink-teal-900">Viaja con confianza</h4>
-                <p className="text-xs text-text-muted-custom font-inter mt-0.5">
-                  Perfiles verificados, reseñas reales y soporte 24/7 para tu tranquilidad.
-                </p>
+          {/* If all categories empty - show all */}
+          {realProps.length > 0 && !['playa','urbano','montana','fincas','exclusivo'].some(id => realProps.some(p => (p.type||'').toLowerCase() === id)) && (
+            <div>
+              <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900 mb-3">🏡 Todas las viviendas</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {realProps.map((p, idx) => (
+                  <PropertyCard key={p.id} property={p} isPriority={idx < 5} />
+                ))}
               </div>
             </div>
-            <Link 
-              href="/how-it-works"
-              className="bg-[#0f766e] hover:bg-[#0d635c] text-white font-inter font-bold text-xs sm:text-sm px-5 py-2.5 rounded-full transition-colors self-start sm:self-center"
-            >
-              Conocer más
-            </Link>
-          </div>
+          )}
 
         </div>
       ) : (
