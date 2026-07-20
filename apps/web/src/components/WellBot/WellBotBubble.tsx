@@ -3,6 +3,44 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useChat } from 'ai/react'
 import { usePathname, useSearchParams } from 'next/navigation'
+import { X, Send, Bot, Sparkles } from 'lucide-react'
+
+// Render markdown-lite: bold (**text**) and links
+function renderBotText(text: string) {
+  const lines = text.split('\n')
+  return lines.map((line, i) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/)
+    const rendered = parts.map((part, j) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={j} className="font-semibold">{part.slice(2, -2)}</strong>
+      }
+      const linkMatch = part.match(/\[([^\]]+)\]\(([^)]+)\)/)
+      if (linkMatch) {
+        const [full, label, href] = linkMatch
+        const before = part.slice(0, part.indexOf(full))
+        const after = part.slice(part.indexOf(full) + full.length)
+        return (
+          <span key={j}>
+            {before}
+            <a href={href} className="text-[#f59e0b] underline underline-offset-2 hover:opacity-80" target={href.startsWith('http') ? '_blank' : undefined}>
+              {label}
+            </a>
+            {after}
+          </span>
+        )
+      }
+      return <span key={j}>{part}</span>
+    })
+    return <span key={i}>{rendered}{i < lines.length - 1 && <br />}</span>
+  })
+}
+
+const QUICK_PROMPTS = [
+  'Fincas en el Eje Cafetero',
+  'Casas en la Costa',
+  'Apartamentos en Bogotá',
+  '¿Cómo gano WellPoints?',
+]
 
 function WellBotBubbleContent() {
   const [isOpen, setIsOpen] = useState(false)
@@ -61,7 +99,7 @@ function WellBotBubbleContent() {
     isDragging.current = false
   }
 
-  // Determinar el contexto de la página
+  // Page context for smarter AI responses
   const getPageContext = () => {
     const path = pathname || ''
     if (path === '/') return { page: 'home', details: 'Buscando inspiración' }
@@ -72,14 +110,20 @@ function WellBotBubbleContent() {
     }
     if (path.startsWith('/messages')) return { page: 'messages_center' }
     if (path.startsWith('/dashboard')) return { page: 'dashboard' }
-    return { page: 'unknown', path }
+    if (path.startsWith('/exchanges')) return { page: 'exchanges' }
+    return { page: 'other', path }
   }
 
   const { messages, input, handleInputChange, handleSubmit, isLoading } = useChat({
     api: '/api/chat',
-    body: {
-      page_context: getPageContext()
-    }
+    initialMessages: [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: '¡Hola! Soy **WellBot**, tu asistente de Wellhouse.\n\nPuedo ayudarte a:\n• Encontrar viviendas por ciudad o región\n• Entender cómo funcionan los WellPoints\n• Guiarte para publicar tu vivienda\n\n¿Qué buscas hoy?'
+      }
+    ],
+    body: { page_context: getPageContext() }
   })
 
   // Auto-scroll al fondo cuando hay nuevos mensajes
@@ -92,9 +136,12 @@ function WellBotBubbleContent() {
   // Don't render until position is computed client-side
   if (!position) return null
 
+  // On property detail page the bar is at bottom-[72px], so offset above it on mobile
+  const isPropertyPage = (pathname || '').startsWith('/properties/')
+
   return (
     <>
-      {/* Floating Button — Desktop: fixed bottom-right / Mobile: draggable */}
+      {/* Floating Button */}
       {!isOpen && (
         <button
           ref={buttonRef}
@@ -102,113 +149,153 @@ function WellBotBubbleContent() {
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
-          className="fixed z-50 w-14 h-14 bg-primary-cobalt text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-primary-cobalt/30 cursor-grab active:cursor-grabbing select-none touch-none"
+          className="fixed z-[70] w-14 h-14 bg-[#0f766e] text-white rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-[#0f766e]/30 cursor-grab active:cursor-grabbing select-none touch-none"
           style={{ left: `${position.x}px`, top: `${position.y}px` }}
-          aria-label="Abrir WellBot"
+          aria-label="Abrir WellBot asistente"
         >
-          <span className="text-2xl pointer-events-none">🤖</span>
+          <Bot className="w-6 h-6" />
+          {/* Ping indicator */}
+          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#f59e0b] rounded-full border-2 border-white" />
         </button>
       )}
 
-      {/* Panel del Chat — full screen on mobile, panel on desktop */}
+      {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed z-50 inset-0 md:inset-auto md:bottom-6 md:right-6 font-inter">
+        <div
+          className="fixed z-[70] inset-0 md:inset-auto md:bottom-6 md:right-6 font-inter"
+          role="dialog"
+          aria-label="WellBot asistente"
+          aria-modal="true"
+        >
           {/* Mobile backdrop */}
           <div
-            className="md:hidden absolute inset-0 bg-black/40"
+            className="md:hidden absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
-          <div className="relative md:static w-full h-full md:w-96 md:h-[500px] md:max-h-[calc(100vh-4rem)] flex flex-col bg-white md:rounded-[24px] shadow-2xl border-0 md:border border-surface-mist-dark overflow-hidden animate-in slide-in-from-bottom-5 duration-300">
 
+          <div
+            className={`relative md:static flex flex-col bg-white overflow-hidden shadow-2xl
+              /* Mobile: sheet from bottom */
+              absolute bottom-0 left-0 right-0 rounded-t-[24px] max-h-[90vh]
+              md:rounded-[20px] md:w-[380px] md:h-[540px] md:max-h-none md:bottom-auto md:left-auto
+              ${isPropertyPage ? 'pb-[env(safe-area-inset-bottom,0px)]' : ''}
+            `}
+          >
             {/* Header */}
-            <div className="bg-primary-cobalt text-white p-4 flex justify-between items-center shrink-0">
+            <div className="bg-[#0f766e] text-white px-4 py-3.5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center text-xl">
-                  🤖
+                <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-fraunces font-bold text-lg leading-tight">WellBot</h3>
-                  <p className="text-xs text-white/80 font-medium">Asistente Inteligente</p>
+                  <h3 className="font-fraunces font-bold text-base leading-tight">WellBot</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />
+                    <p className="text-[11px] text-white/80">Asistente Inteligente</p>
+                  </div>
                 </div>
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-white/80 hover:text-white p-2 focus:outline-none transition-colors"
-                aria-label="Cerrar chat"
+                className="text-white/80 hover:text-white p-1.5 focus:outline-none transition-colors rounded-full hover:bg-white/10"
+                aria-label="Cerrar WellBot"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Área de mensajes */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface-mist/30">
-              {messages.length === 0 ? (
-                <div className="text-center mt-10">
-                  <span className="text-4xl mb-3 block">👋</span>
-                  <p className="text-sm text-ink-teal-700">¡Hola! Soy WellBot.</p>
-                  <p className="text-xs text-text-muted-custom mt-2 px-6">
-                    Puedo ayudarte a buscar casas, entender tus WellPoints, o explicarte cómo funciona la plataforma.
-                  </p>
-                </div>
-              ) : (
-                messages.map(m => (
-                  <div key={m.id} className={`flex flex-col ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
-                    {m.role === 'assistant' && (
-                      <span className="text-[10px] text-text-muted-custom ml-1 mb-1 font-bold">WellBot</span>
-                    )}
-                    <div
-                      className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm ${
-                        m.role === 'user'
-                          ? 'bg-primary-cobalt text-white rounded-br-none'
-                          : 'bg-white text-ink-teal-900 border border-surface-mist-dark rounded-tl-none shadow-sm'
-                      }`}
-                    >
-                      {m.content}
-                      {m.toolInvocations?.map((tool: any) => (
-                        <div key={tool.toolCallId} className="mt-2 text-[10px] bg-surface-mist p-2 rounded-lg text-text-muted-custom font-mono">
-                          {'result' in tool ? `✓ Consultó: ${tool.toolName}` : `⏳ Consultando: ${tool.toolName}...`}
-                        </div>
-                      ))}
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#f8fafb]">
+              {messages.map(m => (
+                <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  {m.role === 'assistant' && (
+                    <div className="w-7 h-7 rounded-full bg-[#0f766e]/10 flex items-center justify-center mr-2 flex-shrink-0 mt-0.5">
+                      <Bot className="w-3.5 h-3.5 text-[#0f766e]" />
                     </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl text-sm leading-relaxed ${
+                      m.role === 'user'
+                        ? 'bg-[#0f766e] text-white rounded-br-sm'
+                        : 'bg-white text-[#1a2e2e] border border-gray-100 rounded-bl-sm shadow-sm'
+                    }`}
+                  >
+                    {m.role === 'assistant' ? renderBotText(m.content) : m.content}
+                    {m.toolInvocations?.map((tool: any) => (
+                      <div key={tool.toolCallId} className="mt-2 text-[10px] bg-gray-50 p-1.5 rounded text-gray-500 font-mono border border-gray-200">
+                        {'result' in tool ? `Consultó: ${tool.toolName}` : `Consultando: ${tool.toolName}...`}
+                      </div>
+                    ))}
                   </div>
-                ))
-              )}
+                </div>
+              ))}
 
-              {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-                <div className="flex items-start">
-                  <div className="bg-white text-ink-teal-900 border border-surface-mist-dark rounded-2xl rounded-tl-none shadow-sm px-4 py-3 flex gap-1">
-                    <div className="w-2 h-2 bg-text-muted-custom/50 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-text-muted-custom/50 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-text-muted-custom/50 rounded-full animate-bounce delay-200"></div>
+              {isLoading && (
+                <div className="flex items-start gap-2">
+                  <div className="w-7 h-7 rounded-full bg-[#0f766e]/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Bot className="w-3.5 h-3.5 text-[#0f766e]" />
+                  </div>
+                  <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm shadow-sm px-4 py-3 flex gap-1 items-center">
+                    {[0, 1, 2].map(i => (
+                      <span
+                        key={i}
+                        className="w-2 h-2 bg-gray-300 rounded-full animate-bounce"
+                        style={{ animationDelay: `${i * 150}ms` }}
+                      />
+                    ))}
                   </div>
                 </div>
               )}
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick prompts - show when only welcome message */}
+            {messages.length <= 1 && (
+              <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-none shrink-0 bg-[#f8fafb]">
+                {QUICK_PROMPTS.map(prompt => (
+                  <button
+                    key={prompt}
+                    onClick={() => {
+                      // Simulate form submit with this text
+                      const fakeEvent = {
+                        preventDefault: () => {},
+                        target: {}
+                      } as any
+                      handleInputChange({ target: { value: prompt } } as any)
+                      setTimeout(() => handleSubmit(fakeEvent), 10)
+                    }}
+                    className="flex-shrink-0 bg-white border border-gray-200 text-[#0f766e] font-inter text-xs px-3 py-2 rounded-full hover:border-[#0f766e] hover:bg-[#f0fdfa] transition-all whitespace-nowrap shadow-sm"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
-            <div className="p-3 bg-white border-t border-surface-mist-dark shrink-0 safe-area-inset-bottom">
-              <form onSubmit={handleSubmit} className="relative flex items-center">
+            <div className="px-4 py-3 bg-white border-t border-gray-100 shrink-0">
+              <form onSubmit={handleSubmit} className="flex items-center gap-2">
                 <input
                   value={input}
                   onChange={handleInputChange}
                   placeholder="Escribe tu pregunta..."
-                  className="w-full bg-surface-mist border-none rounded-full py-3 pl-4 pr-12 text-sm text-ink-teal-900 focus:ring-2 focus:ring-primary-cobalt/50 outline-none transition-all placeholder:text-text-muted-custom"
+                  className="flex-1 bg-[#f8fafb] border border-gray-200 rounded-full py-2.5 px-4 text-sm text-[#1a2e2e] focus:ring-2 focus:ring-[#0f766e]/30 focus:border-[#0f766e] outline-none transition-all placeholder:text-gray-400"
                   disabled={isLoading}
+                  style={{ fontSize: '16px' }} /* prevent iOS zoom */
                 />
                 <button
                   type="submit"
                   disabled={isLoading || !input.trim()}
-                  className="absolute right-2 w-8 h-8 flex items-center justify-center bg-primary-cobalt text-white rounded-full hover:bg-primary-cobalt/90 disabled:opacity-50 disabled:bg-text-muted-custom transition-colors focus:outline-none"
+                  className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-[#0f766e] text-white rounded-full hover:bg-[#0d635c] disabled:opacity-40 disabled:bg-gray-300 transition-colors focus:outline-none"
+                  aria-label="Enviar mensaje"
                 >
-                  ↑
+                  <Send className="w-4 h-4" />
                 </button>
               </form>
-              <p className="text-[9px] text-center text-text-muted-custom mt-2">
-                WellBot puede cometer errores. Verifica información importante.
+              <p className="text-[10px] text-center text-gray-400 mt-2">
+                WellBot puede cometer errores. Verifica la información importante.
               </p>
             </div>
-
           </div>
         </div>
       )}
