@@ -94,7 +94,7 @@ export default function SearchMapView({
       if (!hasScrolled && mapRef.current) {
         const center = mapRef.current.getCenter();
         // slowly pan longitude
-        center.lng += 0.01;
+        center.lng += 0.04; // A little faster
         mapRef.current.jumpTo({ center: [center.lng, center.lat] });
         animationId = requestAnimationFrame(panMap);
       }
@@ -210,7 +210,12 @@ export default function SearchMapView({
   }
 
   return (
-    <div className={`relative rounded-2xl overflow-hidden ${className}`}>
+    <div 
+      className={`relative rounded-2xl overflow-hidden ${className}`}
+      onMouseDown={() => setHasScrolled(true)}
+      onTouchStart={() => setHasScrolled(true)}
+      onWheel={() => setHasScrolled(true)}
+    >
       <MapGL
         ref={mapRef}
         {...viewport}
