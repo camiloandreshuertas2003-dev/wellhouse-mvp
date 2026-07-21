@@ -732,21 +732,10 @@ export default function SearchPage() {
           </button>
           <button
             onClick={() => {
-              setViewMode('map');
-              setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
-            }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-              viewMode === 'map' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
-            }`}
-          >
-            <Map className="w-3.5 h-3.5" /> Mapa
-          </button>
-          <button
-            onClick={() => {
               setViewMode('split');
               setTimeout(() => window.dispatchEvent(new Event('resize')), 100)
             }}
-            className={`hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
               viewMode === 'split' ? 'bg-ink-teal-900 text-white' : 'text-text-muted-custom hover:text-ink-teal-900'
             }`}
           >

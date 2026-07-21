@@ -38,7 +38,7 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
   const currentStory = activeStories[currentIndex]
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
-  const [isMuted, setIsMuted] = useState(true)
+  const [isMuted, setIsMuted] = useState(false)
   const [liked, setLiked] = useState(false)
 
   // Check if liked and reset on story change
@@ -73,9 +73,12 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
           '*'
         )
-        // Note: Auto-unmuting here breaks autoplay on most browsers (Chrome/Android)
-        // because browsers block unmuted video without direct interaction on the iframe.
-        // It's safer to let it autoplay muted and let the user unmute manually.
+        if (!isMuted) {
+          iframeRef.current?.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'unMute', args: '' }),
+            '*'
+          )
+        }
       }, 300)
     }
   }
@@ -264,7 +267,7 @@ export default function StoryViewer({ stories, initialIndex, onClose, onStoryRem
           <iframe
             ref={iframeRef}
             key={currentStory.id}
-            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080&loop=0`}
+            src={`https://www.youtube.com/embed/${currentStory.youtube_video_id}?autoplay=1&mute=${isMuted ? 1 : 0}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080&loop=0`}
             title="Host Story"
             className="w-full h-full object-cover"
             allow="autoplay; encrypted-media; picture-in-picture"
