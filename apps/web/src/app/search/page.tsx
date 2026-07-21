@@ -689,20 +689,6 @@ export default function SearchPage() {
             )
           })}
 
-          {/* Fallback: show all if nothing matches categories */}
-          {realProps.length > 0 && !['playa','urbano','montana','fincas','exclusivo'].some(id => realProps.some(p => (p.type||'').toLowerCase() === id)) && (
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <Home className="w-4 h-4 text-[#0f766e]" />
-                <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900">Todas las viviendas</h2>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {realProps.map((p, idx) => (
-                  <PropertyCard key={p.id} property={p} isPriority={idx < 5} />
-                ))}
-              </div>
-            </div>
-          )}
 
         </div>
       ) : (
