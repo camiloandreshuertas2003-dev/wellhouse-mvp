@@ -655,7 +655,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               numberOfMonths={2}
               pagedNavigation
               disabled={[
-                { before: property?.available_from ? new Date(property.available_from) : new Date() },
+                { before: property?.available_from ? new Date(Math.max(new Date(property.available_from).getTime(), new Date().setHours(0,0,0,0))) : new Date(new Date().setHours(0,0,0,0)) },
                 { after: property?.available_to ? new Date(property.available_to) : new Date(2100, 1, 1) }
               ]}
               className="p-1 mx-auto"

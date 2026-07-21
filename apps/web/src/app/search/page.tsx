@@ -61,6 +61,7 @@ export default function SearchPage() {
   const [showFiltersModal, setShowFiltersModal] = useState(false)
 
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false)
   const [isDesktopSearchFocused, setIsDesktopSearchFocused] = useState(false)
   const [activeSearch, setActiveSearch] = useState<{ query: string, dateRange?: DateRange, guestCount?: number | '' } | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
@@ -508,6 +509,65 @@ export default function SearchPage() {
             )}
           </div>
 
+          {/* 2. Categoría */}
+          <div 
+            className="px-4 py-2 flex items-center justify-between hover:bg-surface-mist transition-colors cursor-pointer w-[180px] relative"
+            onClick={() => {
+              setIsDesktopSearchFocused(true)
+              setShowCategoryDropdown(!showCategoryDropdown)
+              setShowLocationDropdown(false)
+              setShowDatePicker(false)
+            }}
+          >
+            <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
+              <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Categoría</label>
+              <div className="w-full text-sm text-ink-teal-900 bg-transparent truncate cursor-pointer font-medium text-[#0f766e]">
+                {CATEGORY_TABS.find(t => t.id === category)?.label || 'Todas'}
+              </div>
+            </div>
+
+            {category !== 'all' && (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCategory('all')
+                }}
+                className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors"
+                title="Limpiar categoría"
+              >
+                ✕
+              </button>
+            )}
+
+            {/* Category Dropdown */}
+            {showCategoryDropdown && (
+              <div 
+                className="absolute top-[125%] left-0 w-[220px] bg-white border border-surface-mist-dark rounded-3xl shadow-2xl z-50 p-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p className="text-xs font-bold text-text-muted-custom uppercase px-3 py-1.5 mb-1">Elige categoría</p>
+                {CATEGORY_TABS.map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setCategory(tab.id)
+                      setShowCategoryDropdown(false)
+                      // Transition to Dates
+                      setShowDatePicker(true)
+                    }}
+                    className={`w-full text-left px-3 py-2 text-xs font-semibold rounded-2xl flex items-center gap-2.5 transition-colors ${
+                      category === tab.id ? 'bg-[#0f766e]/10 text-[#0f766e]' : 'hover:bg-surface-mist text-ink-teal-900'
+                    }`}
+                  >
+                    <tab.Icon className="w-4 h-4 text-[#0f766e]" />
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* 2. Fechas */}
           <div 
             className="px-4 py-2 flex items-center justify-between hover:bg-surface-mist transition-colors cursor-pointer w-[220px] relative"
@@ -583,11 +643,12 @@ export default function SearchPage() {
                     day_selected: "bg-[#0f766e] text-white hover:bg-ink-teal-900 hover:text-white focus:bg-[#0f766e] focus:text-white",
                     day_today: "font-bold text-accent-mango",
                     day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-200 opacity-50",
+                    day_disabled: "text-gray-200 opacity-50 cursor-not-allowed",
                     day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none hover:rounded-none",
                     day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
                     day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
                   } as any}
+                  disabled={[{ before: new Date(new Date().setHours(0,0,0,0)) }]}
                 />
               </div>
             )}
@@ -732,8 +793,8 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* ── CATEGORY BADGES (Centered under stories in Home view) ── */}
-          <div className="w-full flex justify-center py-2">
+          {/* ── CATEGORY BADGES (Mobile only, hidden on Desktop) ── */}
+          <div className="w-full flex justify-center py-2 md:hidden">
             <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between md:justify-center max-w-4xl">
               {CATEGORY_TABS.map(tab => {
                 const isActive = category === tab.id
