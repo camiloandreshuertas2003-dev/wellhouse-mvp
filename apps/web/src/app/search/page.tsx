@@ -7,10 +7,11 @@ import { Sparkles, Search, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Bui
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import StoryViewer from '@/components/Stories/StoryViewer'
-import { DayPicker, DateRange } from 'react-day-picker'
+import PropertyCalendar from '@/components/PropertyCalendar'
+import { type DateRange } from 'react-day-picker'
 import { es } from 'date-fns/locale'
 import { format } from 'date-fns'
-import 'react-day-picker/dist/style.css'
+
 // Dynamic import for map (client-only, avoids SSR issues with mapbox-gl)
 const SearchMapView = dynamic(() => import('@/components/Map/SearchMapView'), {
   ssr: false,
@@ -618,38 +619,10 @@ export default function SearchPage() {
                     ✕
                   </button>
                 </div>
-                <DayPicker
-                  mode="range"
+                <PropertyCalendar
                   selected={dateRange}
                   onSelect={(range) => setDateRange(range)}
-                  locale={es}
-                  numberOfMonths={2}
-                  pagedNavigation
-                  className="p-2"
-                  classNames={{
-                    months: "flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6",
-                    month: "space-y-3",
-                    caption: "flex justify-center pt-1 relative items-center mb-2",
-                    caption_label: "text-sm font-bold text-ink-teal-900",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: "h-7 w-7 bg-transparent hover:bg-surface-mist rounded-full flex items-center justify-center p-0 opacity-70 hover:opacity-100 transition-colors",
-                    nav_button_previous: "absolute left-1",
-                    nav_button_next: "absolute right-1",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex",
-                    head_cell: "text-text-muted-custom w-8 font-semibold text-[10px] uppercase tracking-wider",
-                    row: "flex w-full mt-1",
-                    cell: "relative p-0 text-center text-sm focus-within:relative focus-within:z-20",
-                    day: "h-8 w-8 p-0 font-medium rounded-full hover:bg-surface-mist hover:text-ink-teal-900 transition-colors cursor-pointer",
-                    day_selected: "bg-[#0f766e] text-white hover:bg-ink-teal-900 hover:text-white focus:bg-[#0f766e] focus:text-white",
-                    day_today: "font-bold text-accent-mango",
-                    day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-200 opacity-50 cursor-not-allowed",
-                    day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none hover:rounded-none",
-                    day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
-                    day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
-                  } as any}
-                  disabled={[{ before: new Date(new Date().setHours(0,0,0,0)) }]}
+                  disabledBefore={new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </div>
             )}
@@ -783,28 +756,7 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* ── CATEGORY BADGES (Mobile only, hidden on Desktop) ── */}
-          <div className="w-full flex justify-center py-2 md:hidden">
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between md:justify-center max-w-4xl">
-              {CATEGORY_TABS.map(tab => {
-                const isActive = category === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => { setCategory(tab.id); setQuery('') }}
-                    className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
-                      isActive 
-                        ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
-                        : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
-                    }`}
-                  >
-                    <tab.Icon className={`w-5 h-5 ${isActive ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} />
-                    <span className="leading-tight">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+
 
           {/* Netflix-style rows per category */}
           {[
@@ -844,28 +796,6 @@ export default function SearchPage() {
       ) : (
         /* ── FILTERED STATE ─────────────────────────── */
         <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-6">
-          {/* ── CATEGORY BADGES (Centered in Filtered view) ── */}
-          <div className="w-full flex justify-center py-2 mb-4">
-            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between md:justify-center max-w-4xl">
-              {CATEGORY_TABS.map(tab => {
-                const isActive = category === tab.id
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => { setCategory(tab.id); setQuery('') }}
-                    className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
-                      isActive 
-                        ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
-                        : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
-                    }`}
-                  >
-                    <tab.Icon className={`w-5 h-5 ${isActive ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} />
-                    <span className="leading-tight">{tab.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
           <div className="flex justify-between items-center mb-5">
             <p className="font-fraunces font-semibold text-lg md:text-xl text-ink-teal-900">
               {debouncedQuery ? (
@@ -1024,42 +954,39 @@ export default function SearchPage() {
                 </div>
               )}
             </div>
-            
-            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark overflow-x-auto">
-              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿Cuándo?</h2>
-              <div className="flex justify-center">
-                <DayPicker
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={setDateRange}
-                  locale={es}
-                  numberOfMonths={1}
-                  className="p-1 max-w-[280px] mx-auto"
-                  classNames={{
-                    months: "flex flex-col space-y-4",
-                    month: "space-y-3",
-                    caption: "flex justify-center pt-1 relative items-center mb-2",
-                    caption_label: "text-sm font-bold text-ink-teal-900",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: "h-8 w-8 bg-surface-mist hover:bg-surface-mist-dark rounded-full flex items-center justify-center p-0 opacity-70 transition-colors",
-                    nav_button_previous: "absolute left-1",
-                    nav_button_next: "absolute right-1",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex justify-between",
-                    head_cell: "text-text-muted-custom w-9 font-semibold text-[10px] uppercase tracking-wider",
-                    row: "flex w-full mt-1 justify-between",
-                    cell: "text-center text-sm p-0 relative",
-                    day: "h-9 w-9 p-0 font-medium text-ink-teal-900 hover:bg-surface-mist rounded-full transition-colors",
-                    day_selected: "bg-ink-teal-900 text-white hover:bg-ink-teal-900 hover:text-white font-bold",
-                    day_today: "text-accent-mango font-bold",
-                    day_outside: "text-gray-300 opacity-50",
-                    day_disabled: "text-gray-200 opacity-50",
-                    day_range_middle: "bg-surface-mist text-ink-teal-900 rounded-none",
-                    day_range_end: "rounded-r-full bg-ink-teal-900 text-white",
-                    day_range_start: "rounded-l-full bg-ink-teal-900 text-white"
-                  } as any}
-                />
+
+            {/* ── CATEGORY STEP ── */}
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark">
+              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿Qué tipo de vivienda?</h2>
+              <div className="grid grid-cols-3 gap-2">
+                {CATEGORY_TABS.map(tab => {
+                  const isActive = category === tab.id
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setCategory(tab.id)}
+                      className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-2xl border text-[11px] font-bold transition-all ${
+                        isActive
+                          ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]'
+                          : 'bg-surface-mist border-neutral-200 text-text-muted-custom hover:bg-[#f0fdfa]'
+                      }`}
+                    >
+                      <tab.Icon className={`w-6 h-6 ${isActive ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} />
+                      <span className="leading-tight text-center">{tab.label}</span>
+                    </button>
+                  )
+                })}
               </div>
+            </div>
+
+            {/* ── WHEN STEP ── */}
+            <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark">
+              <h2 className="text-xl font-bold text-ink-teal-900 mb-4">¿Cuándo?</h2>
+              <PropertyCalendar
+                selected={dateRange}
+                onSelect={setDateRange}
+                disabledBefore={new Date(new Date().setHours(0, 0, 0, 0))}
+              />
             </div>
 
             <div className="bg-white rounded-3xl p-4 shadow-sm border border-surface-mist-dark">

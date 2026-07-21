@@ -176,3 +176,11 @@
   }
 }
 
+/* ── Hide native scrollbars globally for an elegant, Airbnb-style feel ── */
+* {
+  scrollbar-width: none;       /* Firefox */
+  -ms-overflow-style: none;    /* IE / Edge */
+}
+*::-webkit-scrollbar {
+  display: none;               /* Chrome, Safari, Opera */
+}
