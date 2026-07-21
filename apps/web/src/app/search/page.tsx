@@ -560,12 +560,7 @@ export default function SearchPage() {
                 <DayPicker
                   mode="range"
                   selected={dateRange}
-                  onSelect={(range) => {
-                    setDateRange(range)
-                    if (range?.from && range?.to) {
-                      setTimeout(() => setShowDatePicker(false), 300)
-                    }
-                  }}
+                  onSelect={(range) => setDateRange(range)}
                   locale={es}
                   numberOfMonths={2}
                   pagedNavigation
@@ -641,6 +636,7 @@ export default function SearchPage() {
               className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-md relative group flex items-center justify-center"
               aria-label="Buscar"
             >
+              <Search className="w-4 h-4 text-white" />
             </button>
           </div>
         </div>

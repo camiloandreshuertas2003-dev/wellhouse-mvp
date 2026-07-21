@@ -263,6 +263,14 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             .in('status', ['pending', 'approved', 'confirmed'])
             .maybeSingle()
           if (existingEx) setHasPendingRequest(true)
+
+          const { data: favData } = await (supabase as any)
+            .from('favorites')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('property_id', data.id)
+            .maybeSingle()
+          if (favData) setIsSaved(true)
         }
       }
       
@@ -390,8 +398,27 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
     }
   }
 
-  const handleSave = () => {
-    setIsSaved(!isSaved)
+  const handleSave = async () => {
+    if (!currentUser) {
+      router.push('/login')
+      return
+    }
+    const newSaved = !isSaved
+    setIsSaved(newSaved)
+    try {
+      if (newSaved) {
+        await (supabase as any).from('favorites').insert({
+          user_id: currentUser.id,
+          property_id: params.id,
+        })
+      } else {
+        await (supabase as any).from('favorites').delete()
+          .eq('user_id', currentUser.id)
+          .eq('property_id', params.id)
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err)
+    }
   }
 
   const handleRequest = async () => {
@@ -730,35 +757,26 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
   return (
     <div className="min-h-screen bg-white">
       {/* ── Page content ── */}
-      <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-8 lg:px-8 pt-0 md:pt-6 pb-28 md:pb-12">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 sm:px-8 lg:px-8 pt-14 md:pt-6 pb-28 md:pb-12">
         
         {/* ── Mobile Floating Top Bar ── */}
-        <div className="md:hidden fixed top-0 left-0 right-0 z-40 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent pointer-events-none">
+        <div className="md:hidden fixed top-14 left-0 right-0 z-40 flex items-center justify-between p-4 bg-gradient-to-b from-black/40 to-transparent pointer-events-none">
           <button onClick={() => router.back()} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors pointer-events-auto">
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-5 h-5 text-ink-teal-900" />
           </button>
           <div className="flex items-center gap-3 pointer-events-auto">
             <button onClick={handleShare} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors">
-              <Share2 className="w-5 h-5" />
+              <Share2 className="w-5 h-5 text-ink-teal-900" />
             </button>
             <button onClick={handleSave} className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-ink-teal-900 hover:bg-gray-100 transition-colors">
-              <Heart className={`w-5 h-5 ${isSaved ? 'fill-red-500 text-red-500' : ''}`} />
+              <Heart className={`w-5 h-5 ${isSaved ? 'fill-rose-500 text-rose-500' : 'text-ink-teal-900'}`} />
             </button>
           </div>
         </div>
 
         <div className="flex flex-col">
-          {/* Gallery (Order 1 on mobile, 2 on desktop) */}
-          <div className="order-1 md:order-2 mb-6 md:mb-10">
-            <PropertyGallery
-              images={images}
-              title={property.title}
-              isOwner={!!(currentUser && property.user_id === currentUser.id)}
-            />
-          </div>
-
-          {/* Headers (Order 2 on mobile, 1 on desktop) */}
-          <div className="order-2 md:order-1 mb-8 md:mb-6 mt-4 md:mt-0">
+          {/* Headers (Order 1 on mobile & desktop) */}
+          <div className="order-1 mb-4 md:mb-6 mt-2 md:mt-0">
             {/* ── Desktop Breadcrumb ── */}
             <nav className="hidden md:flex items-center gap-1.5 mb-4 font-inter text-xs text-text-muted-custom">
               <button onClick={() => router.back()} className="flex items-center gap-1 hover:text-ink-teal-900 transition-colors">
@@ -792,6 +810,15 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
               <MapPin className="w-4 h-4 text-text-muted-custom" />
               <span>{property.city}, {property.country}</span>
             </div>
+          </div>
+
+          {/* Gallery (Order 2 on mobile & desktop) */}
+          <div className="order-2 mb-6 md:mb-10">
+            <PropertyGallery
+              images={images}
+              title={property.title}
+              isOwner={!!(currentUser && property.user_id === currentUser.id)}
+            />
           </div>
 
           {/* ── Main 2-col layout (Order 3) ── */}
