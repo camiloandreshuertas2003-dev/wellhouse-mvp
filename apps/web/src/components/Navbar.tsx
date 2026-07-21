@@ -29,7 +29,59 @@ const NavbarContent = memo(function NavbarContent() {
   const [showWellBot, setShowWellBot] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0)
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      setUnreadMessagesCount(0)
+      return
+    }
+
+    const userId = session.user.id
+
+    const fetchUnreadMessages = async () => {
+      try {
+        const { data: convs } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
+
+        if (convs && convs.length > 0) {
+          const convIds = convs.map(c => c.id)
+          const { count } = await supabase
+            .from('messages')
+            .select('*', { count: 'exact', head: true })
+            .in('conversation_id', convIds)
+            .neq('sender_id', userId)
+            .is('read_at', null)
+
+          setUnreadMessagesCount(count || 0)
+        } else {
+          setUnreadMessagesCount(0)
+        }
+      } catch (err) {
+        console.error('Error fetching unread messages count:', err)
+      }
+    }
+
+    fetchUnreadMessages()
+
+    const channel = supabase
+      .channel('navbar-unread-messages')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'messages' },
+        () => {
+          fetchUnreadMessages()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [session, pathname])
 
   useEffect(() => {
     setHasMounted(true)
@@ -174,8 +226,15 @@ const NavbarContent = memo(function NavbarContent() {
                       </Link>
 
                       <Link href="/messages" className="flex flex-col items-center justify-center gap-1 group relative h-full pt-1">
-                        <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/messages' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
-                          <img src="/images/nav_icons/mensajes.png" alt="Mensajes" className="w-full h-full object-contain" />
+                        <div className="relative">
+                          <div className={`w-8 h-8 transition-transform group-hover:scale-110 ${pathname === '/messages' ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'}`}>
+                            <img src="/images/nav_icons/mensajes.png" alt="Mensajes" className="w-full h-full object-contain" />
+                          </div>
+                          {unreadMessagesCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] font-extrabold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shadow-sm">
+                              {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                            </span>
+                          )}
                         </div>
                         <span className={`font-inter text-xs font-semibold transition-colors ${pathname === '/messages' ? 'text-ink-teal-900' : 'text-gray-500 group-hover:text-ink-teal-900'}`}>
                           Mensajes
@@ -419,14 +478,20 @@ const NavbarContent = memo(function NavbarContent() {
             </span>
           </button>
 
-          {/* Mensajes */}
           <Link
             href="/messages"
-            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors ${
+            className={`flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 transition-colors relative ${
               pathname === '/messages' ? 'text-[#0f766e]' : 'text-[#6b7280]'
             }`}
           >
-            <MessageCircle className="w-[18px] h-[18px]" strokeWidth={pathname === '/messages' ? 2.5 : 1.5} />
+            <div className="relative">
+              <MessageCircle className="w-[18px] h-[18px]" strokeWidth={pathname === '/messages' ? 2.5 : 1.5} />
+              {unreadMessagesCount > 0 && (
+                <span className="absolute -top-1 -right-2 bg-emerald-500 text-white text-[8px] font-extrabold px-1 py-0.2 min-w-[13px] h-[13px] rounded-full flex items-center justify-center border border-white shadow-sm">
+                  {unreadMessagesCount > 9 ? '9+' : unreadMessagesCount}
+                </span>
+              )}
+            </div>
             <span className={`font-inter text-[9px] font-medium ${pathname === '/messages' ? 'text-[#0f766e] font-semibold' : 'text-[#6b7280]'}`}>
               Mensajes
             </span>

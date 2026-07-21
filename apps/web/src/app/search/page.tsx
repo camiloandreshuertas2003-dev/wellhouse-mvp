@@ -27,12 +27,12 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): nu
 }
 
 const CATEGORY_TABS = [
-  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'all', label: 'Todo', Icon: Home },
+  { id: 'playa', label: 'Playa', Icon: Waves },
+  { id: 'montana', label: 'Montaña', Icon: Mountain },
+  { id: 'fincas', label: 'Campo', Icon: Trees },
+  { id: 'urbano', label: 'Ciudad', Icon: Building },
+  { id: 'exclusivo', label: 'Nuevas', Icon: Sparkles },
 ]
 
 interface HeroBanner {
@@ -647,7 +647,7 @@ export default function SearchPage() {
                         : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
                     }`}
                   >
-                    {tab.icon(isActive)}
+                    <tab.Icon className={`w-5 h-5 ${isActive ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} />
                     <span className="leading-tight">{tab.label}</span>
                   </button>
                 )
@@ -708,7 +708,7 @@ export default function SearchPage() {
                         : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
                     }`}
                   >
-                    {tab.icon(isActive)}
+                    <tab.Icon className={`w-5 h-5 ${isActive ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} />
                     <span className="leading-tight">{tab.label}</span>
                   </button>
                 )
