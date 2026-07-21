@@ -491,8 +491,9 @@ export default function SearchPage() {
                       onClick={() => {
                         setQuery(loc)
                         setShowLocationDropdown(false)
-                        // Transition directly to Dates!
-                        setShowDatePicker(true)
+                        // Transition to Category selection first!
+                        setShowCategoryDropdown(true)
+                        setShowDatePicker(false)
                       }}
                       className="w-full text-left px-4 py-3 text-sm font-medium text-ink-teal-900 hover:bg-surface-mist rounded-2xl flex items-center gap-3 transition-colors"
                     >

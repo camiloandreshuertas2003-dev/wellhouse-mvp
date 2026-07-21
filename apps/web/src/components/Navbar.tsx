@@ -28,6 +28,7 @@ const NavbarContent = memo(function NavbarContent() {
   const [showNotifications, setShowNotifications] = useState(false)
   const [showWellBot, setShowWellBot] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
+  const [isNavVisible, setIsNavVisible] = useState(true)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [unreadMessagesCount, setUnreadMessagesCount] = useState<number>(0)
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
@@ -100,8 +101,16 @@ const NavbarContent = memo(function NavbarContent() {
       }
     })
 
+    let lastScrollY = window.scrollY
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      const currentY = window.scrollY
+      setIsScrolled(currentY > 20)
+      if (currentY > lastScrollY && currentY > 80) {
+        setIsNavVisible(false)  // scrolling down — hide
+      } else {
+        setIsNavVisible(true)   // scrolling up — show
+      }
+      lastScrollY = currentY
     }
     window.addEventListener('scroll', handleScroll, { passive: true })
     
@@ -167,7 +176,7 @@ const NavbarContent = memo(function NavbarContent() {
   return (
     <>
       {/* ── Desktop Navbar ─────────────────────────────────────────────── */}
-      <nav className={`hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 transition-all duration-300 ease-in-out ${isScrolled ? 'shadow-md' : 'shadow-sm'}`} role="navigation" aria-label="Navegación principal">
+      <nav className={`hidden md:block bg-white border-b border-surface-mist-dark sticky top-0 z-50 transition-all duration-300 ease-in-out ${isScrolled ? 'shadow-md' : 'shadow-sm'} ${isNavVisible ? 'translate-y-0' : '-translate-y-full'}`} role="navigation" aria-label="Navegación principal">
         <div className="max-w-[1380px] mx-auto px-6 lg:px-8">
           <div className={`flex items-center transition-all duration-300 ease-in-out ${isScrolled ? 'h-16' : 'h-20'}`}>
 
