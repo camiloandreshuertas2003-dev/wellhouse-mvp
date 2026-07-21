@@ -619,7 +619,7 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
             </div>
           )}
 
-          <div className="flex justify-center w-full bg-white rounded-xl border border-neutral-200 overflow-x-auto shadow-sm my-4">
+          <div className="flex justify-center w-full bg-white rounded-2xl border border-neutral-200 overflow-x-auto shadow-sm my-3 p-2 no-scrollbar">
             <DayPicker
               mode="range"
               selected={dateRange}
@@ -631,16 +631,27 @@ export default function PropertyPage({ params }: { params: { id: string } }) {
                 { before: property?.available_from ? new Date(property.available_from) : new Date() },
                 { after: property?.available_to ? new Date(property.available_to) : new Date(2100, 1, 1) }
               ]}
-              className="p-3 mx-auto"
+              className="p-1 mx-auto"
               classNames={{
-                selected: "bg-ink-teal-900 text-white rounded-full",
-                range_middle: "bg-ink-teal-900/10 text-ink-teal-900 rounded-none",
-                day: "w-9 h-9 font-inter text-sm",
-                weekday: "text-text-muted-custom font-inter font-semibold text-xs pb-2 w-9",
-                month_caption: "font-fraunces font-bold text-base text-ink-teal-900 mb-2",
+                months: "flex flex-row space-x-2 sm:space-x-4 justify-center overflow-x-auto no-scrollbar py-1",
+                month: "space-y-1 text-center flex-shrink-0",
+                caption: "flex justify-center pt-1 relative items-center mb-1",
+                caption_label: "font-fraunces font-bold text-xs sm:text-sm text-ink-teal-900",
+                nav: "space-x-1 flex items-center",
+                nav_button: "h-5 w-5 bg-transparent hover:bg-surface-mist rounded-full flex items-center justify-center p-0 opacity-70 hover:opacity-100 transition-colors",
+                table: "w-full border-collapse space-y-0.5",
+                head_row: "flex justify-center",
+                head_cell: "text-text-muted-custom font-inter font-semibold text-[9px] uppercase tracking-wider text-center w-6 sm:w-7 pb-1",
+                row: "flex w-full mt-0.5 justify-center",
+                cell: "relative p-0 text-center text-xs focus-within:relative focus-within:z-20",
+                day: "h-6 w-6 sm:h-7 sm:w-7 p-0 font-inter text-[10px] sm:text-xs rounded-full hover:bg-surface-mist transition-colors cursor-pointer flex items-center justify-center mx-auto",
+                selected: "bg-[#0f766e] text-white hover:bg-ink-teal-900 font-bold",
+                range_middle: "bg-[#0f766e]/10 text-ink-teal-900 rounded-none",
+                range_start: "rounded-l-full bg-[#0f766e] text-white font-bold",
+                range_end: "rounded-r-full bg-[#0f766e] text-white font-bold",
                 today: "font-bold text-accent-mango",
-                disabled: "opacity-30 cursor-not-allowed",
-              }}
+                disabled: "opacity-25 cursor-not-allowed",
+              } as any}
             />
           </div>
 
