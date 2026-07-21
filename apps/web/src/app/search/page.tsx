@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import PropertyCard, { type PropertyCardData } from '@/components/PropertyCard'
-import { Sparkles, Search, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin, Map, List } from 'lucide-react'
+import { Sparkles, Search, ShieldCheck, Heart, Home, Waves, Mountain, Trees, Building, MapPin, Map, List, Video } from 'lucide-react'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import StoryViewer from '@/components/Stories/StoryViewer'
@@ -594,31 +594,7 @@ export default function SearchPage() {
         </div>
       </div>
       </div>
-      {/* ── CATEGORY BADGES ─────────────────────────── */}
-      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-4">
-        <div className="flex items-center gap-2">
-          {/* Categories Scroll */}
-          <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between sm:justify-start">
-            {CATEGORY_TABS.map(tab => {
-              const isActive = category === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => { setCategory(tab.id); setQuery('') }}
-                  className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
-                    isActive 
-                      ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
-                      : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
-                  }`}
-                >
-                  {tab.icon(isActive)}
-                  <span className="leading-tight">{tab.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      </div>
+
 
       {/* ── CATÁLOGO ESTILO NETFLIX ─────────────────────────────── */}
       {category === 'all' && !debouncedQuery && viewMode === 'list' ? (
@@ -627,8 +603,8 @@ export default function SearchPage() {
           {/* Stories row (if any) */}
           {stories.length > 0 && (
             <div>
-              <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900 mb-3">
-                ✨ Historias de anfitriones
+              <h2 className="font-fraunces font-bold text-base sm:text-lg text-ink-teal-900 mb-3 flex items-center gap-1.5">
+                <Video className="w-5 h-5 text-[#0f766e]" /> Historias de anfitriones
               </h2>
               <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
                 {stories.map((story, idx) => (
@@ -655,6 +631,29 @@ export default function SearchPage() {
               </div>
             </div>
           )}
+
+          {/* ── CATEGORY BADGES (Centered under stories in Home view) ── */}
+          <div className="w-full flex justify-center py-2">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between md:justify-center max-w-4xl">
+              {CATEGORY_TABS.map(tab => {
+                const isActive = category === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setCategory(tab.id); setQuery('') }}
+                    className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
+                      isActive 
+                        ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
+                        : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
+                    }`}
+                  >
+                    {tab.icon(isActive)}
+                    <span className="leading-tight">{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
           {/* Netflix-style rows per category */}
           {[
@@ -694,6 +693,28 @@ export default function SearchPage() {
       ) : (
         /* ── FILTERED STATE ─────────────────────────── */
         <div className="max-w-[1380px] mx-auto px-4 sm:px-5 md:px-6 mt-6">
+          {/* ── CATEGORY BADGES (Centered in Filtered view) ── */}
+          <div className="w-full flex justify-center py-2 mb-4">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar pb-2 flex-1 justify-between md:justify-center max-w-4xl">
+              {CATEGORY_TABS.map(tab => {
+                const isActive = category === tab.id
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => { setCategory(tab.id); setQuery('') }}
+                    className={`flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 py-2 px-0 sm:px-4 sm:py-2 rounded-xl sm:rounded-full border text-[9px] sm:text-sm font-bold transition-all flex-1 sm:flex-none sm:flex-shrink-0 sm:h-[42px] min-w-0 sm:min-w-fit ${
+                      isActive 
+                        ? 'bg-[#f0fdfa] border-[#0f766e] text-[#0f766e]' 
+                        : 'bg-white border-surface-mist-dark text-text-muted-custom hover:bg-surface-mist'
+                    }`}
+                  >
+                    {tab.icon(isActive)}
+                    <span className="leading-tight">{tab.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
           <div className="flex justify-between items-center mb-5">
             <p className="font-fraunces font-semibold text-lg md:text-xl text-ink-teal-900">
               {debouncedQuery ? (
