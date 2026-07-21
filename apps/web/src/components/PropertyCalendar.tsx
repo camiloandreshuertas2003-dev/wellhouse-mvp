@@ -227,8 +227,8 @@ export default function PropertyCalendar({
         </button>
       </div>
 
-      {/* Months grid: 1 col on mobile, 2 cols on md+ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-3 pb-4 md:px-4">
+      {/* Single month grid on all screen sizes */}
+      <div className="px-3 pb-4 md:px-4">
         <MonthGrid
           year={baseMonth.getFullYear()}
           month={baseMonth.getMonth()}
@@ -240,21 +240,8 @@ export default function PropertyCalendar({
           onDayClick={handleDayClick}
           onDayHover={setHovered}
         />
-        {/* Divider on desktop */}
-        <div className="hidden md:block border-l border-neutral-100 pl-4 md:pl-0">
-          <MonthGrid
-            year={secondMonth.getFullYear()}
-            month={secondMonth.getMonth()}
-            selected={selected}
-            hovered={hovered}
-            disabledBefore={disabledBefore ?? null}
-            disabledAfter={disabledAfter ?? null}
-            today={today}
-            onDayClick={handleDayClick}
-            onDayHover={setHovered}
-          />
-        </div>
       </div>
+
 
       {/* Selection summary */}
       {(selected?.from || selected?.to) && (
