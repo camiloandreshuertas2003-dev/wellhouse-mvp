@@ -27,12 +27,12 @@ function calcWellRank(capacity: number, bedrooms: number, bathrooms: number): nu
 }
 
 const CATEGORY_TABS = [
-  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
-  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-[18px] h-[18px] sm:w-[13px] sm:h-[13px] ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'all', label: 'Todo', icon: (active: boolean) => <Home className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'playa', label: 'Playa', icon: (active: boolean) => <Waves className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'montana', label: 'Montaña', icon: (active: boolean) => <Mountain className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'fincas', label: 'Campo', icon: (active: boolean) => <Trees className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'urbano', label: 'Ciudad', icon: (active: boolean) => <Building className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
+  { id: 'exclusivo', label: 'Nuevas', icon: (active: boolean) => <Sparkles className={`w-5 h-5 ${active ? 'text-[#0f766e]' : 'text-[#6b7280]'}`} /> },
 ]
 
 interface HeroBanner {
