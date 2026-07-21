@@ -48,7 +48,7 @@ const NavbarContent = memo(function NavbarContent() {
           .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
 
         if (convs && convs.length > 0) {
-          const convIds = convs.map(c => c.id)
+          const convIds = (convs as any[]).map(c => c.id)
           const { count } = await supabase
             .from('messages')
             .select('*', { count: 'exact', head: true })

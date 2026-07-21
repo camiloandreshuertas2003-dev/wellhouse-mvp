@@ -61,6 +61,7 @@ export default function SearchPage() {
   const [showFiltersModal, setShowFiltersModal] = useState(false)
 
   const [showLocationDropdown, setShowLocationDropdown] = useState(false)
+  const [isDesktopSearchFocused, setIsDesktopSearchFocused] = useState(false)
   const [activeSearch, setActiveSearch] = useState<{ query: string, dateRange?: DateRange, guestCount?: number | '' } | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
 
@@ -420,27 +421,66 @@ export default function SearchPage() {
           )}
         </div>
       </div>
-
+      {isDesktopSearchFocused && (
+        <div 
+          className="fixed inset-0 bg-black/40 z-30 transition-opacity animate-in fade-in"
+          onClick={() => {
+            setIsDesktopSearchFocused(false)
+            setShowLocationDropdown(false)
+            setShowDatePicker(false)
+          }}
+        />
+      )}
 
       {/* ── VIEW TOGGLE (Lista / Mapa) ──────────────── */}
-      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2">
-        <div className="hidden md:flex flex-1 max-w-4xl items-center bg-white rounded-full border border-surface-mist-dark shadow-sm divide-x divide-surface-mist-dark relative">
-          <div className="flex-1 px-4 py-2 flex flex-col justify-center rounded-l-full hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist group relative">
-            <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Lugar</label>
-            <input 
-              type="text" 
-              placeholder="¿A dónde vas?" 
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value)
-                setShowLocationDropdown(true)
-              }}
-              onFocus={() => setShowLocationDropdown(true)}
-              onBlur={() => setTimeout(() => setShowLocationDropdown(false), 200)}
-              className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom"
-            />
+      <div className="max-w-[1380px] mx-auto px-3 sm:px-5 md:px-6 mt-3 flex items-center justify-between gap-2 relative z-40">
+        <div className={`hidden md:flex flex-1 max-w-4xl items-center bg-white rounded-full border border-surface-mist-dark transition-all duration-300 divide-x divide-surface-mist-dark relative ${
+          isDesktopSearchFocused ? 'shadow-2xl ring-4 ring-[#0f766e]/20 border-[#0f766e]' : 'shadow-sm'
+        }`}>
+          
+          {/* 1. Lugar */}
+          <div 
+            className="flex-1 px-4 py-2 flex items-center justify-between rounded-l-full hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist group relative"
+            onClick={() => setIsDesktopSearchFocused(true)}
+          >
+            <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
+              <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Lugar</label>
+              <input 
+                type="text" 
+                placeholder="¿A dónde vas?" 
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value)
+                  setShowLocationDropdown(true)
+                }}
+                onFocus={() => {
+                  setIsDesktopSearchFocused(true)
+                  setShowLocationDropdown(true)
+                }}
+                className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom truncate font-medium"
+              />
+            </div>
+
+            {query && (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setQuery('')
+                }}
+                className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors"
+                title="Limpiar lugar"
+              >
+                ✕
+              </button>
+            )}
+
+            {/* Location Dropdown */}
             {showLocationDropdown && (query.length > 0 || uniqueLocations.length > 0) && (
-              <div className="absolute top-[120%] left-0 w-[300px] bg-white border border-surface-mist-dark rounded-3xl shadow-2xl z-50 max-h-64 overflow-y-auto overflow-x-hidden p-3">
+              <div 
+                className="absolute top-[125%] left-0 w-[320px] bg-white border border-surface-mist-dark rounded-3xl shadow-2xl z-50 max-h-64 overflow-y-auto overflow-x-hidden p-3"
+                onClick={(e) => e.stopPropagation()}
+              >
                 <p className="text-xs font-bold text-text-muted-custom uppercase px-3 py-2 mb-1">Destinos recomendados</p>
                 {uniqueLocations
                   .filter(loc => normalize(loc).includes(normalize(query)))
@@ -450,6 +490,8 @@ export default function SearchPage() {
                       onClick={() => {
                         setQuery(loc)
                         setShowLocationDropdown(false)
+                        // Transition directly to Dates!
+                        setShowDatePicker(true)
                       }}
                       className="w-full text-left px-4 py-3 text-sm font-medium text-ink-teal-900 hover:bg-surface-mist rounded-2xl flex items-center gap-3 transition-colors"
                     >
@@ -466,27 +508,64 @@ export default function SearchPage() {
             )}
           </div>
 
+          {/* 2. Fechas */}
           <div 
-            className="px-4 py-2 flex flex-col justify-center hover:bg-surface-mist transition-colors cursor-pointer focus-within:bg-surface-mist w-[200px]"
-            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="px-4 py-2 flex items-center justify-between hover:bg-surface-mist transition-colors cursor-pointer w-[220px] relative"
+            onClick={() => {
+              setIsDesktopSearchFocused(true)
+              setShowDatePicker(!showDatePicker)
+              setShowLocationDropdown(false)
+            }}
           >
-            <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Fechas</label>
-            <div className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none truncate cursor-pointer font-medium text-[#0f766e]">
-              {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'd MMM', { locale: es })} - ${format(dateRange.to, 'd MMM', { locale: es })}` : format(dateRange.from, 'd MMM', { locale: es })) : <span className="text-text-muted-custom font-normal">Añade fechas</span>}
+            <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
+              <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-pointer">Fechas</label>
+              <div className="w-full text-sm text-ink-teal-900 bg-transparent truncate cursor-pointer font-medium text-[#0f766e]">
+                {dateRange?.from ? (
+                  dateRange.to ? `${format(dateRange.from, 'd MMM', { locale: es })} - ${format(dateRange.to, 'd MMM', { locale: es })}` : format(dateRange.from, 'd MMM', { locale: es })
+                ) : (
+                  <span className="text-text-muted-custom font-normal">Añade fechas</span>
+                )}
+              </div>
             </div>
+
+            {dateRange?.from && (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setDateRange(undefined)
+                }}
+                className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors"
+                title="Limpiar fechas"
+              >
+                ✕
+              </button>
+            )}
+
             {/* Desktop DatePicker Dropdown */}
             {showDatePicker && (
               <div 
-                className="absolute top-[120%] left-1/4 mt-2 bg-white rounded-3xl p-4 shadow-2xl border border-surface-mist-dark z-50 cursor-auto"
+                className="absolute top-[125%] left-1/2 -translate-x-1/2 bg-white rounded-3xl p-4 shadow-2xl border border-surface-mist-dark z-50 cursor-auto"
                 onClick={e => e.stopPropagation()}
               >
-                <div className="flex justify-end mb-2">
-                  <button onClick={() => setShowDatePicker(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold">✕</button>
+                <div className="flex justify-between items-center mb-2 px-2">
+                  <span className="text-xs font-bold text-ink-teal-900 uppercase">Selecciona las fechas</span>
+                  <button 
+                    onClick={() => setShowDatePicker(false)} 
+                    className="w-7 h-7 flex items-center justify-center rounded-full bg-surface-mist hover:bg-surface-mist-dark text-ink-teal-900 font-bold text-xs"
+                  >
+                    ✕
+                  </button>
                 </div>
                 <DayPicker
                   mode="range"
                   selected={dateRange}
-                  onSelect={setDateRange}
+                  onSelect={(range) => {
+                    setDateRange(range)
+                    if (range?.from && range?.to) {
+                      setTimeout(() => setShowDatePicker(false), 300)
+                    }
+                  }}
                   locale={es}
                   numberOfMonths={2}
                   pagedNavigation
@@ -519,24 +598,49 @@ export default function SearchPage() {
             )}
           </div>
 
-          <div className="px-4 py-2 flex flex-col justify-center hover:bg-surface-mist transition-colors cursor-text focus-within:bg-surface-mist w-[120px]">
-             <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Quién</label>
-             <input 
-               type="number" 
-               placeholder="¿Cuántos?" 
-               value={guestCount}
-               onChange={(e) => setGuestCount(e.target.value ? parseInt(e.target.value) : '')}
-               className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom"
-             />
+          {/* 3. Quién */}
+          <div 
+            className="px-4 py-2 flex items-center justify-between hover:bg-surface-mist transition-colors cursor-text w-[150px] relative"
+            onClick={() => setIsDesktopSearchFocused(true)}
+          >
+             <div className="flex flex-col justify-center flex-1 min-w-0 pr-1">
+               <label className="text-[10px] font-bold text-ink-teal-900 uppercase tracking-wide cursor-text">Quién</label>
+               <input 
+                 type="number" 
+                 placeholder="¿Cuántos?" 
+                 value={guestCount}
+                 onFocus={() => setIsDesktopSearchFocused(true)}
+                 onChange={(e) => setGuestCount(e.target.value ? parseInt(e.target.value) : '')}
+                 className="w-full text-sm text-ink-teal-900 bg-transparent focus:outline-none placeholder-text-muted-custom font-medium"
+               />
+             </div>
+             {guestCount !== '' && (
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setGuestCount('')
+                }}
+                className="w-5 h-5 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600 flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors"
+                title="Limpiar huéspedes"
+              >
+                ✕
+              </button>
+             )}
           </div>
 
+          {/* 4. Botón Buscar */}
           <div className="px-4 py-2 flex items-center justify-end rounded-r-full hover:bg-surface-mist transition-colors w-[80px]">
             <button 
-              onClick={executeSearch}
-              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-sm relative"
+              onClick={() => {
+                executeSearch()
+                setIsDesktopSearchFocused(false)
+                setShowLocationDropdown(false)
+                setShowDatePicker(false)
+              }}
+              className="p-2.5 bg-accent-mango text-white rounded-full hover:bg-[#e07525] transition-colors shadow-md relative group flex items-center justify-center"
               aria-label="Buscar"
             >
-              <Search className="w-4 h-4" />
             </button>
           </div>
         </div>
